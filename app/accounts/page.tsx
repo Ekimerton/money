@@ -1,0 +1,129 @@
+'use client';
+
+import { useState, useEffect } from "react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+
+interface Account {
+    id: string;
+    name: string;
+    currency: string;
+    balance: string;
+    "balance-date": number;
+    type: string;
+}
+
+export default function AccountsPage() {
+    const [accounts, setAccounts] = useState<Account[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    const updateAccountType = async (accountId: string, newType: string) => {
+        try {
+            const response = await fetch('/api/update-account-type', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ accountId, newType }),
+            });
+
+            if (!response.ok) {
+                throw new Error(`Error updating account type: ${response.statusText}`);
+            }
+
+            const updatedAccount = await response.json();
+            setAccounts(prevAccounts =>
+                prevAccounts.map(a =>
+                    a.id === accountId ? { ...a, type: updatedAccount.type } : a
+                )
+            );
+        } catch (err: any) {
+            console.error("Failed to update account type:", err);
+            setError(err.message);
+        }
+    };
+
+    useEffect(() => {
+        const loadAccounts = async () => {
+            try {
+                const accountsResponse = await fetch('/api/get-accounts');
+                if (!accountsResponse.ok) {
+                    throw new Error(`Error: ${accountsResponse.status}`);
+                }
+                const accountsData = await accountsResponse.json();
+                setAccounts(accountsData.accounts);
+
+            } catch (err: any) {
+                setError(err.message);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadAccounts();
+    }, []);
+
+    if (loading) {
+        return <div className="p-8">Loading accounts...</div>;
+    }
+
+    if (error) {
+        return <div className="p-8 text-red-500">Error: {error}</div>;
+    }
+
+    return (
+        <div className="w-full bg-neutral-950">
+            <div className="p-2">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Account Name</TableHead>
+                            <TableHead>Balance</TableHead>
+                            <TableHead>Account Type</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {accounts.map((account) => (
+                            <TableRow key={account.id}>
+                                <TableCell>{account.name}</TableCell>
+                                <TableCell>
+                                    {new Intl.NumberFormat('en-US', {
+                                        style: 'currency',
+                                        currency: account.currency || 'USD',
+                                    }).format(parseFloat(account.balance))}
+                                </TableCell>
+                                <TableCell>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Badge
+                                                variant={account.type === 'Uncategorized' ? 'destructive' : 'default'}
+                                                className="cursor-pointer"
+                                            >
+                                                {account.type}
+                                            </Badge>
+                                        </PopoverTrigger>
+                                        <PopoverContent>
+                                            <Input
+                                                type="text"
+                                                placeholder="Set account type"
+                                                defaultValue={account.type}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') {
+                                                        updateAccountType(account.id, e.currentTarget.value);
+                                                    }
+                                                }}
+                                            />
+                                        </PopoverContent>
+                                    </Popover>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </div>
+        </div>
+    );
+} 

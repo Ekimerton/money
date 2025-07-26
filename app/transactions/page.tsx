@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { Input } from "@/components/ui/input";
 
 interface Account {
     id: string;
@@ -29,6 +32,32 @@ export default function TransactionsPage() {
     const [accounts, setAccounts] = useState<Account[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    const updateTransactionCategory = async (transactionId: string, newCategory: string) => {
+        try {
+            const response = await fetch('/api/update-transaction-category', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ transactionId, newCategory }),
+            });
+
+            if (!response.ok) {
+                throw new Error(`Error updating category: ${response.statusText}`);
+            }
+
+            const updatedTransaction = await response.json();
+            setTransactions(prevTransactions =>
+                prevTransactions.map(t =>
+                    t.id === transactionId ? { ...t, category: updatedTransaction.category } : t
+                )
+            );
+        } catch (err: any) {
+            console.error("Failed to update category:", err);
+            setError(err.message);
+        }
+    };
 
     useEffect(() => {
         const loadTransactions = async () => {
@@ -85,7 +114,7 @@ export default function TransactionsPage() {
                             const currency = account?.currency || 'USD';
                             return (
                                 <TableRow key={transaction.id}>
-                                    <TableCell>{new Date(transaction.posted * 1000).toLocaleDateString()}</TableCell>
+                                    <TableCell>{new Date(transaction.posted * 1000).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</TableCell>
                                     <TableCell>{transaction.description}</TableCell>
                                     <TableCell>{transaction.payee}</TableCell>
                                     <TableCell>
@@ -94,7 +123,30 @@ export default function TransactionsPage() {
                                             currency: currency,
                                         }).format(parseFloat(transaction.amount))}
                                     </TableCell>
-                                    <TableCell>{transaction.category}</TableCell>
+                                    <TableCell>
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <Badge
+                                                    variant={transaction.category === 'Uncategorized' ? 'destructive' : 'default'}
+                                                    className="cursor-pointer"
+                                                >
+                                                    {transaction.category}
+                                                </Badge>
+                                            </PopoverTrigger>
+                                            <PopoverContent>
+                                                <Input
+                                                    type="text"
+                                                    placeholder="Set category"
+                                                    defaultValue={transaction.category}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') {
+                                                            updateTransactionCategory(transaction.id, e.currentTarget.value);
+                                                        }
+                                                    }}
+                                                />
+                                            </PopoverContent>
+                                        </Popover>
+                                    </TableCell>
                                     <TableCell>{account?.name}</TableCell>
                                 </TableRow>
                             );

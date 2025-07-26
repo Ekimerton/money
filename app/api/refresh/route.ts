@@ -11,6 +11,7 @@ db.exec(`
     id TEXT PRIMARY KEY,
     name TEXT,
     currency TEXT,
+    type TEXT DEFAULT 'Uncategorized',
     balance TEXT,
     balance_date INTEGER
   );
@@ -55,7 +56,7 @@ export async function POST(req: Request) {
     const accounts = data.accounts;
 
     const insertAccount = db.prepare(
-      'INSERT OR REPLACE INTO accounts (id, name, currency, balance, balance_date) VALUES (?, ?, ?, ?, ?)'
+      'INSERT INTO accounts (id, name, currency, balance, balance_date) VALUES (?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET name=excluded.name, currency=excluded.currency, balance=excluded.balance, balance_date=excluded.balance_date'
     );
 
     db.transaction(() => {
@@ -70,7 +71,7 @@ export async function POST(req: Request) {
 
         // Save transactions for each account
         const insertTransaction = db.prepare(
-          'INSERT OR REPLACE INTO transactions (id, account_id, posted, amount, description, payee, transacted_at, pending, hidden, category) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+          'INSERT INTO transactions (id, account_id, posted, amount, description, payee, transacted_at, pending, category) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET account_id=excluded.account_id, posted=excluded.posted, amount=excluded.amount, description=excluded.description, payee=excluded.payee, transacted_at=excluded.transacted_at, pending=excluded.pending, hidden=excluded.hidden'
         );
         for (const transaction of account.transactions) {
           insertTransaction.run(
@@ -82,8 +83,7 @@ export async function POST(req: Request) {
             transaction.payee || null,
             transaction.transacted_at || null,
             transaction.pending ? 1 : 0,
-            0, // Default for hidden
-            'Uncategorized' // Placeholder for category
+            'Uncategorized' // Default for new, existing untouched by ON CONFLICT
           );
         }
       }

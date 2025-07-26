@@ -128,10 +128,10 @@ export default function Home() {
                 {transactions.map((transaction) => (
                   <li key={transaction.id} className="mb-2">
                     {new Date(transaction.posted * 1000).toLocaleDateString()}: {transaction.description} - {
-                    new Intl.NumberFormat('en-US', {
-                      style: 'currency',
-                      currency: accounts.find(acc => acc.id === transaction.account_id)?.currency || 'USD',
-                    }).format(parseFloat(transaction.amount))} {transaction.pending ? '(Pending)' : ''}
+                      new Intl.NumberFormat('en-US', {
+                        style: 'currency',
+                        currency: accounts.find(acc => acc.id === transaction.account_id)?.currency || 'USD',
+                      }).format(parseFloat(transaction.amount))} {transaction.pending ? '(Pending)' : ''}
                   </li>
                 ))}
               </ul>
