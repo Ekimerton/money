@@ -55,6 +55,7 @@ export default function AccountsPage() {
                     throw new Error(`Error: ${accountsResponse.status}`);
                 }
                 const accountsData = await accountsResponse.json();
+                console.log(accountsData);
                 setAccounts(accountsData.accounts);
 
             } catch (err: any) {
@@ -99,7 +100,7 @@ export default function AccountsPage() {
                                 <TableCell>
                                     <CategoryPopover
                                         defaultValue={account.type}
-                                        suggestions={['Checking', 'Savings', 'Credit Card', 'Investment']}
+                                        suggestions={['Checking', 'Savings', 'Credit Card', 'Investments']}
                                         onSubmit={(newType) => updateAccountType(account.id, newType)}
                                     />
                                 </TableCell>
