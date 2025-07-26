@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
+import { CategoryPopover } from "@/components/ui/category-popover";
 
 interface Account {
     id: string;
@@ -124,28 +125,11 @@ export default function TransactionsPage() {
                                         }).format(parseFloat(transaction.amount))}
                                     </TableCell>
                                     <TableCell>
-                                        <Popover>
-                                            <PopoverTrigger asChild>
-                                                <Badge
-                                                    variant={transaction.category === 'Uncategorized' ? 'destructive' : 'default'}
-                                                    className="cursor-pointer"
-                                                >
-                                                    {transaction.category}
-                                                </Badge>
-                                            </PopoverTrigger>
-                                            <PopoverContent>
-                                                <Input
-                                                    type="text"
-                                                    placeholder="Set category"
-                                                    defaultValue={transaction.category}
-                                                    onKeyDown={(e) => {
-                                                        if (e.key === 'Enter') {
-                                                            updateTransactionCategory(transaction.id, e.currentTarget.value);
-                                                        }
-                                                    }}
-                                                />
-                                            </PopoverContent>
-                                        </Popover>
+                                        <CategoryPopover
+                                            defaultValue={transaction.category}
+                                            suggestions={['Groceries', 'Rent', 'Salary', 'Transport', 'Utilities', 'Dining']}
+                                            onSubmit={(newCategory) => updateTransactionCategory(transaction.id, newCategory)}
+                                        />
                                     </TableCell>
                                     <TableCell>{account?.name}</TableCell>
                                 </TableRow>

@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { CategoryPopover } from "@/components/ui/category-popover";
 
 interface Account {
     id: string;
@@ -96,28 +97,11 @@ export default function AccountsPage() {
                                     }).format(parseFloat(account.balance))}
                                 </TableCell>
                                 <TableCell>
-                                    <Popover>
-                                        <PopoverTrigger asChild>
-                                            <Badge
-                                                variant={account.type === 'Uncategorized' ? 'destructive' : 'default'}
-                                                className="cursor-pointer"
-                                            >
-                                                {account.type}
-                                            </Badge>
-                                        </PopoverTrigger>
-                                        <PopoverContent>
-                                            <Input
-                                                type="text"
-                                                placeholder="Set account type"
-                                                defaultValue={account.type}
-                                                onKeyDown={(e) => {
-                                                    if (e.key === 'Enter') {
-                                                        updateAccountType(account.id, e.currentTarget.value);
-                                                    }
-                                                }}
-                                            />
-                                        </PopoverContent>
-                                    </Popover>
+                                    <CategoryPopover
+                                        defaultValue={account.type}
+                                        suggestions={['Checking', 'Savings', 'Credit Card', 'Investment']}
+                                        onSubmit={(newType) => updateAccountType(account.id, newType)}
+                                    />
                                 </TableCell>
                             </TableRow>
                         ))}
