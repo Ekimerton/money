@@ -2,10 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-import { Input } from "@/components/ui/input";
 import { CategoryPopover } from "@/components/ui/category-popover";
+import { useSearchParams } from "next/navigation";
 
 interface Account {
     id: string;
@@ -25,7 +23,7 @@ interface Transaction {
     transacted_at: number | null;
     pending: boolean;
     hidden: boolean;
-    category: string; // Add category field
+    category: string;
 }
 
 export default function TransactionsPage() {
@@ -33,6 +31,7 @@ export default function TransactionsPage() {
     const [accounts, setAccounts] = useState<Account[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const searchParams = useSearchParams();
 
     const updateTransactionCategory = async (transactionId: string, newCategory: string) => {
         try {
@@ -63,7 +62,9 @@ export default function TransactionsPage() {
     useEffect(() => {
         const loadTransactions = async () => {
             try {
-                const transactionsResponse = await fetch('/api/get-transactions');
+                const accountId = searchParams.get('account');
+                const transactionsUrl = accountId ? `/api/get-transactions?accountId=${accountId}` : '/api/get-transactions';
+                const transactionsResponse = await fetch(transactionsUrl);
                 if (!transactionsResponse.ok) {
                     throw new Error(`Error: ${transactionsResponse.status}`);
                 }
@@ -85,7 +86,7 @@ export default function TransactionsPage() {
         };
 
         loadTransactions();
-    }, []);
+    }, [searchParams]);
 
     if (loading) {
         return <div className="p-8">Loading transactions...</div>;

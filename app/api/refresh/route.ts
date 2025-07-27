@@ -56,7 +56,7 @@ export async function POST(req: Request) {
     const accounts = data.accounts;
 
     const insertAccount = db.prepare(
-      'INSERT INTO accounts (id, name, currency, balance, balance_date) VALUES (?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET name=excluded.name, currency=excluded.currency, balance=excluded.balance, balance_date=excluded.balance_date'
+      'INSERT INTO accounts (id, name, currency, balance, balance_date) VALUES (?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET currency=excluded.currency, balance=excluded.balance, balance_date=excluded.balance_date'
     );
 
     db.transaction(() => {

@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { CategoryPopover } from "@/components/ui/category-popover";
+import { AccountNamePopover } from "@/components/ui/account-name-popover";
+import { StackedAccountsChart } from "./account-stacked-chart";
+import { useRouter } from "next/navigation";
 
 interface Account {
     id: string;
@@ -14,12 +14,14 @@ interface Account {
     balance: string;
     "balance-date": number;
     type: string;
+    balanceHistory?: { date: string; balance: number }[]; // Re-add balanceHistory to the interface
 }
 
 export default function AccountsPage() {
     const [accounts, setAccounts] = useState<Account[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const router = useRouter();
 
     const updateAccountType = async (accountId: string, newType: string) => {
         try {
@@ -47,15 +49,41 @@ export default function AccountsPage() {
         }
     };
 
+    const updateAccountName = async (accountId: string, newName: string) => {
+        try {
+            const response = await fetch('/api/update-account-name', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ accountId, newName }),
+            });
+
+            if (!response.ok) {
+                throw new Error(`Error updating account name: ${response.statusText}`);
+            }
+
+            const updatedAccount = await response.json();
+            setAccounts(prevAccounts =>
+                prevAccounts.map(a =>
+                    a.id === accountId ? { ...a, name: updatedAccount.name } : a
+                )
+            );
+        } catch (err: any) {
+            console.error("Failed to update account name:", err);
+            setError(err.message);
+        }
+    };
+
     useEffect(() => {
         const loadAccounts = async () => {
             try {
-                const accountsResponse = await fetch('/api/get-accounts');
+                // Request 365 days of data for the chart
+                const accountsResponse = await fetch('/api/get-accounts?days=365');
                 if (!accountsResponse.ok) {
                     throw new Error(`Error: ${accountsResponse.status}`);
                 }
                 const accountsData = await accountsResponse.json();
-                console.log(accountsData);
                 setAccounts(accountsData.accounts);
 
             } catch (err: any) {
@@ -79,6 +107,9 @@ export default function AccountsPage() {
     return (
         <div className="w-full bg-neutral-950">
             <div className="p-2">
+                <div className="sm:w-1/2 pb-2">
+                    <StackedAccountsChart accounts={accounts} />
+                </div>
                 <Table>
                     <TableHeader>
                         <TableRow>
@@ -90,8 +121,13 @@ export default function AccountsPage() {
                     <TableBody>
                         {accounts.map((account) => (
                             <TableRow key={account.id}>
-                                <TableCell>{account.name}</TableCell>
                                 <TableCell>
+                                    <AccountNamePopover
+                                        defaultValue={account.name}
+                                        onSubmit={(newName) => updateAccountName(account.id, newName)}
+                                    />
+                                </TableCell>
+                                <TableCell onClick={() => router.push(`/transactions?account=${account.id}`)} className="cursor-pointer hover:underline">
                                     {new Intl.NumberFormat('en-US', {
                                         style: 'currency',
                                         currency: account.currency || 'USD',
