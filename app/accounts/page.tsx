@@ -4,8 +4,8 @@ import { useState, useEffect } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CategoryPopover } from "@/components/ui/category-popover";
 import { AccountNamePopover } from "@/components/ui/account-name-popover";
-import { StackedAccountsChart } from "./account-stacked-chart";
 import { useRouter } from "next/navigation";
+import { AccountBalanceChart } from "./account-balance-chart";
 
 interface Account {
     id: string;
@@ -106,11 +106,13 @@ export default function AccountsPage() {
 
     return (
         <div className="w-full bg-neutral-950">
-            <div className="p-2">
-                <div className="sm:w-1/2 pb-2">
+            <div className="p-4">
+                { /* <div className="sm:w-1/2 pb-2">
                     <StackedAccountsChart accounts={accounts} />
-                </div>
-                <Table>
+                </div> */}
+
+                <AccountBalanceChart accounts={accounts} />
+                <Table className="mt-4">
                     <TableHeader>
                         <TableRow>
                             <TableHead>Account Name</TableHead>
