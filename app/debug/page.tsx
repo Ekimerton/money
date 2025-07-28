@@ -120,7 +120,7 @@ export default function Home() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ url: simplefinUrl }),
+        body: JSON.stringify({ SETUP_TOKEN: simplefinUrl }),
       });
 
       if (!response.ok) {
@@ -202,6 +202,7 @@ export default function Home() {
             <li>Cron to fetch new data</li>
             <li>Cron to train classifier model</li>
             <li>Onboarding flow for configuring</li>
+            <li>Smarter table filtering, pagination, etc.</li>
           </ul>
         </div>
         <div className="mt-8 text-center sm:text-left">

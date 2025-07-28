@@ -1,38 +1,30 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 
+interface UserConfigRow {
+  simplefin_url: string;
+}
+
 const dbPath = path.join(process.cwd(), './data/user_data.db');
-const db = new Database(dbPath);
 
-const ACCESS_URL = "https://8AC46E79E1C2726F5C26C7C1485EF1CC29085D4E4846F36AFC179E708490151F:CB257D829DE2F92559B3136A243523049652B057473A4E89E1C44D583F5BFE82@beta-bridge.simplefin.org/simplefin";
-
-db.exec(`
-  CREATE TABLE IF NOT EXISTS accounts (
-    id TEXT PRIMARY KEY,
-    name TEXT,
-    currency TEXT,
-    type TEXT DEFAULT 'Uncategorized',
-    balance TEXT,
-    balance_date INTEGER
-  );
-
-  CREATE TABLE IF NOT EXISTS transactions (
-    id TEXT PRIMARY KEY,
-    account_id TEXT,
-    posted INTEGER,
-    amount TEXT,
-    description TEXT,
-    payee TEXT,
-    transacted_at INTEGER,
-    pending INTEGER,
-    hidden INTEGER DEFAULT 0,
-    category TEXT DEFAULT 'Uncategorized',
-    FOREIGN KEY (account_id) REFERENCES accounts(id)
-  );
-`);
+// Move db instance creation into the POST function to ensure it's always fresh
+// and can be closed properly after each request.
 
 export async function POST(req: Request) {
+  const db = new Database(dbPath);
   try {
+    // Retrieve simplefin_url from the user_config table
+    const simplefinUrlRow = db.prepare('SELECT simplefin_url FROM user_config WHERE name = ?').get('simplefin_url') as UserConfigRow;
+
+    if (!simplefinUrlRow || !simplefinUrlRow.simplefin_url) {
+      return new Response(JSON.stringify({ error: 'SimpleFIN URL not found in database. Please initialize it first.' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    const ACCESS_URL = simplefinUrlRow.simplefin_url;
+
     const urlParts = ACCESS_URL.split('@');
     const authString = urlParts[0].replace('https://', '');
     const baseUrl = urlParts[1];
@@ -100,5 +92,7 @@ export async function POST(req: Request) {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });
+  } finally {
+    db.close(); // Ensure the database connection is closed
   }
 } 
