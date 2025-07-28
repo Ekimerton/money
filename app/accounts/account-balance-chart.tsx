@@ -55,6 +55,7 @@ const chartConfig = {
 
 export function AccountBalanceChart({ accounts }: { accounts: Account[] }) {
     const [timeRange, setTimeRange] = React.useState("90d");
+    const [chartView, setChartView] = React.useState<"account" | "accountType">("account");
 
     const fullChartData = React.useMemo(() => {
         const dailyData: { [date: string]: { [key: string]: number } } = {};
@@ -65,7 +66,11 @@ export function AccountBalanceChart({ accounts }: { accounts: Account[] }) {
                 if (!dailyData[date]) {
                     dailyData[date] = {};
                 }
-                dailyData[date][account.id] = history.balance;
+                if (chartView === "account") {
+                    dailyData[date][account.id] = history.balance;
+                } else if (chartView === "accountType") {
+                    dailyData[date][account.type] = (dailyData[date][account.type] || 0) + history.balance;
+                }
             });
         });
 
@@ -77,37 +82,59 @@ export function AccountBalanceChart({ accounts }: { accounts: Account[] }) {
             let totalBalance = 0;
             const dateEntry: { date: string; totalBalance: number;[key: string]: number | string } = { date, totalBalance: 0 };
 
-            accounts.forEach(account => {
-                const balanceForDate = dailyData[date]?.[account.id] || 0;
-                dateEntry[account.id] = balanceForDate;
-                totalBalance += balanceForDate;
-            });
+            if (chartView === "account") {
+                accounts.forEach(account => {
+                    const balanceForDate = dailyData[date]?.[account.id] || 0;
+                    dateEntry[account.id] = balanceForDate;
+                    totalBalance += balanceForDate;
+                });
+            } else if (chartView === "accountType") {
+                const accountTypes = Array.from(new Set(accounts.map(a => a.type)));
+                accountTypes.forEach(type => {
+                    const balanceForType = dailyData[date]?.[type] || 0;
+                    dateEntry[type] = balanceForType;
+                    totalBalance += balanceForType;
+                });
+            }
+
             dateEntry.totalBalance = totalBalance;
             return dateEntry;
         });
         return processedData;
-    }, [accounts]);
+    }, [accounts, chartView]);
 
     // Dynamically add account configurations to chartConfig
     const dynamicChartConfig = React.useMemo(() => {
         const newConfig: ChartConfig = { ...chartConfig };
-        accounts.forEach((account, index) => {
-            newConfig[account.id] = {
-                label: account.name,
-                color: COLORS[index % COLORS.length], // Use gradient colors
-            };
-        });
+        if (chartView === "account") {
+            accounts.forEach((account, index) => {
+                newConfig[account.id] = {
+                    label: account.name,
+                    color: COLORS[index % COLORS.length], // Use gradient colors
+                };
+            });
+        } else if (chartView === "accountType") {
+            const accountTypes = Array.from(new Set(accounts.map(a => a.type)));
+            accountTypes.forEach((type, index) => {
+                newConfig[type] = {
+                    label: type,
+                    color: COLORS[index % COLORS.length],
+                };
+            });
+        }
         return newConfig;
-    }, [accounts]);
+    }, [accounts, chartView]);
 
     const filteredData = fullChartData.filter((item) => {
         const date = new Date(item.date);
-        const referenceDate = new Date(); // Use current date as reference
+        const referenceDate = new Date();
         let daysToSubtract = 90;
         if (timeRange === "30d") {
             daysToSubtract = 30;
         } else if (timeRange === "7d") {
             daysToSubtract = 7;
+        } else if (timeRange === "365d") {
+            daysToSubtract = 365;
         }
         const startDate = new Date(referenceDate);
         startDate.setDate(startDate.getDate() - daysToSubtract);
@@ -120,9 +147,25 @@ export function AccountBalanceChart({ accounts }: { accounts: Account[] }) {
                 <div className="grid flex-1 gap-1">
                     <CardTitle>Account Balance Over Time</CardTitle>
                     <CardDescription>
-                        Showing total balance for the last {timeRange === "90d" ? "3 months" : timeRange === "30d" ? "30 days" : "7 days"}
+                        Showing {chartView === "account" ? "account balances" : "account type balances"} for the last {timeRange === "90d" ? "3 months" : timeRange === "30d" ? "30 days" : timeRange === "365d" ? "12 months" : "7 days"}
                     </CardDescription>
                 </div>
+                <Select value={chartView} onValueChange={(value: "account" | "accountType") => setChartView(value)}>
+                    <SelectTrigger
+                        className="hidden w-[160px] rounded-lg sm:ml-auto sm:flex"
+                        aria-label="Select a view type"
+                    >
+                        <SelectValue placeholder="Select View" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl">
+                        <SelectItem value="account" className="rounded-lg">
+                            By Account
+                        </SelectItem>
+                        <SelectItem value="accountType" className="rounded-lg">
+                            By Account Type
+                        </SelectItem>
+                    </SelectContent>
+                </Select>
                 <Select value={timeRange} onValueChange={setTimeRange}>
                     <SelectTrigger
                         className="hidden w-[160px] rounded-lg sm:ml-auto sm:flex"
@@ -131,6 +174,9 @@ export function AccountBalanceChart({ accounts }: { accounts: Account[] }) {
                         <SelectValue placeholder="Last 3 months" />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
+                        <SelectItem value="365d" className="rounded-lg">
+                            Last 12 months
+                        </SelectItem>
                         <SelectItem value="90d" className="rounded-lg">
                             Last 3 months
                         </SelectItem>
@@ -162,7 +208,7 @@ export function AccountBalanceChart({ accounts }: { accounts: Account[] }) {
                                     stopOpacity={0.1}
                                 />
                             </linearGradient>
-                            {accounts.map((account, index) => (
+                            {chartView === "account" && accounts.map((account, index) => (
                                 <linearGradient key={account.id} id={`fill${account.id}`} x1="0" y1="0" x2="0" y2="1">
                                     <stop
                                         offset="5%"
@@ -172,6 +218,20 @@ export function AccountBalanceChart({ accounts }: { accounts: Account[] }) {
                                     <stop
                                         offset="95%"
                                         stopColor={COLORS[index % COLORS.length]} // Use gradient colors
+                                        stopOpacity={0.1}
+                                    />
+                                </linearGradient>
+                            ))}
+                            {chartView === "accountType" && Array.from(new Set(accounts.map(a => a.type))).map((type, index) => (
+                                <linearGradient key={type} id={`fill${type}`} x1="0" y1="0" x2="0" y2="1">
+                                    <stop
+                                        offset="5%"
+                                        stopColor={COLORS[index % COLORS.length]}
+                                        stopOpacity={0.8}
+                                    />
+                                    <stop
+                                        offset="95%"
+                                        stopColor={COLORS[index % COLORS.length]}
                                         stopOpacity={0.1}
                                     />
                                 </linearGradient>
@@ -206,13 +266,23 @@ export function AccountBalanceChart({ accounts }: { accounts: Account[] }) {
                                 />
                             }
                         />
-                        {accounts.map((account, index) => (
+                        {chartView === "account" && accounts.map((account, index) => (
                             <Area
                                 key={account.id}
                                 dataKey={account.id}
                                 type="natural"
                                 fill={`url(#fill${account.id})`}
                                 stroke={COLORS[index % COLORS.length]} // Use gradient colors
+                                activeDot={{ r: 6 }}
+                            />
+                        ))}
+                        {chartView === "accountType" && Array.from(new Set(accounts.map(a => a.type))).map((type, index) => (
+                            <Area
+                                key={type}
+                                dataKey={type}
+                                type="natural"
+                                fill={`url(#fill${type})`}
+                                stroke={COLORS[index % COLORS.length]}
                                 activeDot={{ r: 6 }}
                             />
                         ))}
