@@ -27,6 +27,31 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [simplefinUrl, setSimplefinUrl] = useState<string>('');
+
+  const initializeDatabase = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/initialize-database', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to initialize database.');
+      }
+      alert('Database initialized successfully!');
+    } catch (err: any) {
+      setError(err.message);
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const refreshDatabase = async () => {
     setLoading(true);
@@ -86,6 +111,31 @@ export default function Home() {
     }
   };
 
+  const saveSimplefinUrl = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/save-simplefin-url', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url: simplefinUrl }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to save SimpleFIN URL.');
+      }
+      alert('SimpleFIN URL saved successfully!');
+    } catch (err: any) {
+      setError(err.message);
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
       <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
@@ -103,6 +153,13 @@ export default function Home() {
             className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
           >
             {loading ? "Loading Data from DB..." : "Fetch Data from DB"}
+          </button>
+          <button
+            onClick={initializeDatabase}
+            disabled={loading}
+            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
+          >
+            {loading ? "Initializing Database..." : "Initialize Database"}
           </button>
           {error && <p className="text-red-500">Error: {error}</p>}
           {accounts.length > 0 && (
@@ -137,6 +194,34 @@ export default function Home() {
               </ul>
             </div>
           )}
+        </div>
+        <div className="mt-8">
+          <h2 className="text-xl font-semibold mb-4">To-do:</h2>
+          <ul>
+            <li>Dashboard</li>
+            <li>Cron to fetch new data</li>
+            <li>Cron to train classifier model</li>
+            <li>Onboarding flow for configuring</li>
+          </ul>
+        </div>
+        <div className="mt-8 text-center sm:text-left">
+          <p className="text-gray-700 dark:text-gray-300 mb-2">SimpleFIN is how I pull your financial data. Works great, costs 1.5 dollars per month. Sign up here and get an application token <a href="https://beta-bridge.simplefin.org/" target="_blank" rel="noopener noreferrer">https://beta-bridge.simplefin.org/</a></p>
+        </div>
+        <div className="flex gap-4 items-center flex-col sm:flex-row mt-8">
+          <input
+            type="text"
+            placeholder="Enter SimpleFIN URL"
+            value={simplefinUrl}
+            onChange={(e) => setSimplefinUrl(e.target.value)}
+            className="w-full sm:w-80 p-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+          />
+          <button
+            onClick={saveSimplefinUrl}
+            disabled={loading}
+            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
+          >
+            {loading ? "Saving URL..." : "Save SimpleFIN URL"}
+          </button>
         </div>
       </main>
     </div>

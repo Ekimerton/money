@@ -105,7 +105,7 @@ export default function AccountsPage() {
     }
 
     return (
-        <div className="w-full bg-neutral-950">
+        <div className="w-full ">
             <div className="p-4">
                 { /* <div className="sm:w-1/2 pb-2">
                     <StackedAccountsChart accounts={accounts} />

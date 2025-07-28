@@ -39,17 +39,17 @@ interface Account {
 export const description = "An interactive area chart"
 
 const COLORS = [
-    "hsl(240, 80%, 10%)", // Darkest blue
-    "hsl(240, 75%, 30%)",
-    "hsl(240, 70%, 50%)",
-    "hsl(240, 65%, 70%)",
-    "hsl(240, 60%, 90%)",
+    "oklch(28.2% 0.091 267.935)",
+    "oklch(37.9% 0.146 265.522)",
+    "oklch(42.4% 0.199 265.638)",
+    "oklch(48.8% 0.243 264.376)",
+    "oklch(54.6% 0.245 262.881)",
 ];
 
 const chartConfig = {
     totalBalance: {
         label: "Total Balance",
-        color: "hsl(var(--foreground))", // Black color
+        color: "oklch(82.8% 0.111 230.318)",
     },
 } satisfies ChartConfig;
 
@@ -290,7 +290,7 @@ export function AccountBalanceChart({ accounts }: { accounts: Account[] }) {
                             dataKey="totalBalance"
                             type="natural"
                             fill="url(#fillTotalBalance)"
-                            stroke="#fff" // Black color
+                            stroke="oklch(82.8% 0.111 230.318)" // Black color
                             activeDot={{ r: 6 }}
                         />
                         <ChartLegend content={<ChartLegendContent />} />

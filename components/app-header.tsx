@@ -48,7 +48,7 @@ export function AppHeader({ title, className, ...props }: AppHeaderProps) {
     }, [accountId]);
 
     return (
-        <div className="flex items-center gap-2 px-2 h-14 border-b border-neutral-800">
+        <div className="flex items-center gap-2 px-2 h-14 border-b">
             <SidebarTrigger className="mx-1" />
             <div className="h-4 bg-neutral-800 w-[1px]"></div>
             <Breadcrumb className="flex-1 overflow-x-auto">

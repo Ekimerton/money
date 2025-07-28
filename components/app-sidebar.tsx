@@ -13,11 +13,11 @@ import {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
-    <Sidebar {...props} className="border-r border-neutral-800 bg-neutral-950">
+    <Sidebar {...props} className="border-r">
       <SidebarHeader className="h-14 px-4 flex justify-center">
         <h1 className="text-xl font-bold">Money App</h1>
       </SidebarHeader>
-      <SidebarContent className="px-2">
+      <SidebarContent className="p-2">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild>

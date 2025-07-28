@@ -1,9 +1,12 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { ArrowUpDown } from "lucide-react";
 import { CategoryPopover } from "@/components/ui/category-popover";
 import { useSearchParams } from "next/navigation";
+import { ColumnDef } from "@tanstack/react-table";
+import { DataTable } from "@/components/data-table";
 
 interface Account {
     id: string;
@@ -96,48 +99,82 @@ export default function TransactionsPage() {
         return <div className="p-8 text-red-500">Error: {error}</div>;
     }
 
+    const columns: ColumnDef<Transaction>[] = [
+        {
+            accessorKey: "posted",
+            header: ({ column }) => {
+                return (
+                    <Button
+                        variant="ghost"
+                        className="-ml-3"
+                        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                    >
+                        Date
+                        <ArrowUpDown className="h-4 w-4" />
+                    </Button>
+                )
+            },
+            cell: ({ row }) => {
+                const date = new Date(row.original.posted * 1000);
+                return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+            },
+        },
+        {
+            accessorKey: "description",
+            header: "Description",
+        },
+        {
+            accessorKey: "payee",
+            header: "Payee",
+        },
+        {
+            accessorKey: "amount",
+            header: ({ column }) => {
+                return (
+                    <Button
+                        variant="ghost"
+                        className="-ml-3"
+                        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                    >
+                        Amount
+                        <ArrowUpDown className="h-4 w-4" />
+                    </Button>
+                )
+            },
+            cell: ({ row }) => {
+                const account = accounts.find(acc => acc.id === row.original.account_id);
+                const currency = account?.currency || 'USD';
+                return new Intl.NumberFormat('en-US', {
+                    style: 'currency',
+                    currency: currency,
+                }).format(parseFloat(row.original.amount));
+            },
+        },
+        {
+            accessorKey: "category",
+            header: "Category",
+            cell: ({ row }) => (
+                <CategoryPopover
+                    defaultValue={row.original.category}
+                    suggestions={['Groceries', 'Rent', 'Salary', 'Transport', 'Utilities', 'Dining']}
+                    onSubmit={(newCategory) => updateTransactionCategory(row.original.id, newCategory)}
+                />
+            ),
+        },
+        {
+            accessorKey: "account_id",
+            header: "Account",
+            cell: ({ row }) => {
+                const account = accounts.find(acc => acc.id === row.original.account_id);
+                return account?.name;
+            },
+        },
+    ];
+
     return (
-        <div className="w-full bg-neutral-950">
+        <div className="w-full">
             <div className="p-2">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Date</TableHead>
-                            <TableHead>Description</TableHead>
-                            <TableHead>Payee</TableHead>
-                            <TableHead>Amount</TableHead>
-                            <TableHead>Category</TableHead>
-                            <TableHead>Account</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {transactions.map((transaction) => {
-                            const account = accounts.find(acc => acc.id === transaction.account_id);
-                            const currency = account?.currency || 'USD';
-                            return (
-                                <TableRow key={transaction.id}>
-                                    <TableCell>{new Date(transaction.posted * 1000).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</TableCell>
-                                    <TableCell>{transaction.description}</TableCell>
-                                    <TableCell>{transaction.payee}</TableCell>
-                                    <TableCell>
-                                        {new Intl.NumberFormat('en-US', {
-                                            style: 'currency',
-                                            currency: currency,
-                                        }).format(parseFloat(transaction.amount))}
-                                    </TableCell>
-                                    <TableCell>
-                                        <CategoryPopover
-                                            defaultValue={transaction.category}
-                                            suggestions={['Groceries', 'Rent', 'Salary', 'Transport', 'Utilities', 'Dining']}
-                                            onSubmit={(newCategory) => updateTransactionCategory(transaction.id, newCategory)}
-                                        />
-                                    </TableCell>
-                                    <TableCell>{account?.name}</TableCell>
-                                </TableRow>
-                            );
-                        })}
-                    </TableBody>
-                </Table>
+                <DataTable columns={columns} data={transactions} />
             </div>
         </div>
     );
