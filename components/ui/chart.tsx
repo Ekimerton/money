@@ -86,13 +86,13 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
             ([theme, prefix]) => `
 ${prefix} [data-chart=${id}] {
 ${colorConfig
-                .map(([key, itemConfig]) => {
-                  const color =
-                    itemConfig.theme?.[theme as keyof typeof itemConfig.theme] ||
-                    itemConfig.color
-                  return color ? `  --color-${key}: ${color};` : null
-                })
-                .join("\n")}
+  .map(([key, itemConfig]) => {
+    const color =
+      itemConfig.theme?.[theme as keyof typeof itemConfig.theme] ||
+      itemConfig.color
+    return color ? `  --color-${key}: ${color};` : null
+  })
+  .join("\n")}
 }
 `
           )
@@ -173,7 +173,7 @@ function ChartTooltipContent({
   return (
     <div
       className={cn(
-        "border-border/50 bg-background grid min-w-[8rem] items-start gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs shadow-xl",
+        "border-neutral-200/50 bg-white grid min-w-[8rem] items-start gap-1.5 rounded-lg border border-neutral-200 px-2.5 py-1.5 text-xs shadow-xl dark:border-neutral-800/50 dark:bg-neutral-950 dark:border-neutral-800",
         className
       )}
     >
@@ -188,7 +188,7 @@ function ChartTooltipContent({
             <div
               key={item.dataKey}
               className={cn(
-                "[&>svg]:text-muted-foreground flex w-full flex-wrap items-stretch gap-2 [&>svg]:h-2.5 [&>svg]:w-2.5",
+                "[&>svg]:text-neutral-500 flex w-full flex-wrap items-stretch gap-2 [&>svg]:h-2.5 [&>svg]:w-2.5 dark:[&>svg]:text-neutral-400",
                 indicator === "dot" && "items-center"
               )}
             >
@@ -228,12 +228,12 @@ function ChartTooltipContent({
                   >
                     <div className="grid gap-1.5">
                       {nestLabel ? tooltipLabel : null}
-                      <span className="text-muted-foreground pr-4">
+                      <span className="text-neutral-500 dark:text-neutral-400">
                         {itemConfig?.label || item.name}
                       </span>
                     </div>
                     {item.value && (
-                      <span className="text-foreground font-mono font-medium tabular-nums">
+                      <span className="text-neutral-950 font-mono font-medium tabular-nums dark:text-neutral-50">
                         {item.value.toLocaleString()}
                       </span>
                     )}
@@ -270,7 +270,7 @@ function ChartLegendContent({
   return (
     <div
       className={cn(
-        "flex items-center justify-center gap-4 overflow-x-auto",
+        "flex items-center justify-center gap-4",
         verticalAlign === "top" ? "pb-3" : "pt-3",
         className
       )}
@@ -283,7 +283,7 @@ function ChartLegendContent({
           <div
             key={item.value}
             className={cn(
-              "[&>svg]:text-muted-foreground flex items-center gap-1.5 [&>svg]:h-3 [&>svg]:w-3 whitespace-nowrap"
+              "[&>svg]:text-neutral-500 flex items-center gap-1.5 [&>svg]:h-3 [&>svg]:w-3 dark:[&>svg]:text-neutral-400"
             )}
           >
             {itemConfig?.icon && !hideIcon ? (
@@ -316,8 +316,8 @@ function getPayloadConfigFromPayload(
 
   const payloadPayload =
     "payload" in payload &&
-      typeof payload.payload === "object" &&
-      payload.payload !== null
+    typeof payload.payload === "object" &&
+    payload.payload !== null
       ? payload.payload
       : undefined
 
