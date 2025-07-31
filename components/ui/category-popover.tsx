@@ -29,7 +29,7 @@ export function CategoryPopover({ defaultValue, suggestions, onSubmit }: Categor
         <Popover open={open} onOpenChange={setOpen}> {/* Bind open state to Popover component */}
             <PopoverTrigger asChild>
                 <Badge
-                    variant={defaultValue === 'Uncategorized' ? 'destructive' : 'default'}
+                    variant={defaultValue === 'Uncategorized' ? 'outline' : 'default'}
                     className="cursor-pointer"
                 >
                     {defaultValue}
