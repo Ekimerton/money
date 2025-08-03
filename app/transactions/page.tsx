@@ -151,7 +151,7 @@ export default function TransactionsPage() {
 
     const columns: ColumnDef<Transaction>[] = [
         {
-            accessorKey: "posted",
+            accessorKey: "transacted_at",
             header: ({ column }) => {
                 return (
                     <Button
@@ -165,7 +165,11 @@ export default function TransactionsPage() {
                 )
             },
             cell: ({ row }) => {
-                const date = new Date(row.original.posted * 1000);
+                const transactedAt = row.original.transacted_at;
+                if (typeof transactedAt !== 'number' || transactedAt === null) {
+                    return <span className="text-muted-foreground italic">N/A</span>;
+                }
+                const date = new Date(transactedAt * 1000);
                 return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
             },
         },

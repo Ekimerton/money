@@ -5,10 +5,10 @@ import path from 'path';
 const dbPath = path.join(process.cwd(), './data/user_data.db');
 
 export async function POST(req: NextRequest) {
-    try {
-        const db = new Database(dbPath);
+  try {
+    const db = new Database(dbPath);
 
-        db.exec(`
+    db.exec(`
       CREATE TABLE IF NOT EXISTS accounts (
         id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
@@ -31,20 +31,22 @@ export async function POST(req: NextRequest) {
         category TEXT DEFAULT 'uncategorized',
         FOREIGN KEY (account_id) REFERENCES accounts(id)
       );
-    `);
 
-        db.exec(`
+      CREATE INDEX IF NOT EXISTS idx_transactions_account_id ON transactions (account_id);
+      CREATE INDEX IF NOT EXISTS idx_transactions_transacted_at ON transactions (transacted_at);
+      CREATE INDEX IF NOT EXISTS idx_transactions_category ON transactions (category);
+
       CREATE TABLE IF NOT EXISTS user_config (
         name TEXT PRIMARY KEY,
         simplefin_url TEXT
       );
     `);
 
-        db.close();
+    db.close();
 
-        return NextResponse.json({ message: 'Database initialized successfully!' }, { status: 200 });
-    } catch (error: any) {
-        console.error('Error initializing database:', error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
-    }
+    return NextResponse.json({ message: 'Database initialized successfully!' }, { status: 200 });
+  } catch (error: any) {
+    console.error('Error initializing database:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 } 
