@@ -34,6 +34,7 @@ export default function TransactionsPage() {
     const [accounts, setAccounts] = useState<Account[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [existingCategories, setExistingCategories] = useState<string[]>([]);
     const searchParams = useSearchParams();
 
     const updateTransactionCategory = async (transactionId: string, newCategory: string) => {
@@ -80,6 +81,13 @@ export default function TransactionsPage() {
                 }
                 const accountsData = await accountsResponse.json();
                 setAccounts(accountsData.accounts);
+
+                const categoriesResponse = await fetch('/api/get-categories');
+                if (!categoriesResponse.ok) {
+                    throw new Error(`Error fetching categories: ${categoriesResponse.status}`);
+                }
+                const categoriesData = await categoriesResponse.json();
+                setExistingCategories(categoriesData.categories);
 
             } catch (err: any) {
                 setError(err.message);
@@ -156,7 +164,7 @@ export default function TransactionsPage() {
             cell: ({ row }) => (
                 <CategoryPopover
                     defaultValue={row.original.category}
-                    suggestions={['Groceries', 'Rent', 'Salary', 'Transport', 'Utilities', 'Dining']}
+                    suggestions={[...new Set([...existingCategories, 'Groceries', 'Rent', 'Salary', 'Transport', 'Utilities', 'Dining'])]}
                     onSubmit={(newCategory) => updateTransactionCategory(row.original.id, newCategory)}
                 />
             ),
