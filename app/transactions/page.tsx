@@ -7,6 +7,7 @@ import { CategoryPopover } from "@/components/ui/category-popover";
 import { useSearchParams } from "next/navigation";
 import { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/data-table";
+import { toast } from "sonner";
 
 interface Account {
     id: string;
@@ -52,14 +53,55 @@ export default function TransactionsPage() {
             }
 
             const updatedTransaction = await response.json();
-            setTransactions(prevTransactions =>
-                prevTransactions.map(t =>
+            setTransactions(prevTransactions => {
+                const updatedTransactions = prevTransactions.map(t =>
                     t.id === transactionId ? { ...t, category: updatedTransaction.category } : t
-                )
-            );
+                );
+
+                const originalTransaction = prevTransactions.find(t => t.id === transactionId);
+                if (originalTransaction?.payee) {
+                    const transactionsByPayee = updatedTransactions.filter(t => t.payee === originalTransaction.payee);
+                    if (transactionsByPayee.length > 3) {
+                        toast(`Would you like to categorize all transactions from ${originalTransaction.payee} as ${newCategory}?`, {
+                            id: `bulk-category-prompt-${originalTransaction.payee}-${newCategory}`,
+                            action: {
+                                label: "Yes",
+                                onClick: async () => {
+                                    try {
+                                        const bulkUpdateResponse = await fetch('/api/update-transactions-by-payee', {
+                                            method: 'POST',
+                                            headers: {
+                                                'Content-Type': 'application/json',
+                                            },
+                                            body: JSON.stringify({ payee: originalTransaction.payee, newCategory }),
+                                        });
+
+                                        if (!bulkUpdateResponse.ok) {
+                                            throw new Error(`Error bulk updating categories: ${bulkUpdateResponse.statusText}`);
+                                        }
+
+                                        setTransactions(prev =>
+                                            prev.map(t =>
+                                                t.payee === originalTransaction.payee ? { ...t, category: newCategory } : t
+                                            )
+                                        );
+                                        toast.success(`Updated ${transactionsByPayee.length} transactions from ${originalTransaction.payee} to ${newCategory}.`);
+                                    } catch (bulkErr: any) {
+                                        console.error("Failed to bulk update categories:", bulkErr);
+                                        setError(bulkErr.message);
+                                        toast.error("Failed to update transactions.");
+                                    }
+                                },
+                            },
+                        });
+                    }
+                }
+                return updatedTransactions;
+            });
         } catch (err: any) {
             console.error("Failed to update category:", err);
             setError(err.message);
+            toast.error("Failed to update category: " + err.message);
         }
     };
 
