@@ -53,6 +53,31 @@ export default function Home() {
     }
   };
 
+  const refreshRecentDatabase = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const refreshResponse = await fetch('/api/refresh-recent', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!refreshResponse.ok) {
+        const errorData = await refreshResponse.json();
+        throw new Error(errorData.error || 'Failed to refresh recent data from SimpleFIN.');
+      }
+      alert('Recent data refreshed and saved to database!');
+
+    } catch (err: any) {
+      setError(err.message);
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const refreshDatabase = async () => {
     setLoading(true);
     setError(null);
@@ -160,6 +185,13 @@ export default function Home() {
             className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
           >
             {loading ? "Initializing Database..." : "Initialize Database"}
+          </button>
+          <button
+            onClick={refreshRecentDatabase}
+            disabled={loading}
+            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
+          >
+            {loading ? "Refreshing Recent..." : "Refresh Recent"}
           </button>
           {error && <p className="text-red-500">Error: {error}</p>}
           {accounts.length > 0 && (

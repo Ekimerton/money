@@ -43,14 +43,16 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased dark`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <SidebarProvider>
           <div className="flex h-screen w-screen">
             <AppSidebar className="h-full" />
-            <main className="flex-1 overflow-y-auto">
+            <main className="flex flex-col flex-1">
               <AppHeader title={pageTitle} />
-              {children}
+              <div className="flex-1 overflow-y-auto pt-14">
+                {children}
+              </div>
             </main>
           </div>
         </SidebarProvider>

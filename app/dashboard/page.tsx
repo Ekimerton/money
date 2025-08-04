@@ -89,7 +89,7 @@ export default function DashboardPage() {
             <h1>Dashboard</h1>
             <p>Total Income: {totalIncome.toFixed(2)}</p>
             <p>Total Expenses: {totalExpenses.toFixed(2)}</p>
-            <div className="mt-8">
+            <div className="mt-8 p-4">
                 <IncomeExpenseSankeyChart transactions={transactions} accounts={accounts} />
             </div>
         </div>

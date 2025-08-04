@@ -105,7 +105,8 @@ export function IncomeExpenseSankeyChart({ transactions, accounts }: { transacti
             value: link.value,
         }));
 
-        return { nodes, links: formattedLinks };
+        console.log({ nodes: nodes.map(node => ({ name: node.name })), links: formattedLinks });
+        return { nodes: nodes.map(node => ({ name: node.name })), links: formattedLinks };
     }, [transactions, accounts]);
 
     return (
