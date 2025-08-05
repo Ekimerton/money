@@ -231,6 +231,7 @@ export function AccountBalanceChart({ accounts }: { accounts: Account[] }) {
                                 type="natural"
                                 stroke={COLORS[index % COLORS.length]} // Use gradient colors
                                 dot={false}
+                                strokeWidth={2}
                             />
                         ))}
                         {chartView === "accountType" && Array.from(new Set(accounts.map(a => a.type))).map((type, index) => (
@@ -240,6 +241,7 @@ export function AccountBalanceChart({ accounts }: { accounts: Account[] }) {
                                 type="natural"
                                 stroke={COLORS[index % COLORS.length]}
                                 dot={false}
+                                strokeWidth={2}
                             />
                         ))}
                         <Line
@@ -247,6 +249,7 @@ export function AccountBalanceChart({ accounts }: { accounts: Account[] }) {
                             type="natural"
                             stroke="oklch(82.8% 0.111 230.318)" // Black color
                             dot={false}
+                            strokeWidth={2}
                         />
                         <ChartLegend content={<ChartLegendContent />} />
                     </LineChart>
