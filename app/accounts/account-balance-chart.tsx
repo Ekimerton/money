@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Area, AreaChart, CartesianGrid, XAxis } from "recharts"
+import { CartesianGrid, Line, LineChart, XAxis } from "recharts"
 
 import {
     Card,
@@ -194,49 +194,7 @@ export function AccountBalanceChart({ accounts }: { accounts: Account[] }) {
                     config={dynamicChartConfig} // Use dynamic config here
                     className="aspect-auto h-[250px] w-full"
                 >
-                    <AreaChart data={filteredData}>
-                        <defs>
-                            <linearGradient id="fillTotalBalance" x1="0" y1="0" x2="0" y2="1">
-                                <stop
-                                    offset="5%"
-                                    stopColor="var(--color-totalBalance)"
-                                    stopOpacity={0.8}
-                                />
-                                <stop
-                                    offset="95%"
-                                    stopColor="var(--color-totalBalance)"
-                                    stopOpacity={0.1}
-                                />
-                            </linearGradient>
-                            {chartView === "account" && accounts.map((account, index) => (
-                                <linearGradient key={account.id} id={`fill${account.id}`} x1="0" y1="0" x2="0" y2="1">
-                                    <stop
-                                        offset="5%"
-                                        stopColor={COLORS[index % COLORS.length]} // Use gradient colors
-                                        stopOpacity={0.8}
-                                    />
-                                    <stop
-                                        offset="95%"
-                                        stopColor={COLORS[index % COLORS.length]} // Use gradient colors
-                                        stopOpacity={0.1}
-                                    />
-                                </linearGradient>
-                            ))}
-                            {chartView === "accountType" && Array.from(new Set(accounts.map(a => a.type))).map((type, index) => (
-                                <linearGradient key={type} id={`fill${type}`} x1="0" y1="0" x2="0" y2="1">
-                                    <stop
-                                        offset="5%"
-                                        stopColor={COLORS[index % COLORS.length]}
-                                        stopOpacity={0.8}
-                                    />
-                                    <stop
-                                        offset="95%"
-                                        stopColor={COLORS[index % COLORS.length]}
-                                        stopOpacity={0.1}
-                                    />
-                                </linearGradient>
-                            ))}
-                        </defs>
+                    <LineChart data={filteredData}>
                         <CartesianGrid vertical={false} />
                         <XAxis
                             dataKey="date"
@@ -267,34 +225,31 @@ export function AccountBalanceChart({ accounts }: { accounts: Account[] }) {
                             }
                         />
                         {chartView === "account" && accounts.map((account, index) => (
-                            <Area
+                            <Line
                                 key={account.id}
                                 dataKey={account.id}
                                 type="natural"
-                                fill={`url(#fill${account.id})`}
                                 stroke={COLORS[index % COLORS.length]} // Use gradient colors
-                                activeDot={{ r: 6 }}
+                                dot={false}
                             />
                         ))}
                         {chartView === "accountType" && Array.from(new Set(accounts.map(a => a.type))).map((type, index) => (
-                            <Area
+                            <Line
                                 key={type}
                                 dataKey={type}
                                 type="natural"
-                                fill={`url(#fill${type})`}
                                 stroke={COLORS[index % COLORS.length]}
-                                activeDot={{ r: 6 }}
+                                dot={false}
                             />
                         ))}
-                        <Area
+                        <Line
                             dataKey="totalBalance"
                             type="natural"
-                            fill="url(#fillTotalBalance)"
                             stroke="oklch(82.8% 0.111 230.318)" // Black color
-                            activeDot={{ r: 6 }}
+                            dot={false}
                         />
                         <ChartLegend content={<ChartLegendContent />} />
-                    </AreaChart>
+                    </LineChart>
                 </ChartContainer>
             </CardContent>
         </Card>
