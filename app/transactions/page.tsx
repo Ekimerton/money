@@ -8,6 +8,7 @@ import { useSearchParams } from "next/navigation";
 import { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/data-table";
 import { toast } from "sonner";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface Account {
     id: string;
@@ -176,6 +177,26 @@ export default function TransactionsPage() {
         {
             accessorKey: "description",
             header: "Description",
+            cell: ({ row }) => {
+                const description: string = row.getValue("description");
+                const truncatedDescription = description.length > 50
+                    ? `${description.substring(0, 47)}...`
+                    : description;
+                return (
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger className="text-left">
+                                <span className="block max-w-[200px] truncate">
+                                    {truncatedDescription}
+                                </span>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>{description}</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                );
+            },
         },
         {
             accessorKey: "payee",

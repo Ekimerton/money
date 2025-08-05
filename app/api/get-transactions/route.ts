@@ -10,13 +10,33 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const accountId = searchParams.get('accountId');
+    const month = searchParams.get('month');
+    const year = searchParams.get('year');
 
     let query = 'SELECT * FROM transactions';
     const params = [];
+    const conditions = [];
 
     if (accountId) {
-      query += ' WHERE account_id = ?';
+      conditions.push('account_id = ?');
       params.push(accountId);
+    }
+
+    if (month && year) {
+      // For SQLite, timestamps are typically in seconds since epoch
+      // We need to calculate the start and end of the month in UTC seconds
+      const startDate = new Date(Date.UTC(parseInt(year), parseInt(month), 1));
+      const endDate = new Date(Date.UTC(parseInt(year), parseInt(month) + 1, 0, 23, 59, 59, 999));
+
+      conditions.push('transacted_at >= ?');
+      params.push(Math.floor(startDate.getTime() / 1000));
+
+      conditions.push('transacted_at <= ?');
+      params.push(Math.floor(endDate.getTime() / 1000));
+    }
+
+    if (conditions.length > 0) {
+      query += ' WHERE ' + conditions.join(' AND ');
     }
 
     query += ' ORDER BY transacted_at DESC';

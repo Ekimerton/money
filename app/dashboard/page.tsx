@@ -1,6 +1,12 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { IncomeExpenseSankeyChart } from '@/components/ui/sankey-chart';
+import {
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
 
 interface Transaction {
     id: string;
@@ -25,12 +31,19 @@ export default function DashboardPage() {
     const [error, setError] = useState<string | null>(null);
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [accounts, setAccounts] = useState<Account[]>([]);
+    const [monthlySavings, setMonthlySavings] = useState<number>(0); // Initialize state for monthlySavings
+    const [savingsRate, setSavingsRate] = useState<number>(0); // Initialize state for savingsRate
 
     useEffect(() => {
         const fetchDashboardData = async () => {
             try {
-                // Fetch transactions
-                const transactionsResponse = await fetch('/api/get-transactions');
+                // Get current month and year
+                const now = new Date();
+                const currentMonth = now.getMonth(); // 0-indexed
+                const currentYear = now.getFullYear();
+
+                // Fetch transactions for the current month
+                const transactionsResponse = await fetch(`/api/get-transactions?month=${currentMonth}&year=${currentYear}`);
                 if (!transactionsResponse.ok) {
                     throw new Error(`Error fetching transactions: ${transactionsResponse.status}`);
                 }
@@ -46,26 +59,30 @@ export default function DashboardPage() {
                 const accountsData = await accountsResponse.json();
                 setAccounts(accountsData.accounts);
 
-                const now = new Date();
-                const currentMonth = now.getMonth();
-                const currentYear = now.getFullYear();
-
                 let income = 0;
                 let expenses = 0;
 
                 fetchedTransactions.forEach(transaction => {
-                    const transactionDate = new Date(transaction.transacted_at * 1000);
-                    if (transactionDate.getMonth() === currentMonth && transactionDate.getFullYear() === currentYear) {
-                        if (Number(transaction.amount) > 0) {
-                            income += Number(transaction.amount);
-                        } else {
-                            expenses += Number(transaction.amount);
-                        }
+                    if (Number(transaction.amount) > 0) {
+                        income += Number(transaction.amount);
+                    } else {
+                        expenses += Number(transaction.amount);
                     }
                 });
 
                 setTotalIncome(income);
                 setTotalExpenses(expenses);
+
+                // Calculate monthly savings and savings rate after income and expenses are set
+                const calculatedSavings = income + expenses;
+                setMonthlySavings(calculatedSavings);
+
+                if (income > 0) {
+                    setSavingsRate((calculatedSavings / income) * 100);
+                } else {
+                    setSavingsRate(0);
+                }
+
             } catch (err: any) {
                 setError(err.message);
             } finally {
@@ -86,10 +103,42 @@ export default function DashboardPage() {
 
     return (
         <div>
-            <h1>Dashboard</h1>
-            <p>Total Income: {totalIncome.toFixed(2)}</p>
-            <p>Total Expenses: {totalExpenses.toFixed(2)}</p>
-            <div className="mt-8 p-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 p-4 pb-0 w-full">
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Monthly Income</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{totalIncome.toFixed(2)}</div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Monthly Expenses</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{totalExpenses.toFixed(2)}</div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Monthly Savings</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{monthlySavings.toFixed(2)}</div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Savings Rate</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{savingsRate.toFixed(2)}%</div>
+                    </CardContent>
+                </Card>
+            </div>
+
+            <div className="p-4">
                 <IncomeExpenseSankeyChart transactions={transactions} accounts={accounts} />
             </div>
         </div>
