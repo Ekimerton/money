@@ -1,21 +1,12 @@
 import joblib
 import pandas as pd
-import nltk
-from nltk.stem import PorterStemmer, WordNetLemmatizer
-from nltk.tokenize import word_tokenize
 import os
 import sqlite3
-import sys # Import sys for command-line arguments
+import sys
+import datetime
+import nltk
 
-# Initialize stemmer and lemmatizer globally (must match train_model.py)
-stemmer = PorterStemmer()
-lemmatizer = WordNetLemmatizer()
-
-# Custom tokenizer (must match train_model.py)
-def custom_tokenizer(text):
-    tokens = word_tokenize(text.lower())
-    lemmas = [lemmatizer.lemmatize(word) for word in tokens]
-    return [stemmer.stem(word) for word in lemmas]
+from preprocess_text import custom_tokenizer, stemmer, lemmatizer
 
 def load_model_and_preprocessors(model_dir="model"):
     model_path = os.path.join(model_dir, "category_classifier_model.joblib")
@@ -49,6 +40,8 @@ def classify_new_transaction(payee, description, amount, account_id, model, tfid
     new_df['combined_text'] = new_df['payee'] + " " + new_df['description']
     new_combined_features = tfidf_combined.transform(new_df['combined_text'])
     new_combined_df = pd.DataFrame(new_combined_features.toarray(), columns=tfidf_combined.get_feature_names_out(), index=new_df.index)
+    # Rename columns to match the training feature names
+    new_combined_df.columns = [f"combined_tfidf_{i}" for i in range(new_combined_df.shape[1])]
 
     new_df['account_encoded'] = le_account.transform(new_df['account_id'])
     new_df['amount_scaled'] = scaler_amount.transform(new_df[['amount']])
@@ -85,14 +78,20 @@ if __name__ == "__main__":
     nltk.download('punkt_tab', quiet=True)
 
     if len(sys.argv) < 2:
-        print("Usage: python classify_transaction.py <start_date_YYYY-MM-DD>")
+        print("Usage: python classify_transaction.py <start_timestamp>")
         sys.exit(1)
 
-    start_date = sys.argv[1]
+    # Directly use the timestamp from command-line argument
+    try:
+        start_timestamp = int(sys.argv[1])
+    except ValueError:
+        print(f"Invalid timestamp: {sys.argv[1]}. Please provide an integer Unix timestamp.")
+        sys.exit(1)
+
     db_path = "user_data.db"
 
     print("Loading model and preprocessors...")
-    model, tfidf_combined, le_account, scaler_amount = load_model_and_preprocessors("data/")
+    model, tfidf_combined, le_account, scaler_amount = load_model_and_preprocessors("model/")
 
     if model and tfidf_combined and le_account and scaler_amount:
         print("Model and preprocessors loaded successfully.\n")
@@ -100,11 +99,12 @@ if __name__ == "__main__":
         conn = None
         try:
             conn = sqlite3.connect(db_path)
-            query = "SELECT id, payee, description, amount, account_id, date FROM transactions WHERE category IS NULL AND date >= ?"
-            uncategorized_df = pd.read_sql_query(query, conn, params=(start_date,))
+            # Query using posted column and integer timestamp directly
+            query = "SELECT id, payee, description, amount, account_id, posted FROM transactions WHERE category = 'Uncategorized' AND posted >= ?"
+            uncategorized_df = pd.read_sql_query(query, conn, params=(start_timestamp,))
             
             if not uncategorized_df.empty:
-                print(f"Found {len(uncategorized_df)} uncategorized transactions since {start_date}.\n")
+                print(f"Found {len(uncategorized_df)} uncategorized transactions since timestamp {start_timestamp}.\n")
                 updated_count = 0
                 for index, row in uncategorized_df.iterrows():
                     transaction_id = row['id']
@@ -112,16 +112,20 @@ if __name__ == "__main__":
                     description = row['description']
                     amount = row['amount']
                     account_id = row['account_id']
-                    date = row['date']
+                    posted_at = row['posted'] # Get posted timestamp
 
                     predicted_category, confidence = classify_new_transaction(
                         payee, description, amount, account_id, model, tfidf_combined, le_account, scaler_amount
                     )
 
-                    print(f"Transaction ID: {transaction_id}, Date: {date}, Payee: {payee}, Desc: {description[:30]}...")
+                    # Convert posted_at timestamp back to readable date for printing (optional, keep for user info)
+                    # import datetime # Added datetime import
+                    # import datetime
+                    readable_date = datetime.datetime.fromtimestamp(posted_at).strftime('%Y-%m-%d')
+                    print(f"Transaction ID: {transaction_id}, Date: {readable_date}, Payee: {payee}, Desc: {description[:30]}...")
                     print(f"  Predicted: {predicted_category}, Confidence: {confidence:.2f}")
 
-                    if confidence > 0.70:
+                    if confidence > 0.80:
                         update_transaction_category_in_db(db_path, transaction_id, predicted_category)
                         updated_count += 1
                         print(f"  -> Auto-categorized as '{predicted_category}' (Confidence: {confidence:.2f})\n")
@@ -129,12 +133,12 @@ if __name__ == "__main__":
                         print(f"  -> Not auto-categorized (Confidence too low: {confidence:.2f})\n")
                 print(f"Finished processing. {updated_count} transactions were auto-categorized.")
             else:
-                print(f"No uncategorized transactions found since {start_date}.")
+                print(f"No uncategorized transactions found since timestamp {start_timestamp}.")
 
         except sqlite3.Error as e:
             print(f"Database error: {e}")
         finally:
-            if conn: # Ensure connection is closed even if error occurs
+            if conn:
                 conn.close()
 
     else:

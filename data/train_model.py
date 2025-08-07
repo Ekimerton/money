@@ -1,30 +1,23 @@
 
-import sqlite3
+import joblib
 import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.preprocessing import LabelEncoder, StandardScaler
-from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, accuracy_score
-import nltk
-from nltk.stem import PorterStemmer, WordNetLemmatizer
-from nltk.tokenize import word_tokenize
-import joblib # Import joblib for saving/loading models
-import os # Import os for directory creation
+import sqlite3
+import os
+import sys
+# import datetime # Removed datetime
+# import time # Removed time
 
-# Initialize stemmer and lemmatizer globally
-stemmer = PorterStemmer()
-lemmatizer = WordNetLemmatizer()
-
-# Custom tokenizer for TF-IDF that includes stemming, lemmatization and lowercasing
-def custom_tokenizer(text):
-    tokens = word_tokenize(text.lower())
-    lemmas = [lemmatizer.lemmatize(word) for word in tokens]
-    return [stemmer.stem(word) for word in lemmas]
+from preprocess_text import custom_tokenizer, stemmer, lemmatizer
 
 def load_data(db_path):
     conn = sqlite3.connect(db_path)
-    query = "SELECT payee, description, amount, account_id, category FROM transactions WHERE category IS NOT NULL"
+    query = "SELECT payee, description, amount, account_id, category FROM transactions WHERE category IS NOT NULL AND category != 'Uncategorized'"
     df = pd.read_sql_query(query, conn)
     conn.close()
     return df
@@ -36,7 +29,7 @@ def preprocess_data(df):
 
     # TF-IDF for payee and description (shared vocabulary)
     df['combined_text'] = df['payee'] + " " + df['description']
-    tfidf_combined = TfidfVectorizer(max_features=10000, tokenizer=custom_tokenizer) # Reduced max_features
+    tfidf_combined = TfidfVectorizer(max_features=10000, analyzer='char_wb', ngram_range=(2, 7))
     combined_features = tfidf_combined.fit_transform(df['combined_text'])
     combined_feature_names = [f"combined_tfidf_{i}" for i in range(combined_features.shape[1])]
     combined_df = pd.DataFrame(combined_features.toarray(), columns=combined_feature_names, index=df.index)
@@ -59,9 +52,9 @@ def preprocess_data(df):
 
 if __name__ == "__main__":
     # Download NLTK resources
-    nltk.download('punkt', quiet=True)
-    nltk.download('wordnet', quiet=True)
-    nltk.download('punkt_tab', quiet=True)
+    # nltk.download('punkt', quiet=True) # Removed nltk download
+    # nltk.download('wordnet', quiet=True) # Removed nltk download
+    # nltk.download('punkt_tab', quiet=True) # Removed nltk download
 
     db_path = "user_data.db"
     data = load_data(db_path)
@@ -83,7 +76,7 @@ if __name__ == "__main__":
         # Make predictions and evaluate the model
         y_pred = model.predict(X_test)
         
-        print("\nModel Accuracy:", accuracy_score(y_test, y_pred))
+        print("\nModel Accuracy:", accuracy_score(y_test, y_pred)) # Changed accuracy_score to accuracy_score
         print("\nClassification Report:")
         print(classification_report(y_test, y_pred))
 
