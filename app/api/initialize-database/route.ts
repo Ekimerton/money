@@ -38,9 +38,27 @@ export async function POST(req: NextRequest) {
 
       CREATE TABLE IF NOT EXISTS user_config (
         name TEXT PRIMARY KEY,
-        simplefin_url TEXT
+        simplefin_url TEXT,
+        classifier_training_date TEXT DEFAULT NULL,
+        display_name TEXT DEFAULT NULL
       );
     `);
+
+    const userConfigColumns = db.prepare("PRAGMA table_info(user_config);").all() as { name: string, type: string, notnull: number, dflt_value: string | null, pk: number }[];
+    const classifierTrainingDateExists = userConfigColumns.some(column => column.name === 'classifier_training_date');
+    const displayNameExists = userConfigColumns.some(column => column.name === 'display_name');
+
+    if (!classifierTrainingDateExists) {
+      db.exec(`
+        ALTER TABLE user_config ADD COLUMN classifier_training_date TEXT DEFAULT NULL;
+      `);
+    }
+
+    if (!displayNameExists) {
+      db.exec(`
+        ALTER TABLE user_config ADD COLUMN display_name TEXT DEFAULT NULL;
+      `);
+    }
 
     db.close();
 

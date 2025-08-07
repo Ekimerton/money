@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface Account {
   id: string;
@@ -28,6 +28,8 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [simplefinUrl, setSimplefinUrl] = useState<string>('');
+  const [userName, setUserName] = useState<string>('');
+  const [classifierTrainingDate, setClassifierTrainingDate] = useState<string | null>(null);
 
   const initializeDatabase = async () => {
     setLoading(true);
@@ -161,6 +163,92 @@ export default function Home() {
     }
   };
 
+  const trainModel = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/train-model', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to train model.');
+      }
+      alert('Model training initiated and date updated!');
+      // Optionally fetch the updated training date
+      fetchClassifierTrainingDate();
+    } catch (err: any) {
+      setError(err.message);
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const saveUserName = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/save-user-name', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userName }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to save user name.');
+      }
+      alert('User name saved successfully!');
+    } catch (err: any) {
+      setError(err.message);
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchClassifierTrainingDate = async () => {
+    try {
+      const response = await fetch('/api/get-classifier-training-date');
+      if (!response.ok) {
+        throw new Error('Failed to fetch classifier training date.');
+      }
+      const data = await response.json();
+      setClassifierTrainingDate(data.classifierTrainingDate);
+    } catch (err) {
+      console.error('Error fetching classifier training date:', err);
+    }
+  };
+
+  const fetchUserConfig = async () => {
+    try {
+      const response = await fetch('/api/get-user-config');
+      if (!response.ok) {
+        throw new Error('Failed to fetch user configuration.');
+      }
+      const data = await response.json();
+      if (data.userConfig) {
+        setSimplefinUrl(data.userConfig.simplefin_url || '');
+        setClassifierTrainingDate(data.userConfig.classifier_training_date || null);
+        setUserName(data.userConfig.display_name || '');
+      }
+    } catch (err) {
+      console.error('Error fetching user config:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchClassifierTrainingDate();
+    fetchUserConfig();
+  }, []);
+
   return (
     <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
       <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
@@ -171,13 +259,6 @@ export default function Home() {
             className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
           >
             {loading ? "Refreshing Database..." : "Refresh Database"}
-          </button>
-          <button
-            onClick={loadDataFromDb}
-            disabled={loading}
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-          >
-            {loading ? "Loading Data from DB..." : "Fetch Data from DB"}
           </button>
           <button
             onClick={initializeDatabase}
@@ -256,6 +337,36 @@ export default function Home() {
             {loading ? "Saving URL..." : "Save SimpleFIN Token"}
           </button>
         </div>
+        <div className="flex gap-4 items-center flex-col sm:flex-row mt-8">
+          <input
+            type="text"
+            placeholder="Enter User Name"
+            value={userName}
+            onChange={(e) => setUserName(e.target.value)}
+            className="w-full sm:w-80 p-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+          />
+          <button
+            onClick={saveUserName}
+            disabled={loading}
+            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
+          >
+            {loading ? "Saving User Name..." : "Save User Name"}
+          </button>
+        </div>
+        <div className="flex gap-4 items-center flex-col sm:flex-row mt-8">
+          <button
+            onClick={trainModel}
+            disabled={loading}
+            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
+          >
+            {loading ? "Training Model..." : "Train Classifier Model"}
+          </button>
+        </div>
+        {classifierTrainingDate && (
+          <div className="mt-4 text-center sm:text-left">
+            <p className="text-gray-700 dark:text-gray-300">Last Classifier Model Training: {new Date(classifierTrainingDate).toLocaleString()}</p>
+          </div>
+        )}
       </main>
     </div>
   );

@@ -56,9 +56,11 @@ if __name__ == "__main__":
     # nltk.download('wordnet', quiet=True) # Removed nltk download
     # nltk.download('punkt_tab', quiet=True) # Removed nltk download
 
-    db_path = "user_data.db"
+    db_path = sys.argv[1] if len(sys.argv) > 1 else "./data/user_data.db" # Default path if not provided
     data = load_data(db_path)
     print(f"Loaded {len(data)} rows with categories for training.")
+    
+    model_save_dir = sys.argv[2] if len(sys.argv) > 2 else "model"
     
     if not data.empty:
         features, labels, tfidf_combined, le_account, scaler_amount = preprocess_data(data) # Get all returned objects
@@ -101,7 +103,7 @@ if __name__ == "__main__":
             print("\nNo test data available for random classification.")
 
         # Save the trained model and preprocessing objects
-        model_dir = "model"
+        model_dir = model_save_dir
         os.makedirs(model_dir, exist_ok=True) # Ensure the directory exists
         model_filename = os.path.join(model_dir, "category_classifier_model.joblib")
         tfidf_filename = os.path.join(model_dir, "tfidf_vectorizer.joblib")
