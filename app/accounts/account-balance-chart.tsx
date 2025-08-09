@@ -48,7 +48,7 @@ const COLORS = [
 
 const chartConfig = {
     totalBalance: {
-        label: "Total Balance",
+        label: "Net Worth",
         color: "oklch(82.8% 0.111 230.318)",
     },
 } satisfies ChartConfig;
@@ -56,6 +56,14 @@ const chartConfig = {
 export function AccountBalanceChart({ accounts }: { accounts: Account[] }) {
     const [timeRange, setTimeRange] = React.useState("90d");
     const [chartView, setChartView] = React.useState<"account" | "accountType">("account");
+
+    const sortedAccountsByName = React.useMemo(() => {
+        return [...accounts].sort((a, b) => a.name.localeCompare(b.name));
+    }, [accounts]);
+
+    const sortedAccountTypesByName = React.useMemo(() => {
+        return Array.from(new Set(accounts.map(a => a.type))).sort((a, b) => a.localeCompare(b));
+    }, [accounts]);
 
     const fullChartData = React.useMemo(() => {
         const dailyData: { [date: string]: { [key: string]: number } } = {};
@@ -141,14 +149,26 @@ export function AccountBalanceChart({ accounts }: { accounts: Account[] }) {
         return date >= startDate;
     });
 
+    const finalNetWorth = filteredData[filteredData.length - 1].totalBalance;
+    const startNetWorth = filteredData[0].totalBalance;
+    const changeNetWorth = finalNetWorth - startNetWorth;
+    const percentChangeRounded = Math.round(changeNetWorth / startNetWorth * 100);
+
     return (
         <Card className="pt-0">
-            <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
+            <CardHeader className="flex items-center gap-2 space-y-0 py-5 sm:flex-row">
                 <div className="grid flex-1 gap-1">
-                    <CardTitle>Account Balance Over Time</CardTitle>
-                    <CardDescription>
-                        Showing {chartView === "account" ? "account balances" : "account type balances"} for the last {timeRange === "90d" ? "3 months" : timeRange === "30d" ? "30 days" : timeRange === "365d" ? "12 months" : "7 days"}
+                    <CardDescription className="font-bold text-muted-foreground uppercase text-sm font-mono">
+                        Net Worth
                     </CardDescription>
+                    <CardTitle className="text-2xl font-bold">
+                        {Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(filteredData[filteredData.length - 1].totalBalance)}
+                        <span className={`text-sm ml-2 font-mono ${changeNetWorth > 0 ? "text-green-700" : "text-red-700"}`}>
+                            {changeNetWorth > 0 ? "+" : "-"}
+                            {Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(changeNetWorth)}
+                            {" "}({percentChangeRounded}%)
+                        </span>
+                    </CardTitle>
                 </div>
                 <Select value={chartView} onValueChange={(value: "account" | "accountType") => setChartView(value)}>
                     <SelectTrigger
@@ -192,7 +212,7 @@ export function AccountBalanceChart({ accounts }: { accounts: Account[] }) {
             <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
                 <ChartContainer
                     config={dynamicChartConfig} // Use dynamic config here
-                    className="aspect-auto h-[250px] w-full"
+                    className="aspect-auto h-[220px] w-full"
                 >
                     <LineChart data={filteredData}>
                         <CartesianGrid vertical={false} />
@@ -224,7 +244,15 @@ export function AccountBalanceChart({ accounts }: { accounts: Account[] }) {
                                 />
                             }
                         />
-                        {chartView === "account" && accounts.map((account, index) => (
+                        {/* Net Worth first in legend */}
+                        <Line
+                            dataKey="totalBalance"
+                            type="natural"
+                            stroke="oklch(82.8% 0.111 230.318)" // Black color
+                            dot={false}
+                            strokeWidth={2}
+                        />
+                        {chartView === "account" && sortedAccountsByName.map((account, index) => (
                             <Line
                                 key={account.id}
                                 dataKey={account.id}
@@ -234,7 +262,7 @@ export function AccountBalanceChart({ accounts }: { accounts: Account[] }) {
                                 strokeWidth={2}
                             />
                         ))}
-                        {chartView === "accountType" && Array.from(new Set(accounts.map(a => a.type))).map((type, index) => (
+                        {chartView === "accountType" && sortedAccountTypesByName.map((type, index) => (
                             <Line
                                 key={type}
                                 dataKey={type}
@@ -244,13 +272,6 @@ export function AccountBalanceChart({ accounts }: { accounts: Account[] }) {
                                 strokeWidth={2}
                             />
                         ))}
-                        <Line
-                            dataKey="totalBalance"
-                            type="natural"
-                            stroke="oklch(82.8% 0.111 230.318)" // Black color
-                            dot={false}
-                            strokeWidth={2}
-                        />
                         <ChartLegend content={<ChartLegendContent />} />
                     </LineChart>
                 </ChartContainer>

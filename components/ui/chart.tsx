@@ -228,13 +228,13 @@ function ChartTooltipContent({
                   >
                     <div className="grid gap-1.5">
                       {nestLabel ? tooltipLabel : null}
-                      <span className="text-neutral-500 dark:text-neutral-400 pr-2">
+                      <span className="text-neutral-500 dark:text-neutral-400 pr-8">
                         {itemConfig?.label || item.name}
                       </span>
                     </div>
                     {item.value && (
                       <span className="text-neutral-950 font-mono font-medium tabular-nums dark:text-neutral-50">
-                        {item.value.toLocaleString()}
+                        {Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(item.value as number)}
                       </span>
                     )}
                   </div>
