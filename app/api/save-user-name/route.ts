@@ -7,11 +7,19 @@ const dbPath = path.join(process.cwd(), './data/user_data.db');
 export async function POST(req: NextRequest) {
     try {
         const { userName } = await req.json();
+        if (!userName || typeof userName !== 'string' || userName.trim().length === 0) {
+            return NextResponse.json({ error: 'userName is required.' }, { status: 400 });
+        }
         const db = new Database(dbPath);
 
-        // Update only the display_name for the user_settings row
-        const stmt = db.prepare('INSERT OR REPLACE INTO user_config (name, simplefin_url, classifier_training_date, display_name) VALUES ('user_settings', (SELECT simplefin_url FROM user_config WHERE name = 'user_settings'), (SELECT classifier_training_date FROM user_config WHERE name = 'user_settings'), ?)');
-        stmt.run(userName);
+        // Upsert display_name on the single-row user_config (id = 1)
+        const stmt = db.prepare(`
+            INSERT INTO user_config (id, display_name)
+            VALUES (1, ?)
+            ON CONFLICT(id) DO UPDATE SET
+                display_name = excluded.display_name
+        `);
+        stmt.run(userName.trim());
 
         db.close();
 

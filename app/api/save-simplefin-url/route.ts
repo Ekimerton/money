@@ -29,12 +29,12 @@ export async function POST(req: NextRequest) {
 
         const db = new Database(dbPath);
         const stmt = db.prepare(`
-            INSERT INTO user_config (name, simplefin_url)
-            VALUES (?, ?)
-            ON CONFLICT(name) DO UPDATE SET
-                simplefin_url=excluded.simplefin_url;
+            INSERT INTO user_config (id, simplefin_url)
+            VALUES (1, ?)
+            ON CONFLICT(id) DO UPDATE SET
+                simplefin_url = excluded.simplefin_url;
         `);
-        stmt.run('simplefin_url', ACCESS_URL);
+        stmt.run(ACCESS_URL);
         db.close();
 
         return NextResponse.json({ message: 'SimpleFIN URL saved successfully!', simplefinUrl: ACCESS_URL }, { status: 200 });

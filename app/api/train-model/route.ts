@@ -23,9 +23,14 @@ export async function POST(req: NextRequest) {
             console.error(`stderr: ${stderr}`);
         });
 
-        // Update the last_classifier_model_training_date in user_config
+        // Update classifier_training_date in single-row user_config (id = 1)
         const now = new Date().toISOString();
-        db.prepare('INSERT INTO user_config (name, classifier_training_date) VALUES (?, ?) ON CONFLICT(name) DO UPDATE SET classifier_training_date=excluded.classifier_training_date').run('classifier_training_date_key', now);
+        db.prepare(`
+            INSERT INTO user_config (id, classifier_training_date)
+            VALUES (1, ?)
+            ON CONFLICT(id) DO UPDATE SET
+                classifier_training_date = excluded.classifier_training_date
+        `).run(now);
         db.close();
 
         return NextResponse.json({ message: 'Model training initiated and date updated!' }, { status: 200 });

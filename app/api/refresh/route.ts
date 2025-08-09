@@ -13,8 +13,10 @@ const dbPath = path.join(process.cwd(), './data/user_data.db');
 export async function POST(req: Request) {
   const db = new Database(dbPath);
   try {
-    // Retrieve simplefin_url from the user_config table
-    const simplefinUrlRow = db.prepare('SELECT simplefin_url FROM user_config WHERE name = ?').get('simplefin_url') as UserConfigRow;
+    // Retrieve simplefin_url from the single-row user_config table
+    const simplefinUrlRow = db
+      .prepare('SELECT simplefin_url FROM user_config WHERE id = 1')
+      .get() as UserConfigRow;
 
     if (!simplefinUrlRow || !simplefinUrlRow.simplefin_url) {
       return new Response(JSON.stringify({ error: 'SimpleFIN URL not found in database. Please initialize it first.' }), {

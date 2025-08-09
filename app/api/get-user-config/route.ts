@@ -7,7 +7,15 @@ const dbPath = path.join(process.cwd(), './data/user_data.db');
 export async function GET() {
     try {
         const db = new Database(dbPath);
-        const userConfig = db.prepare('SELECT simplefin_url, classifier_training_date, name FROM user_config').get();
+        const userConfig = db
+            .prepare(
+                'SELECT display_name, simplefin_url, classifier_training_date FROM user_config WHERE id = 1'
+            )
+            .get() || {
+            display_name: null,
+            simplefin_url: null,
+            classifier_training_date: null,
+        };
         db.close();
 
         return NextResponse.json({ userConfig }, { status: 200 });

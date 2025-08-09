@@ -179,8 +179,36 @@ export default function Home() {
         throw new Error(errorData.error || 'Failed to train model.');
       }
       alert('Model training initiated and date updated!');
-      // Optionally fetch the updated training date
-      fetchClassifierTrainingDate();
+      // Refresh user config to get updated classifier_training_date
+      fetchUserConfig();
+    } catch (err: any) {
+      setError(err.message);
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteUserConfig = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/delete-user-config', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete user_config table.');
+      }
+      alert('user_config table deleted.');
+      // Clear local state since config is gone
+      setSimplefinUrl('');
+      setUserName('');
+      setClassifierTrainingDate(null);
     } catch (err: any) {
       setError(err.message);
       console.error(err);
@@ -214,19 +242,6 @@ export default function Home() {
     }
   };
 
-  const fetchClassifierTrainingDate = async () => {
-    try {
-      const response = await fetch('/api/get-classifier-training-date');
-      if (!response.ok) {
-        throw new Error('Failed to fetch classifier training date.');
-      }
-      const data = await response.json();
-      setClassifierTrainingDate(data.classifierTrainingDate);
-    } catch (err) {
-      console.error('Error fetching classifier training date:', err);
-    }
-  };
-
   const fetchUserConfig = async () => {
     try {
       const response = await fetch('/api/get-user-config');
@@ -245,7 +260,6 @@ export default function Home() {
   };
 
   useEffect(() => {
-    fetchClassifierTrainingDate();
     fetchUserConfig();
   }, []);
 
@@ -360,6 +374,13 @@ export default function Home() {
             className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
           >
             {loading ? "Training Model..." : "Train Classifier Model"}
+          </button>
+          <button
+            onClick={deleteUserConfig}
+            disabled={loading}
+            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-red-600 text-white gap-2 hover:bg-red-700 font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
+          >
+            {loading ? "Deleting user_config..." : "Delete user_config table"}
           </button>
         </div>
         {classifierTrainingDate && (
