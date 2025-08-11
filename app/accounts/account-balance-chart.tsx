@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { CartesianGrid, Line, LineChart, XAxis } from "recharts"
+import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts"
 
 import {
     Card,
@@ -155,7 +155,7 @@ export function AccountBalanceChart({ accounts }: { accounts: Account[] }) {
     const percentChangeRounded = Math.round(changeNetWorth / startNetWorth * 100);
 
     return (
-        <Card className="pt-0">
+        <Card className="pt-0 gap-0">
             <CardHeader className="flex items-center gap-2 space-y-0 py-5 sm:flex-row">
                 <div className="grid flex-1 gap-1">
                     <CardDescription className="font-bold text-muted-foreground uppercase text-sm font-mono">
@@ -209,10 +209,10 @@ export function AccountBalanceChart({ accounts }: { accounts: Account[] }) {
                     </SelectContent>
                 </Select>
             </CardHeader>
-            <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
+            <CardContent className="px-2 sm:px-6">
                 <ChartContainer
                     config={dynamicChartConfig} // Use dynamic config here
-                    className="aspect-auto h-[220px] w-full"
+                    className="aspect-auto h-[300px] w-full"
                 >
                     <LineChart data={filteredData}>
                         <CartesianGrid vertical={false} />
@@ -229,6 +229,13 @@ export function AccountBalanceChart({ accounts }: { accounts: Account[] }) {
                                     day: "numeric",
                                 })
                             }}
+                        />
+                        <YAxis
+                            tickLine={false}
+                            axisLine={false}
+                            tickMargin={20}
+                            tickCount={5}
+                            className="max-sm:hidden"
                         />
                         <ChartTooltip
                             cursor={false}
@@ -272,7 +279,7 @@ export function AccountBalanceChart({ accounts }: { accounts: Account[] }) {
                                 strokeWidth={2}
                             />
                         ))}
-                        <ChartLegend content={<ChartLegendContent />} />
+                        <ChartLegend content={<ChartLegendContent />} className="max-sm:hidden" />
                     </LineChart>
                 </ChartContainer>
             </CardContent>
