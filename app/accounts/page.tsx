@@ -22,8 +22,8 @@ export default async function AccountsPage() {
     const accounts: Account[] = accountsData.accounts;
 
     return (
-        <div className="w-full ">
-            <div className="p-4">
+        <div className="w-full max-sm:max-w-screen">
+            <div className="p-0 max-sm:p-2">
                 <AccountBalanceChart accounts={accounts} />
                 <AccountsTableClient initialAccounts={accounts} />
             </div>

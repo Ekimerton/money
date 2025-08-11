@@ -155,8 +155,8 @@ export function AccountBalanceChart({ accounts }: { accounts: Account[] }) {
     const percentChangeRounded = Math.round(changeNetWorth / startNetWorth * 100);
 
     return (
-        <Card className="pt-0 gap-0">
-            <CardHeader className="flex items-center gap-2 space-y-0 py-5 sm:flex-row">
+        <Card className="pt-0 gap-0 border-none shadow-none">
+            <CardHeader className="flex items-center gap-2 space-y-0 py-5 sm:flex-row max-sm:px-3">
                 <div className="grid flex-1 gap-1">
                     <CardDescription className="font-bold text-muted-foreground uppercase text-sm font-mono">
                         Net Worth
@@ -212,7 +212,7 @@ export function AccountBalanceChart({ accounts }: { accounts: Account[] }) {
             <CardContent className="px-2 sm:px-6">
                 <ChartContainer
                     config={dynamicChartConfig} // Use dynamic config here
-                    className="aspect-auto h-[300px] w-full"
+                    className="aspect-auto h-[300px] max-sm:h-[140px] w-full"
                 >
                     <LineChart data={filteredData}>
                         <CartesianGrid vertical={false} />
@@ -230,13 +230,13 @@ export function AccountBalanceChart({ accounts }: { accounts: Account[] }) {
                                 })
                             }}
                         />
-                        <YAxis
+                        {/*<YAxis
                             tickLine={false}
                             axisLine={false}
                             tickMargin={20}
                             tickCount={5}
                             className="max-sm:hidden"
-                        />
+                        />*/}
                         <ChartTooltip
                             cursor={false}
                             content={
