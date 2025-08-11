@@ -40,7 +40,8 @@ export async function POST(req: NextRequest) {
         id INTEGER PRIMARY KEY CHECK (id = 1),
         display_name TEXT,
         simplefin_url TEXT,
-        classifier_training_date TEXT DEFAULT NULL
+        classifier_training_date TEXT DEFAULT NULL,
+        auto_categorize BOOLEAN DEFAULT FALSE
       );
     `);
 

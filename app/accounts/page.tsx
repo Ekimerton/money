@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import { AccountBalanceChart } from "./account-balance-chart";
 import { AccountsTableClient } from "./accounts-table-client";
 

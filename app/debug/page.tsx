@@ -30,6 +30,7 @@ export default function Home() {
   const [simplefinUrl, setSimplefinUrl] = useState<string>('');
   const [userName, setUserName] = useState<string>('');
   const [classifierTrainingDate, setClassifierTrainingDate] = useState<string | null>(null);
+  const [autoCategorize, setAutoCategorize] = useState<boolean>(false);
 
   const initializeDatabase = async () => {
     setLoading(true);
@@ -253,9 +254,36 @@ export default function Home() {
         setSimplefinUrl(data.userConfig.simplefin_url || '');
         setClassifierTrainingDate(data.userConfig.classifier_training_date || null);
         setUserName(data.userConfig.display_name || '');
+        setAutoCategorize(data.userConfig.auto_categorize || false);
       }
     } catch (err) {
       console.error('Error fetching user config:', err);
+    }
+  };
+
+  const saveAutoCategorize = async (newValue: boolean) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/save-auto-categorize', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ autoCategorize: newValue }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to save auto categorize setting.');
+      }
+      alert('Auto categorize setting saved successfully!');
+      setAutoCategorize(newValue);
+    } catch (err: any) {
+      setError(err.message);
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -388,6 +416,17 @@ export default function Home() {
             <p className="text-gray-700 dark:text-gray-300">Last Classifier Model Training: {new Date(classifierTrainingDate).toLocaleString()}</p>
           </div>
         )}
+        <div className="flex items-center mt-8">
+          <input
+            type="checkbox"
+            id="autoCategorize"
+            checked={autoCategorize}
+            onChange={(e) => saveAutoCategorize(e.target.checked)}
+            disabled={classifierTrainingDate == null}
+            className="mr-2 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+          />
+          <label htmlFor="autoCategorize" className="text-lg font-medium text-gray-900 dark:text-white">Auto Categorize Transactions</label>
+        </div>
       </main>
     </div>
   );
