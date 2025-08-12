@@ -1,115 +1,107 @@
 'use client';
 
-import { useState, useEffect } from "react";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CategoryPopover } from "@/components/ui/category-popover";
-import { AccountNamePopover } from "@/components/ui/account-name-popover";
-import { useRouter } from "next/navigation";
-
-interface Account {
-    id: string;
-    name: string;
-    currency: string;
-    balance: string;
-    "balance-date": number;
-    type: string;
-    balanceHistory?: { date: string; balance: number }[];
-}
+import { Account } from "@/lib/types";
 
 interface AccountsTableClientProps {
-    initialAccounts: Account[];
+    accounts: Account[];
+    timeRange: string;
 }
 
-export function AccountsTableClient({ initialAccounts }: AccountsTableClientProps) {
-    const [accounts, setAccounts] = useState<Account[]>(initialAccounts);
-    const router = useRouter();
+export function AccountsTableClient({ accounts, timeRange }: AccountsTableClientProps) {
 
-    const updateAccountType = async (accountId: string, newType: string) => {
-        try {
-            const response = await fetch('/api/update-account-type', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ accountId, newType }),
-            });
-
-            if (!response.ok) {
-                throw new Error(`Error updating account type: ${response.statusText}`);
-            }
-
-            const updatedAccount = await response.json();
-            setAccounts(prevAccounts =>
-                prevAccounts.map(a =>
-                    a.id === accountId ? { ...a, type: updatedAccount.type } : a
-                )
-            );
-        } catch (err: any) {
-            console.error("Failed to update account type:", err);
-            // Optionally, handle error state in UI
+    const parseTimeRange = (range: string): number => {
+        const value = parseInt(range);
+        if (range.endsWith("d")) {
+            return value;
+        } else if (range.endsWith("m")) {
+            // Assuming 'm' means months, approximate to 30 days per month
+            return value * 30;
+        } else if (range.endsWith("y")) {
+            // Assuming 'y' means years, approximate to 365 days per year
+            return value * 365;
         }
+        return value; // Default to days if no suffix or invalid suffix
     };
 
-    const updateAccountName = async (accountId: string, newName: string) => {
-        try {
-            const response = await fetch('/api/update-account-name', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ accountId, newName }),
-            });
-
-            if (!response.ok) {
-                throw new Error(`Error updating account name: ${response.statusText}`);
-            }
-
-            const updatedAccount = await response.json();
-            setAccounts(prevAccounts =>
-                prevAccounts.map(a =>
-                    a.id === accountId ? { ...a, name: updatedAccount.name } : a
-                )
-            );
-        } catch (err: any) {
-            console.error("Failed to update account name:", err);
-            // Optionally, handle error state in UI
+    // Helper to get balance X days ago
+    const getAccountBalanceChange = (account: Account) => {
+        if (!account.balanceHistory || account.balanceHistory.length < 2) {
+            return { value: "N/A", className: "" };
         }
+
+        const days = parseTimeRange(timeRange);
+
+        const currentDate = new Date(account["balance-date"] * 1000);
+        currentDate.setHours(0, 0, 0, 0); // Normalize to start of the day
+
+        const targetDate = new Date(currentDate);
+        targetDate.setDate(currentDate.getDate() - days);
+        targetDate.setHours(0, 0, 0, 0); // Normalize to start of the day
+
+        let closestBalanceAtTargetDate: { date: string; balance: number } | undefined = undefined;
+        let minDiff = Infinity;
+
+        // Find the closest historical balance to the target date
+        for (const historyItem of account.balanceHistory) {
+            const historyDate = new Date(historyItem.date);
+            historyDate.setHours(0, 0, 0, 0); // Normalize to start of the day
+            const diff = Math.abs(targetDate.getTime() - historyDate.getTime());
+
+            if (diff < minDiff) {
+                minDiff = diff;
+                closestBalanceAtTargetDate = historyItem;
+            }
+        }
+
+        if (!closestBalanceAtTargetDate) {
+            return { value: "N/A", className: "" };
+        }
+
+        const currentBalance = parseFloat(account.balance);
+        const pastBalance = closestBalanceAtTargetDate.balance;
+
+        if (pastBalance === 0) {
+            return { value: "N/A", className: "" }; // Avoid division by zero
+        }
+
+        const percentageChange = ((currentBalance - pastBalance) / pastBalance) * 100;
+        const isPositive = percentageChange >= 0;
+        const sign = isPositive ? "+" : "";
+        const className = isPositive ? "text-green-700" : "text-red-700";
+
+        return {
+            value: `${sign}${percentageChange.toFixed(2)}%`,
+            className: className
+        };
     };
 
     return (
-        <Table className="mt-4">
-            <TableHeader>
-                <TableRow>
-                    <TableHead>Account Name</TableHead>
-                    <TableHead>Balance</TableHead>
-                    <TableHead>Account Type</TableHead>
-                </TableRow>
-            </TableHeader>
-            <TableBody>
-                {accounts.map((account) => (
-                    <TableRow key={account.id}>
-                        <TableCell>
-                            <AccountNamePopover
-                                defaultValue={account.name}
-                                onSubmit={(newName) => updateAccountName(account.id, newName)}
-                            />
-                        </TableCell>
-                        <TableCell onClick={() => router.push(`/transactions?account=${account.id}`)} className="cursor-pointer hover:underline">
-                            {new Intl.NumberFormat('en-US', {
-                                style: 'currency',
-                                currency: account.currency || 'USD',
-                            }).format(parseFloat(account.balance))}
-                        </TableCell>
-                        <TableCell>
-                            <CategoryPopover
-                                defaultValue={account.type}
-                                suggestions={['Checking', 'Savings', 'Credit Card', 'Investments']}
-                                onSubmit={(newType) => updateAccountType(account.id, newType)}
-                            />
-                        </TableCell>
-                    </TableRow>
-                ))}
-            </TableBody>
-        </Table>
+        <div className="p-4">
+            {accounts.map((account) => (
+                <div key={account.id} className="border-b py-2">
+                    <div className="flex w-full items-center justify-between text-left font-medium">
+                        <div className="flex items-center space-x-2">
+                            {account.name}
+                        </div>
+                        <div className="flex items-center space-x-2">
+                            <span className="">
+                                {new Intl.NumberFormat('en-US', {
+                                    style: 'currency',
+                                    currency: account.currency || 'USD',
+                                }).format(parseFloat(account.balance))}
+                            </span>
+                        </div>
+                    </div>
+                    <div className="pt-1 text-sm text-neutral-600">
+                        <div className="flex justify-between">
+                            {account.type}
+                            <span className={getAccountBalanceChange(account).className}>
+                                {getAccountBalanceChange(account).value}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            ))}
+        </div>
     );
 }

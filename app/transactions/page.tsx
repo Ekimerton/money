@@ -1,25 +1,6 @@
 import { TransactionsTableClient } from "@/components/transactions-table-client";
-
-interface Account {
-    id: string;
-    name: string;
-    currency: string;
-    balance: string;
-    "balance-date": number;
-}
-
-interface Transaction {
-    id: string;
-    account_id: string;
-    posted: number;
-    amount: string;
-    description: string;
-    payee: string | null;
-    transacted_at: number | null;
-    pending: boolean;
-    hidden: boolean;
-    category: string;
-}
+import { SpendingAnalysisChart } from "@/app/transactions/spending-analysis-chart";
+import { Account, Transaction } from "@/lib/types";
 
 export default async function TransactionsPage({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
     const accountId = searchParams.account;
@@ -48,6 +29,7 @@ export default async function TransactionsPage({ searchParams }: { searchParams:
 
     return (
         <div className="w-full">
+            <SpendingAnalysisChart transactions={transactions} accounts={accounts} />
             <div className="p-2">
                 <TransactionsTableClient
                     initialTransactions={transactions}
