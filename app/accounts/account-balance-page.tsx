@@ -133,21 +133,21 @@ export function AccountBalancePage({ accounts }: { accounts: Account[] }) {
     const percentChangeRounded = startNetWorth === 0 ? 0 : Math.round(changeNetWorth / startNetWorth * 100);
 
     return (
-        <div className="space-y-8">
-            <div className="p-4 flex">
-                <div className="grid flex-1 gap-1 max-sm:text-center max-sm:py-8">
+        <div className="">
+            <div className="p-4 flex max-sm:pt-12">
+                <div className="grid flex-1 gap-1 max-sm:text-center ">
                     <h2 className="font-bold text-muted-foreground uppercase text-sm font-mono max-sm:hidden">
                         Net Worth
                     </h2>
-                    <h1 className="text-2xl font-bold max-sm:text-4xl">
+                    <h1 className="text-3xl font-bold max-sm:text-4xl">
                         {Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(finalNetWorth)}
-                        <span className={`text-sm ml-2 font-mono max-sm:hidden ${changeNetWorth > 0 ? "text-green-700" : "text-red-700"}`}>
+                        <span className={`text-base ml-2 font-mono max-sm:hidden ${changeNetWorth > 0 ? "text-green-700" : "text-red-700"}`}>
                             {changeNetWorth > 0 ? "+" : "-"}
                             {Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(changeNetWorth)}
                             {" "}({percentChangeRounded}%)
                         </span>
                     </h1>
-                    <h2 className={`text-sm ml-2 font-medium font-mono sm:hidden ${changeNetWorth > 0 ? "text-green-700" : "text-red-700"}`}>
+                    <h2 className={`text-base ml-2 font-medium font-mono sm:hidden ${changeNetWorth > 0 ? "text-green-700" : "text-red-700"}`}>
                         {changeNetWorth > 0 ? "+" : "-"}
                         {Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(changeNetWorth)}
                         {" "}({percentChangeRounded}%)
