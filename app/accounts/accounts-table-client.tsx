@@ -1,5 +1,12 @@
 'use client';
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { CogIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Account } from "@/lib/types";
 
 interface AccountsTableClientProps {
@@ -8,6 +15,59 @@ interface AccountsTableClientProps {
 }
 
 export function AccountsTableClient({ accounts, timeRange }: AccountsTableClientProps) {
+    const router = useRouter();
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
+    const [editedName, setEditedName] = useState("");
+    const [editedType, setEditedType] = useState("");
+    const [isSaving, setIsSaving] = useState(false);
+
+    const openSettings = (account: Account) => {
+        setSelectedAccount(account);
+        setEditedName(account.name ?? "");
+        setEditedType(account.type ?? "");
+        setIsSettingsOpen(true);
+    };
+
+    const handleSave = async () => {
+        if (!selectedAccount) return;
+        try {
+            setIsSaving(true);
+            const updates: Promise<Response>[] = [];
+
+            if (editedName.trim() && editedName.trim() !== selectedAccount.name) {
+                updates.push(
+                    fetch('/api/update-account-name', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ accountId: selectedAccount.id, newName: editedName.trim() }),
+                    })
+                );
+            }
+
+            if (editedType.trim() && editedType.trim() !== selectedAccount.type) {
+                updates.push(
+                    fetch('/api/update-account-type', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ accountId: selectedAccount.id, newType: editedType.trim() }),
+                    })
+                );
+            }
+
+            if (updates.length > 0) {
+                const responses = await Promise.all(updates);
+                const anyFailed = responses.some(r => !r.ok);
+                if (anyFailed) {
+                    console.error('Failed to save one or more updates');
+                }
+            }
+        } finally {
+            setIsSaving(false);
+            setIsSettingsOpen(false);
+            router.refresh();
+        }
+    };
 
     // Match the time window semantics used in `account-balance-page.tsx`
     const getDaysForTimeRange = (range: string): number => {
@@ -85,8 +145,16 @@ export function AccountsTableClient({ accounts, timeRange }: AccountsTableClient
                 return (
                     <div key={account.id} className="border-b last:border-b-0 py-2">
                         <div className="flex w-full items-center justify-between text-left font-medium">
-                            <div className="flex items-center space-x-2">
-                                {account.name}
+                            <div className="flex items-center space-x-1">
+                                <span>{account.name}</span>
+                                <Button
+                                    variant="ghost"
+                                    size="iconSm"
+                                    aria-label="Account settings"
+                                    onClick={() => openSettings(account)}
+                                >
+                                    <CogIcon className="size-4 text-muted-foreground" />
+                                </Button>
                             </div>
                             <div className="flex items-center space-x-2">
                                 <span className="">
@@ -106,6 +174,44 @@ export function AccountsTableClient({ accounts, timeRange }: AccountsTableClient
                     </div>
                 );
             })}
+
+            <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Edit account</DialogTitle>
+                        <DialogDescription>
+                            Update the account name or category. Changes are saved immediately on Save.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="flex flex-col gap-4">
+                        <div className="grid gap-2">
+                            <Label htmlFor="account-name">Name</Label>
+                            <Input
+                                id="account-name"
+                                value={editedName}
+                                onChange={(e) => setEditedName(e.target.value)}
+                                placeholder="Account name"
+                            />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="account-type">Category</Label>
+                            <Input
+                                id="account-type"
+                                value={editedType}
+                                onChange={(e) => setEditedType(e.target.value)}
+                                placeholder="Account category/type"
+                            />
+                        </div>
+                    </div>
+
+                    <DialogFooter>
+                        <Button onClick={handleSave} disabled={isSaving}>
+                            {isSaving ? 'Saving…' : 'Save'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
