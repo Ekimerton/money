@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Line, LineChart } from "recharts"
+import { Line, LineChart, CartesianAxis } from "recharts"
 
 import {
     ChartConfig,

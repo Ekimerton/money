@@ -5,6 +5,7 @@ import * as React from "react"
 import {
     ChartConfig,
 } from "@/components/ui/chart"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
     Select,
     SelectContent,
@@ -131,6 +132,9 @@ export function AccountBalancePage({ accounts }: { accounts: Account[] }) {
     const startNetWorth = filteredData[0]?.totalBalance || 0;
     const changeNetWorth = finalNetWorth - startNetWorth;
     const percentChangeRounded = startNetWorth === 0 ? 0 : Math.round(changeNetWorth / startNetWorth * 100);
+    const changeSign = changeNetWorth > 0 ? "+" : changeNetWorth < 0 ? "-" : "";
+    const formattedAbsChange = Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(Math.abs(changeNetWorth));
+    const formattedPercentChange = `${changeSign}${Math.abs(percentChangeRounded)}%`;
 
     return (
         <div className="">
@@ -141,16 +145,16 @@ export function AccountBalancePage({ accounts }: { accounts: Account[] }) {
                     </h2>
                     <h1 className="text-3xl font-bold max-sm:text-4xl">
                         {Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(finalNetWorth)}
-                        <span className={`text-base ml-2 font-mono max-sm:hidden ${changeNetWorth > 0 ? "text-green-700" : "text-red-700"}`}>
-                            {changeNetWorth > 0 ? "+" : "-"}
-                            {Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(changeNetWorth)}
-                            {" "}({percentChangeRounded}%)
+                        <span className={`text-base ml-2 font-mono max-sm:hidden ${changeNetWorth > 0 ? "text-green-700" : changeNetWorth < 0 ? "text-red-700" : ""}`}>
+                            {changeSign}
+                            {formattedAbsChange}
+                            {" "}({formattedPercentChange})
                         </span>
                     </h1>
-                    <h2 className={`text-base ml-2 font-medium font-mono sm:hidden ${changeNetWorth > 0 ? "text-green-700" : "text-red-700"}`}>
-                        {changeNetWorth > 0 ? "+" : "-"}
-                        {Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(changeNetWorth)}
-                        {" "}({percentChangeRounded}%)
+                    <h2 className={`text-base ml-2 font-medium font-mono sm:hidden ${changeNetWorth > 0 ? "text-green-700" : changeNetWorth < 0 ? "text-red-700" : ""}`}>
+                        {changeSign}
+                        {formattedAbsChange}
+                        {" "}({formattedPercentChange})
                     </h2>
                 </div>
                 <div className="flex gap-2">
@@ -178,17 +182,17 @@ export function AccountBalancePage({ accounts }: { accounts: Account[] }) {
                             <SelectValue placeholder="Last 3 months" />
                         </SelectTrigger>
                         <SelectContent className="rounded-xl">
-                            <SelectItem value="365d" className="rounded-lg">
-                                Last 12 months
-                            </SelectItem>
-                            <SelectItem value="90d" className="rounded-lg">
-                                Last 3 months
+                            <SelectItem value="7d" className="rounded-lg">
+                                Last 7 days
                             </SelectItem>
                             <SelectItem value="30d" className="rounded-lg">
                                 Last 30 days
                             </SelectItem>
-                            <SelectItem value="7d" className="rounded-lg">
-                                Last 7 days
+                            <SelectItem value="90d" className="rounded-lg">
+                                Last 3 months
+                            </SelectItem>
+                            <SelectItem value="365d" className="rounded-lg">
+                                Last 12 months
                             </SelectItem>
                         </SelectContent>
                     </Select>
@@ -201,6 +205,17 @@ export function AccountBalancePage({ accounts }: { accounts: Account[] }) {
                 sortedAccountsByName={sortedAccountsByName}
                 sortedAccountTypesByName={sortedAccountTypesByName}
             />
+            {/* Mobile time range tabs */}
+            <div className="sm:hidden px-4 py-3 flex justify-center w-full">
+                <Tabs value={timeRange} onValueChange={setTimeRange} className="w-full justify-center flex">
+                    <TabsList className="w-full">
+                        <TabsTrigger value="7d" className="flex-1">7D</TabsTrigger>
+                        <TabsTrigger value="30d" className="flex-1">30D</TabsTrigger>
+                        <TabsTrigger value="90d" className="flex-1">3M</TabsTrigger>
+                        <TabsTrigger value="365d" className="flex-1">12M</TabsTrigger>
+                    </TabsList>
+                </Tabs>
+            </div>
             <AccountsTableClient accounts={accounts} timeRange={timeRange} />
         </div >
     )
