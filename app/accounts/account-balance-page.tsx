@@ -1,10 +1,6 @@
 "use client"
 
 import * as React from "react"
-
-import {
-    ChartConfig,
-} from "@/components/ui/chart"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
     Select,
@@ -14,23 +10,9 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { Account } from "@/lib/types";
-import { AccountBalanceChart } from "./account-balance-chart";
+// import { AccountBalanceChart } from "./account-balance-chart";
+import { CashSavingsInvestmentsChart } from "./cash-savings-investments-chart";
 import { AccountsTableClient } from "./accounts-table-client";
-
-const COLORS = [
-    "oklch(28.2% 0.091 267.935)",
-    "oklch(37.9% 0.146 265.522)",
-    "oklch(42.4% 0.199 265.638)",
-    "oklch(48.8% 0.243 264.376)",
-    "oklch(54.6% 0.245 262.881)",
-];
-
-const chartConfig = {
-    totalBalance: {
-        label: "Net Worth",
-        color: "oklch(82.8% 0.111 230.318)",
-    },
-} satisfies ChartConfig;
 
 export function AccountBalancePage({ accounts }: { accounts: Account[] }) {
     const [timeRange, setTimeRange] = React.useState("30d");
@@ -91,6 +73,7 @@ export function AccountBalancePage({ accounts }: { accounts: Account[] }) {
     }, [accounts, chartView]);
 
     // Dynamically add account configurations to chartConfig
+    /*
     const dynamicChartConfig = React.useMemo(() => {
         const newConfig: ChartConfig = { ...chartConfig };
         if (chartView === "account") {
@@ -111,6 +94,7 @@ export function AccountBalancePage({ accounts }: { accounts: Account[] }) {
         }
         return newConfig;
     }, [accounts, chartView]);
+    */
 
     const filteredData = fullChartData.filter((item) => {
         const date = new Date(item.date);
@@ -158,7 +142,7 @@ export function AccountBalancePage({ accounts }: { accounts: Account[] }) {
                     </h2>
                 </div>
                 <div className="flex gap-2">
-                    <Select value={chartView} onValueChange={(value: "account" | "accountType") => setChartView(value)}>
+                    {/*<Select value={chartView} onValueChange={(value: "account" | "accountType") => setChartView(value)}>
                         <SelectTrigger
                             className="hidden w-[160px] rounded-lg sm:ml-auto sm:flex"
                             aria-label="Select a view type"
@@ -173,7 +157,7 @@ export function AccountBalancePage({ accounts }: { accounts: Account[] }) {
                                 By Account Type
                             </SelectItem>
                         </SelectContent>
-                    </Select>
+                    </Select>*/}
                     <Select value={timeRange} onValueChange={setTimeRange}>
                         <SelectTrigger
                             className="hidden w-[160px] rounded-lg sm:ml-auto sm:flex"
@@ -198,13 +182,14 @@ export function AccountBalancePage({ accounts }: { accounts: Account[] }) {
                     </Select>
                 </div>
             </div >
-            <AccountBalanceChart
+            {/* <AccountBalanceChart
                 filteredData={filteredData}
                 dynamicChartConfig={dynamicChartConfig}
                 chartView={chartView}
                 sortedAccountsByName={sortedAccountsByName}
                 sortedAccountTypesByName={sortedAccountTypesByName}
-            />
+            /> */}
+            <CashSavingsInvestmentsChart accounts={accounts} timeRange={timeRange} />
             {/* Mobile time range tabs */}
             <div className="sm:hidden px-4 py-3 flex justify-center w-full pt-6">
                 <Tabs value={timeRange} onValueChange={setTimeRange} className="w-full justify-center flex">
