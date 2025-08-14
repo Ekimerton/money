@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { CogIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -126,8 +127,7 @@ export function AccountsTableClient({ accounts, timeRange }: AccountsTableClient
 
         // Percent display rules
         if (startBalance === 0) {
-            if (change > 0) return { percentValue: "+∞%", className };
-            if (change < 0) return { percentValue: "-∞%", className };
+            if (change !== 0) return { percentValue: "", className: "" };
             return { percentValue: "0%", className: "" };
         }
 
@@ -143,7 +143,12 @@ export function AccountsTableClient({ accounts, timeRange }: AccountsTableClient
             {accounts.map((account) => {
                 const change = getAccountBalanceChange(account);
                 return (
-                    <div key={account.id} className="border-b last:border-b-0 py-2">
+                    <Link
+                        key={account.id}
+                        prefetch={true}
+                        href={`/transactions/?accountId=${encodeURIComponent(account.id)}`}
+                        className="block border-b last:border-b-0 py-2 hover:bg-muted/60"
+                    >
                         <div className="flex w-full items-center justify-between text-left font-medium">
                             <div className="flex items-center space-x-1">
                                 <span>{account.name}</span>
@@ -151,7 +156,11 @@ export function AccountsTableClient({ accounts, timeRange }: AccountsTableClient
                                     variant="ghost"
                                     size="iconSm"
                                     aria-label="Account settings"
-                                    onClick={() => openSettings(account)}
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        openSettings(account);
+                                    }}
                                 >
                                     <CogIcon className="size-4 text-muted-foreground" />
                                 </Button>
@@ -171,7 +180,7 @@ export function AccountsTableClient({ accounts, timeRange }: AccountsTableClient
                                 <span className={change.className}>{change.percentValue}</span>
                             </div>
                         </div>
-                    </div>
+                    </Link>
                 );
             })}
 

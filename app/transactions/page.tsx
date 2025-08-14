@@ -3,9 +3,10 @@ import { SpendingAnalysisChart } from "@/app/transactions/spending-analysis-char
 import { Account, Transaction } from "@/lib/types";
 
 export default async function TransactionsPage({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
-    const accountId = searchParams.account;
+    // Support both `accountId` (preferred) and legacy `account`
+    const accountId = (searchParams.accountId ?? searchParams.account) as string | undefined;
 
-    const transactionsUrl = accountId ? `http://localhost:3000/api/get-transactions?accountId=${accountId}` : 'http://localhost:3000/api/get-transactions';
+    const transactionsUrl = accountId ? `http://localhost:3000/api/get-transactions?accountId=${encodeURIComponent(accountId)}` : 'http://localhost:3000/api/get-transactions';
     const transactionsResponse = await fetch(transactionsUrl);
     if (!transactionsResponse.ok) {
         throw new Error(`Error: ${transactionsResponse.status}`);

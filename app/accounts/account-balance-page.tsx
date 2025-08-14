@@ -33,7 +33,7 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export function AccountBalancePage({ accounts }: { accounts: Account[] }) {
-    const [timeRange, setTimeRange] = React.useState("90d");
+    const [timeRange, setTimeRange] = React.useState("30d");
     const [chartView, setChartView] = React.useState<"account" | "accountType">("account");
 
     const sortedAccountsByName = React.useMemo(() => {
@@ -143,7 +143,7 @@ export function AccountBalancePage({ accounts }: { accounts: Account[] }) {
                     <h2 className="font-bold text-muted-foreground uppercase text-sm font-mono max-sm:hidden">
                         Net Worth
                     </h2>
-                    <h1 className="text-3xl font-bold max-sm:text-4xl">
+                    <h1 className="text-2xl font-bold max-sm:text-4xl">
                         {Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(finalNetWorth)}
                         <span className={`text-base ml-2 font-mono max-sm:hidden ${changeNetWorth > 0 ? "text-green-700" : changeNetWorth < 0 ? "text-red-700" : ""}`}>
                             {changeSign}
@@ -206,7 +206,7 @@ export function AccountBalancePage({ accounts }: { accounts: Account[] }) {
                 sortedAccountTypesByName={sortedAccountTypesByName}
             />
             {/* Mobile time range tabs */}
-            <div className="sm:hidden px-4 py-3 flex justify-center w-full">
+            <div className="sm:hidden px-4 py-3 flex justify-center w-full pt-6">
                 <Tabs value={timeRange} onValueChange={setTimeRange} className="w-full justify-center flex">
                     <TabsList className="w-full">
                         <TabsTrigger value="7d" className="flex-1">7D</TabsTrigger>

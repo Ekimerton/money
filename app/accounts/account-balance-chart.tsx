@@ -35,7 +35,7 @@ export function AccountBalanceChart({
     sortedAccountTypesByName: string[];
 }) {
     return (
-        <div className="sm:px-6">
+        <div className="sm:px-4">
             <ChartContainer
                 config={dynamicChartConfig} // Use dynamic config here
                 className="aspect-auto h-[300px] max-sm:h-[300px] w-full"
