@@ -3,7 +3,6 @@
 import * as React from "react"
 
 import { Card, CardContent } from "@/components/ui/card"
-import { MobileTimeRangeTabs } from "@/components/mobile-time-range-tabs"
 import { Account, Transaction } from "@/lib/types";
 import { SpendPieChart } from "@/app/transactions/spend-pie-chart";
 import { IncomePieChart } from "@/app/transactions/income-pie-chart";
@@ -13,10 +12,9 @@ interface SpendingAnalysisChartProps {
     accounts: Account[];
     timeRange: "7d" | "30d" | "90d" | "365d";
     chartView: "spend" | "income" | "cashFlow";
-    onTimeRangeChange: (value: "7d" | "30d" | "90d" | "365d") => void;
 }
 
-export function SpendingAnalysisChart({ transactions, accounts, timeRange, chartView, onTimeRangeChange }: SpendingAnalysisChartProps) {
+export function SpendingAnalysisChart({ transactions, accounts, timeRange, chartView }: SpendingAnalysisChartProps) {
 
     const filteredTransactions = React.useMemo(() => {
         return transactions.filter((transaction) => {
@@ -49,19 +47,11 @@ export function SpendingAnalysisChart({ transactions, accounts, timeRange, chart
         return { totalSpending: spend, totalIncome: income, totalCashFlow: flow };
     }, [filteredTransactions]);
 
-    const formattedTotal = React.useMemo(() => {
-        const value = chartView === "spend" ? totalSpending : chartView === "income" ? totalIncome : totalCashFlow;
-        return Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(value);
-    }, [chartView, totalSpending, totalIncome, totalCashFlow]);
-
     return (
-        <Card className="pt-0 gap-0 border-none shadow-none">
-            <CardContent className="px-2 max-w-screen">
-                {chartView === "spend" && <SpendPieChart transactions={filteredTransactions} />}
-                {chartView === "income" && <IncomePieChart transactions={filteredTransactions} accounts={accounts} />}
-                {chartView === "cashFlow" && null}
-                <MobileTimeRangeTabs value={timeRange} onValueChange={onTimeRangeChange} />
-            </CardContent>
-        </Card>
+        <div className="max-sm:pt-9 max-sm:pb-2">
+            {chartView === "spend" && <SpendPieChart transactions={filteredTransactions} total={totalSpending} />}
+            {chartView === "income" && <IncomePieChart transactions={filteredTransactions} accounts={accounts} />}
+            {chartView === "cashFlow" && null}
+        </div>
     )
 }

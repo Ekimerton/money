@@ -67,31 +67,29 @@ export function TransactionsList({ transactions, accounts, timeRange }: Transact
         <div className="p-4">
             {groups.map(group => (
                 <div key={group.key}>
-                    <div className="px-0 pb-0 pt-4 text-sm text-muted-foreground font-semibold">{group.label}</div>
+                    <div className="px-0 pb-1 pt-4 text-xs text-muted-foreground font-semibold">{group.label}</div>
                     {group.items.map((t) => {
                         const account = getAccountFor(t.account_id);
                         const currency = account?.currency || 'USD';
                         const amountNumber = parseFloat(t.amount);
-                        const amountClass = amountNumber < 0 ? "text-red-700" : amountNumber > 0 ? "text-green-700" : "";
-                        const title = t.payee || t.description;
-                        const accountName = account?.name || "";
+                        const categoryClass = t.category === "Uncategorized" ? "text-red-700" : "text-neutral-700";
 
                         return (
-                            <div key={t.id} className="block border-b last:border-b-0 py-1 hover:bg-muted/60">
+                            <div key={t.id} className="block border-b last:border-b-0 pt-1 pb-2 hover:bg-muted/60">
                                 <div className="flex w-full items-center justify-between text-left font-medium">
                                     <div className="flex items-center space-x-1">
-                                        <span className="truncate max-w-[60vw]">{title}</span>
+                                        <span className="truncate max-w-[60vw]">{t.payee} [{t.description}]</span>
                                     </div>
-                                    <div className="flex items-center space-x-2">
-                                        <span className={amountClass}>
+                                    <div className="flex items-center space-x-1">
+                                        <span>
                                             {new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amountNumber)}
                                         </span>
                                     </div>
                                 </div>
-                                <div className="pt-1 text-sm text-neutral-600">
+                                <div className="text-sm text-neutral-600">
                                     <div className="flex justify-between">
-                                        <span className="truncate max-w-[60vw]">{accountName}</span>
-                                        <span className="truncate max-w-[40vw]">{t.category}</span>
+                                        <span className={`truncate max-w-[60vw] ${categoryClass}`}>{t.category}</span>
+                                        <span className="truncate max-w-[40vw]">{ }</span>
                                     </div>
                                 </div>
                             </div>

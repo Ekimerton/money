@@ -3,7 +3,7 @@
 import * as React from "react"
 import { SpendingAnalysisChart } from "@/app/transactions/spending-analysis-chart"
 import { TimeRangeSelect, type TimeRangeValue } from "@/components/time-range-select"
-import { CardDescription, CardTitle } from "@/components/ui/card"
+import { MobileTimeRangeTabs } from "@/components/mobile-time-range-tabs"
 import {
     Select,
     SelectContent,
@@ -63,14 +63,14 @@ export default function TransactionsPageClient({ transactions, accounts, categor
 
     return (
         <div className="w-full">
-            <div className="flex gap-2 space-y-0 p-4 sm:flex-row max-sm:p-2">
+            <div className="flex gap-2 space-y-0 p-4 sm:flex-row max-sm:p-2 max-sm:hidden">
                 <div className="grid flex-1 gap-1">
-                    <CardDescription className="font-bold text-muted-foreground uppercase text-sm font-mono">
-                        Spending Analysis
-                    </CardDescription>
-                    <CardTitle className="text-2xl font-bold">
+                    <h2 className="font-bold text-muted-foreground uppercase text-sm font-mono">
+                        Net {chartView === "spend" ? "Spend" : chartView === "income" ? "Income" : "Cash Flow"}
+                    </h2>
+                    <h1 className="text-2xl font-bold">
                         {formattedTotal}
-                    </CardTitle>
+                    </h1>
                 </div>
                 <Select value={chartView} onValueChange={(value: "spend" | "income" | "cashFlow") => setChartView(value)}>
                     <SelectTrigger
@@ -98,8 +98,8 @@ export default function TransactionsPageClient({ transactions, accounts, categor
                 accounts={accounts}
                 timeRange={timeRange}
                 chartView={chartView}
-                onTimeRangeChange={setTimeRange}
             />
+            <MobileTimeRangeTabs value={timeRange} onValueChange={setTimeRange} />
             <div>
                 {/* <TransactionsTableClient
                     initialTransactions={transactions}

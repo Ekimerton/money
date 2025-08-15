@@ -35,7 +35,7 @@ function matchesType(type: string | undefined, keyword: string): boolean {
 
 export function CashSavingsInvestmentsChart({ accounts, timeRange }: { accounts: Account[]; timeRange: string }) {
     const fullData = React.useMemo(() => {
-        const dailyTotals: Record<string, { checking: number; credit: number; savings: number; investments: number }> = {}
+        const dailyTotals: Record<string, { checking: number; credit: number; savings: number; investments: number, total: number }> = {}
 
         for (const account of accounts) {
             const isChecking = matchesType(account.type, "checking")
@@ -47,20 +47,21 @@ export function CashSavingsInvestmentsChart({ accounts, timeRange }: { accounts:
             for (const entry of account.balanceHistory) {
                 const date = new Date(entry.date).toISOString().split("T")[0]
                 if (!dailyTotals[date]) {
-                    dailyTotals[date] = { checking: 0, credit: 0, savings: 0, investments: 0 }
+                    dailyTotals[date] = { checking: 0, credit: 0, savings: 0, investments: 0, total: 0 }
                 }
                 if (isChecking) dailyTotals[date].checking += entry.balance
                 if (isCredit) dailyTotals[date].credit += entry.balance
                 if (isSavings) dailyTotals[date].savings += entry.balance
                 if (isInvestment) dailyTotals[date].investments += entry.balance
+                dailyTotals[date].total += entry.balance
             }
         }
 
         const dates = Object.keys(dailyTotals).sort((a, b) => new Date(a).getTime() - new Date(b).getTime())
         return dates.map((date) => {
-            const { checking, credit, savings, investments } = dailyTotals[date]
+            const { checking, credit, savings, investments, total } = dailyTotals[date]
             const cash = checking + credit
-            return { date, cash, savings, investments }
+            return { date, cash, savings, investments, total }
         })
     }, [accounts])
 
@@ -91,10 +92,19 @@ export function CashSavingsInvestmentsChart({ accounts, timeRange }: { accounts:
                                 labelFormatter={(_, payload) => {
                                     if (!payload || payload.length === 0) return ""
                                     const dateValue = payload[0].payload.date
-                                    return new Date(dateValue + "T00:00:00").toLocaleDateString("en-US", {
-                                        month: "short",
-                                        day: "numeric",
-                                    })
+                                    return (
+                                        <div className="flex justify-between w-full pb-2">
+                                            <p>
+                                                {new Date(dateValue + "T00:00:00").toLocaleDateString("en-US", {
+                                                    month: "short",
+                                                    day: "numeric",
+                                                })}
+                                            </p>
+                                            <p className="font-mono">
+                                                {payload[0].payload.total.toLocaleString("en-US", { style: "currency", currency: "USD" })}
+                                            </p>
+                                        </div>
+                                    )
                                 }}
                                 indicator="dot"
                             />

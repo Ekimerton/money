@@ -1,6 +1,6 @@
 "use client"
 
-import { Pie, PieChart, Cell, Tooltip } from "recharts"
+import { Pie, PieChart, Cell, Tooltip, Label } from "recharts"
 import {
     ChartConfig,
     ChartContainer,
@@ -30,7 +30,7 @@ const baseChartConfig = {
     },
 } satisfies ChartConfig;
 
-export function SpendPieChart({ transactions }: { transactions: Transaction[] }) {
+export function SpendPieChart({ transactions, total }: { transactions: Transaction[]; total: number }) {
     const spendingByCategory = transactions
         .filter((transaction) => parseFloat(transaction.amount) < 0)
         .reduce((acc, transaction) => {
@@ -62,11 +62,40 @@ export function SpendPieChart({ transactions }: { transactions: Transaction[] })
                     data={chartData}
                     dataKey="amount"
                     nameKey="name"
-                    innerRadius={80}
-                    outerRadius={120}
+                    innerRadius={90}
+                    outerRadius={130}
                     strokeWidth={2}
                     labelLine={false}
                 >
+                    <Label
+                        content={({ viewBox }) => {
+                            if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                                return (
+                                    <text
+                                        x={viewBox.cx}
+                                        y={viewBox.cy}
+                                        textAnchor="middle"
+                                        dominantBaseline="middle"
+                                    >
+                                        <tspan
+                                            x={viewBox.cx}
+                                            y={viewBox.cy}
+                                            className="fill-foreground text-2xl font-bold sm:hidden"
+                                        >
+                                            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(total)}
+                                        </tspan>
+                                        {/*<tspan
+                                            x={viewBox.cx}
+                                            y={(viewBox.cy || 0) + 24}
+                                            className="fill-muted-foreground"
+                                        >
+                                            +100%
+                                        </tspan>*/}
+                                    </text>
+                                )
+                            }
+                        }}
+                    />
                     {chartData.map((_entry, index) => (
                         <Cell
                             key={`cell-${index}`}
