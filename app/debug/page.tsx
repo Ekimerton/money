@@ -190,6 +190,31 @@ export default function Home() {
     }
   };
 
+  const markInternalTransfers = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/mark-internal-transfers', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to mark internal transfers.');
+      }
+      const data = await response.json();
+      alert(`Marked Internal Transfers. Updated ${data.updated} transactions.`);
+    } catch (err: any) {
+      setError(err.message);
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const deleteUserConfig = async () => {
     setLoading(true);
     setError(null);
@@ -402,6 +427,13 @@ export default function Home() {
             className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
           >
             {loading ? "Training Model..." : "Train Classifier Model"}
+          </button>
+          <button
+            onClick={markInternalTransfers}
+            disabled={loading}
+            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
+          >
+            {loading ? "Marking..." : "Mark Internal Transfers"}
           </button>
           <button
             onClick={deleteUserConfig}
