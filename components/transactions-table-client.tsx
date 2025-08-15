@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowUpDown } from "lucide-react";
 import { CategoryPopover } from "@/components/ui/category-popover";
@@ -9,6 +9,7 @@ import { DataTable } from "@/components/data-table";
 import { toast } from "sonner";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useRouter } from "next/navigation";
+import type { TimeRangeValue } from "@/components/time-range-select";
 
 interface Account {
     id: string;
@@ -35,12 +36,14 @@ interface TransactionsTableClientProps {
     initialTransactions: Transaction[];
     initialAccounts: Account[];
     initialCategories: string[];
+    timeRange: TimeRangeValue;
 }
 
 export function TransactionsTableClient({
     initialTransactions,
     initialAccounts,
     initialCategories,
+    timeRange,
 }: TransactionsTableClientProps) {
     const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
     const [accounts, setAccounts] = useState<Account[]>(initialAccounts);
@@ -211,10 +214,25 @@ export function TransactionsTableClient({
         },
     ];
 
+    const filteredTransactions = useMemo(() => {
+        const referenceDate = new Date();
+        let daysToSubtract = 90;
+        if (timeRange === "30d") daysToSubtract = 30;
+        else if (timeRange === "7d") daysToSubtract = 7;
+        else if (timeRange === "365d") daysToSubtract = 365;
+        const startDate = new Date(referenceDate);
+        startDate.setDate(startDate.getDate() - daysToSubtract);
+        return transactions.filter(t => {
+            if (typeof t.transacted_at !== "number" || t.transacted_at === null) return true;
+            const date = new Date(t.transacted_at * 1000);
+            return date >= startDate;
+        });
+    }, [transactions, timeRange]);
+
     return (
         <div className="w-full">
             <div className="p-2">
-                <DataTable columns={columns} data={transactions} />
+                <DataTable columns={columns} data={filteredTransactions} />
             </div>
         </div>
     );

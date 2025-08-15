@@ -78,7 +78,7 @@ export function SpendPieChart({ transactions }: { transactions: Transaction[] })
                     layout="vertical"
                     verticalAlign="middle"
                     align="right"
-                    content={<ChartLegendContent nameKey="name" className="flex-col items-start gap-2 max-sm:hidden" />}
+                    content={<ChartLegendContent nameKey="name" className="flex-col items-start gap-2 absolute top-1/2 bottom-1/2 max-sm:hidden" />}
                 />
             </PieChart>
         </ChartContainer>

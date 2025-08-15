@@ -2,22 +2,8 @@
 
 import * as React from "react"
 
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card"
-import { TimeRangeSelect } from "@/components/time-range-select"
+import { Card, CardContent } from "@/components/ui/card"
 import { MobileTimeRangeTabs } from "@/components/mobile-time-range-tabs"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
 import { Account, Transaction } from "@/lib/types";
 import { SpendPieChart } from "@/app/transactions/spend-pie-chart";
 import { IncomePieChart } from "@/app/transactions/income-pie-chart";
@@ -25,11 +11,12 @@ import { IncomePieChart } from "@/app/transactions/income-pie-chart";
 interface SpendingAnalysisChartProps {
     transactions: Transaction[];
     accounts: Account[];
+    timeRange: "7d" | "30d" | "90d" | "365d";
+    chartView: "spend" | "income" | "cashFlow";
+    onTimeRangeChange: (value: "7d" | "30d" | "90d" | "365d") => void;
 }
 
-export function SpendingAnalysisChart({ transactions, accounts }: SpendingAnalysisChartProps) {
-    const [timeRange, setTimeRange] = React.useState("30d");
-    const [chartView, setChartView] = React.useState<"spend" | "income" | "cashFlow">("spend");
+export function SpendingAnalysisChart({ transactions, accounts, timeRange, chartView, onTimeRangeChange }: SpendingAnalysisChartProps) {
 
     const filteredTransactions = React.useMemo(() => {
         return transactions.filter((transaction) => {
@@ -69,41 +56,11 @@ export function SpendingAnalysisChart({ transactions, accounts }: SpendingAnalys
 
     return (
         <Card className="pt-0 gap-0 border-none shadow-none">
-            <CardHeader className="flex gap-2 space-y-0 py-5 sm:flex-row max-sm:px-3">
-                <div className="grid flex-1 gap-1">
-                    <CardDescription className="font-bold text-muted-foreground uppercase text-sm font-mono">
-                        Spending Analysis
-                    </CardDescription>
-                    <CardTitle className="text-2xl font-bold">
-                        {formattedTotal}
-                    </CardTitle>
-                </div>
-                <Select value={chartView} onValueChange={(value: "spend" | "income" | "cashFlow") => setChartView(value)}>
-                    <SelectTrigger
-                        className="hidden w-[160px] rounded-lg sm:ml-auto sm:flex"
-                        aria-label="Select a view type"
-                    >
-                        <SelectValue placeholder="Select View" />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-xl">
-                        <SelectItem value="spend" className="rounded-lg">
-                            By Spend
-                        </SelectItem>
-                        <SelectItem value="income" className="rounded-lg">
-                            By Income
-                        </SelectItem>
-                        <SelectItem value="cashFlow" className="rounded-lg">
-                            Cash Flow
-                        </SelectItem>
-                    </SelectContent>
-                </Select>
-                <TimeRangeSelect value={timeRange as any} onValueChange={setTimeRange as any} />
-            </CardHeader>
             <CardContent className="px-2 max-w-screen">
                 {chartView === "spend" && <SpendPieChart transactions={filteredTransactions} />}
                 {chartView === "income" && <IncomePieChart transactions={filteredTransactions} accounts={accounts} />}
                 {chartView === "cashFlow" && null}
-                <MobileTimeRangeTabs value={timeRange as any} onValueChange={setTimeRange as any} />
+                <MobileTimeRangeTabs value={timeRange} onValueChange={onTimeRangeChange} />
             </CardContent>
         </Card>
     )

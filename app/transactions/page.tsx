@@ -1,5 +1,4 @@
-import { TransactionsTableClient } from "@/components/transactions-table-client";
-import { SpendingAnalysisChart } from "@/app/transactions/spending-analysis-chart";
+import TransactionsPageClient from "@/app/transactions/transactions-page-client";
 import { Account, Transaction } from "@/lib/types";
 
 export default async function TransactionsPage({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
@@ -32,15 +31,10 @@ export default async function TransactionsPage({ searchParams }: { searchParams:
     const existingCategories: string[] = categoriesData.categories;
 
     return (
-        <div className="w-full">
-            <SpendingAnalysisChart transactions={nonInternalTransactions} accounts={accounts} />
-            <div className="">
-                <TransactionsTableClient
-                    initialTransactions={nonInternalTransactions}
-                    initialAccounts={accounts}
-                    initialCategories={existingCategories}
-                />
-            </div>
-        </div>
+        <TransactionsPageClient
+            transactions={nonInternalTransactions}
+            accounts={accounts}
+            categories={existingCategories}
+        />
     );
 } 
