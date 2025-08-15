@@ -2,13 +2,8 @@
 
 import * as React from "react"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
+import { TimeRangeSelect } from "@/components/time-range-select"
+import { MobileTimeRangeTabs } from "@/components/mobile-time-range-tabs"
 import { Account } from "@/lib/types";
 // import { AccountBalanceChart } from "./account-balance-chart";
 import { CashSavingsInvestmentsChart } from "./cash-savings-investments-chart";
@@ -158,28 +153,7 @@ export function AccountBalancePage({ accounts }: { accounts: Account[] }) {
                             </SelectItem>
                         </SelectContent>
                     </Select>*/}
-                    <Select value={timeRange} onValueChange={setTimeRange}>
-                        <SelectTrigger
-                            className="hidden w-[160px] rounded-lg sm:ml-auto sm:flex"
-                            aria-label="Select a value"
-                        >
-                            <SelectValue placeholder="Last 3 months" />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xl">
-                            <SelectItem value="7d" className="rounded-lg">
-                                Last 7 days
-                            </SelectItem>
-                            <SelectItem value="30d" className="rounded-lg">
-                                Last 30 days
-                            </SelectItem>
-                            <SelectItem value="90d" className="rounded-lg">
-                                Last 3 months
-                            </SelectItem>
-                            <SelectItem value="365d" className="rounded-lg">
-                                Last 12 months
-                            </SelectItem>
-                        </SelectContent>
-                    </Select>
+                    <TimeRangeSelect value={timeRange as any} onValueChange={setTimeRange as any} />
                 </div>
             </div >
             {/* <AccountBalanceChart
@@ -190,17 +164,7 @@ export function AccountBalancePage({ accounts }: { accounts: Account[] }) {
                 sortedAccountTypesByName={sortedAccountTypesByName}
             /> */}
             <CashSavingsInvestmentsChart accounts={accounts} timeRange={timeRange} />
-            {/* Mobile time range tabs */}
-            <div className="sm:hidden px-4 py-3 flex justify-center w-full pt-6">
-                <Tabs value={timeRange} onValueChange={setTimeRange} className="w-full justify-center flex">
-                    <TabsList className="w-full">
-                        <TabsTrigger value="7d" className="flex-1">7D</TabsTrigger>
-                        <TabsTrigger value="30d" className="flex-1">30D</TabsTrigger>
-                        <TabsTrigger value="90d" className="flex-1">3M</TabsTrigger>
-                        <TabsTrigger value="365d" className="flex-1">12M</TabsTrigger>
-                    </TabsList>
-                </Tabs>
-            </div>
+            <MobileTimeRangeTabs value={timeRange as any} onValueChange={setTimeRange as any} />
             <AccountsTableClient accounts={accounts} timeRange={timeRange} />
         </div >
     )
