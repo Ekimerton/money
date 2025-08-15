@@ -26,7 +26,7 @@ interface SpendingAnalysisChartProps {
 }
 
 export function SpendingAnalysisChart({ transactions, accounts }: SpendingAnalysisChartProps) {
-    const [timeRange, setTimeRange] = React.useState("90d");
+    const [timeRange, setTimeRange] = React.useState("30d");
     const [chartView, setChartView] = React.useState<"spend" | "income" | "cashFlow">("spend");
 
     const filteredTransactions = React.useMemo(() => {
@@ -47,12 +47,23 @@ export function SpendingAnalysisChart({ transactions, accounts }: SpendingAnalys
         }).filter(transaction => !transaction.hidden);
     }, [transactions, timeRange]);
 
-    const totalSpending = React.useMemo(() => {
-        return filteredTransactions.reduce((sum, transaction) => {
+    const { totalSpending, totalIncome, totalCashFlow } = React.useMemo(() => {
+        let spend = 0;
+        let income = 0;
+        let flow = 0;
+        for (const transaction of filteredTransactions) {
             const amount = parseFloat(transaction.amount);
-            return sum + (amount < 0 ? Math.abs(amount) : 0);
-        }, 0);
+            if (amount < 0) spend += Math.abs(amount);
+            else if (amount > 0) income += amount;
+            flow += amount;
+        }
+        return { totalSpending: spend, totalIncome: income, totalCashFlow: flow };
     }, [filteredTransactions]);
+
+    const formattedTotal = React.useMemo(() => {
+        const value = chartView === "spend" ? totalSpending : chartView === "income" ? totalIncome : totalCashFlow;
+        return Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(value);
+    }, [chartView, totalSpending, totalIncome, totalCashFlow]);
 
     return (
         <Card className="pt-0 gap-0 border-none shadow-none">
@@ -62,7 +73,7 @@ export function SpendingAnalysisChart({ transactions, accounts }: SpendingAnalys
                         Spending Analysis
                     </CardDescription>
                     <CardTitle className="text-2xl font-bold">
-                        {`$${totalSpending.toFixed(2)}`}
+                        {formattedTotal}
                     </CardTitle>
                 </div>
                 <Select value={chartView} onValueChange={(value: "spend" | "income" | "cashFlow") => setChartView(value)}>
@@ -92,17 +103,17 @@ export function SpendingAnalysisChart({ transactions, accounts }: SpendingAnalys
                         <SelectValue placeholder="Last 3 months" />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
-                        <SelectItem value="365d" className="rounded-lg">
-                            Last 12 months
-                        </SelectItem>
-                        <SelectItem value="90d" className="rounded-lg">
-                            Last 3 months
+                        <SelectItem value="7d" className="rounded-lg">
+                            Last 7 days
                         </SelectItem>
                         <SelectItem value="30d" className="rounded-lg">
                             Last 30 days
                         </SelectItem>
-                        <SelectItem value="7d" className="rounded-lg">
-                            Last 7 days
+                        <SelectItem value="90d" className="rounded-lg">
+                            Last 3 months
+                        </SelectItem>
+                        <SelectItem value="365d" className="rounded-lg">
+                            Last 12 months
                         </SelectItem>
                     </SelectContent>
                 </Select>

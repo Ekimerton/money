@@ -12,14 +12,19 @@ import * as React from "react";
 import { Transaction } from "@/lib/types";
 
 const COLORS = [
-    "oklch(28.2% 0.091 267.935)",
-    "oklch(37.9% 0.146 265.522)",
-    "oklch(42.4% 0.199 265.638)",
-    "oklch(48.8% 0.243 264.376)",
-    "oklch(54.6% 0.245 262.881)",
+    // Similar tone to other charts (moderate chroma, consistent lightness)
+    "oklch(62% 0.15 155)", // green
+    "oklch(62% 0.15 240)", // blue
+    "oklch(62% 0.13 300)", // purple
+    "oklch(62% 0.14 200)", // teal
+    "oklch(62% 0.14 260)", // indigo
+    "oklch(62% 0.14 20)",  // orange
+    "oklch(62% 0.14 340)", // pink
+    "oklch(62% 0.14 120)", // yellow-green
 ];
 
-const chartConfig = {
+// Will be extended dynamically with category labels so the legend shows names
+const baseChartConfig = {
     amount: {
         label: "Amount",
     },
@@ -39,12 +44,17 @@ export function SpendPieChart({ transactions }: { transactions: Transaction[] })
         amount,
     }));
 
-    console.log("Chart Data:", chartData);
+    const chartConfig: ChartConfig = React.useMemo(() => {
+        const dynamicLabels = Object.fromEntries(
+            chartData.map((d) => [d.name, { label: d.name }])
+        ) as ChartConfig;
+        return { ...baseChartConfig, ...dynamicLabels };
+    }, [chartData]);
 
     return (
         <ChartContainer
             config={chartConfig}
-            className="mx-auto aspect-square max-h-[300px]"
+            className="mx-auto h-[280px] w-[400px]"
         >
             <PieChart>
                 <Tooltip content={<ChartTooltipContent nameKey="name" hideLabel />} />
@@ -52,8 +62,8 @@ export function SpendPieChart({ transactions }: { transactions: Transaction[] })
                     data={chartData}
                     dataKey="amount"
                     nameKey="name"
-                    innerRadius={60}
-                    outerRadius={80}
+                    innerRadius={80}
+                    outerRadius={120}
                     strokeWidth={2}
                     labelLine={false}
                 >
@@ -64,6 +74,12 @@ export function SpendPieChart({ transactions }: { transactions: Transaction[] })
                         />
                     ))}
                 </Pie>
+                <ChartLegend
+                    layout="vertical"
+                    verticalAlign="middle"
+                    align="right"
+                    content={<ChartLegendContent nameKey="name" className="flex-col items-start gap-2 max-sm:hidden" />}
+                />
             </PieChart>
         </ChartContainer>
     )

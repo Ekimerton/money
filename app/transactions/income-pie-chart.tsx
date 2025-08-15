@@ -12,14 +12,17 @@ import * as React from "react";
 import { Account, Transaction } from "@/lib/types";
 
 const COLORS = [
-    "oklch(28.2% 0.091 267.935)",
-    "oklch(37.9% 0.146 265.522)",
-    "oklch(42.4% 0.199 265.638)",
-    "oklch(48.8% 0.243 264.376)",
-    "oklch(54.6% 0.245 262.881)",
+    "oklch(62% 0.15 155)",
+    "oklch(62% 0.15 240)",
+    "oklch(62% 0.13 300)",
+    "oklch(62% 0.14 200)",
+    "oklch(62% 0.14 260)",
+    "oklch(62% 0.14 20)",
+    "oklch(62% 0.14 340)",
+    "oklch(62% 0.14 120)",
 ];
 
-const chartConfig = {
+const baseChartConfig = {
     amount: {
         label: "Amount",
     },
@@ -41,21 +44,26 @@ export function IncomePieChart({ transactions, accounts }: { transactions: Trans
         amount,
     }));
 
-    console.log("Income Chart Data (by Account):"), chartData;
+    const chartConfig: ChartConfig = React.useMemo(() => {
+        const dynamicLabels = Object.fromEntries(
+            chartData.map((d) => [d.name, { label: d.name }])
+        ) as ChartConfig;
+        return { ...baseChartConfig, ...dynamicLabels };
+    }, [chartData]);
 
     return (
         <ChartContainer
             config={chartConfig}
-            className="mx-auto aspect-square max-h-[300px]"
+            className="mx-auto h-[280px] w-[520px]"
         >
-            <PieChart>
+            <PieChart margin={{ right: 140 }}>
                 <Tooltip content={<ChartTooltipContent nameKey="name" hideLabel />} />
                 <Pie
                     data={chartData}
                     dataKey="amount"
                     nameKey="name"
-                    innerRadius={60}
-                    outerRadius={80}
+                    innerRadius={80}
+                    outerRadius={120}
                     strokeWidth={2}
                     labelLine={false}
                 >
@@ -66,7 +74,12 @@ export function IncomePieChart({ transactions, accounts }: { transactions: Trans
                         />
                     ))}
                 </Pie>
-                <ChartLegend content={<ChartLegendContent nameKey="name" payload={chartData.map((item) => ({ value: item.name, payload: item }))} />} />
+                <ChartLegend
+                    layout="vertical"
+                    verticalAlign="middle"
+                    align="right"
+                    content={<ChartLegendContent nameKey="name" className="flex-col items-start gap-2" />}
+                />
             </PieChart>
         </ChartContainer>
     )
