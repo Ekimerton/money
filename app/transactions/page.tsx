@@ -34,7 +34,7 @@ export default async function TransactionsPage({ searchParams }: { searchParams:
     return (
         <div className="w-full">
             <SpendingAnalysisChart transactions={nonInternalTransactions} accounts={accounts} />
-            <div className="p-2">
+            <div className="">
                 <TransactionsTableClient
                     initialTransactions={nonInternalTransactions}
                     initialAccounts={accounts}

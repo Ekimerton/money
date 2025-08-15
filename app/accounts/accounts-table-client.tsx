@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { CogIcon } from "lucide-react";
+import { EllipsisIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -162,7 +162,7 @@ export function AccountsTableClient({ accounts, timeRange }: AccountsTableClient
                                         openSettings(account);
                                     }}
                                 >
-                                    <CogIcon className="size-4 text-muted-foreground" />
+                                    <EllipsisIcon className="size-4 text-muted-foreground" />
                                 </Button>
                             </div>
                             <div className="flex items-center space-x-2">

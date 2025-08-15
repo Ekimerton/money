@@ -65,13 +65,16 @@ export default function Home() {
         headers: {
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ autoCategorize })
       });
 
       if (!refreshResponse.ok) {
         const errorData = await refreshResponse.json();
         throw new Error(errorData.error || 'Failed to refresh recent data from SimpleFIN.');
       }
-      alert('Recent data refreshed and saved to database!');
+      const data = await refreshResponse.json();
+      const classifierMsg = data.classifierOutput ? `\n${data.classifierOutput}` : '';
+      alert(`Recent data refreshed and saved to database!${classifierMsg}`);
 
     } catch (err: any) {
       setError(err.message);

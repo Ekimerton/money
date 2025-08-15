@@ -1,6 +1,7 @@
 
 import Database from 'better-sqlite3';
 import path from 'path';
+import { spawn } from 'child_process';
 
 interface UserConfigRow {
     simplefin_url: string;
@@ -11,10 +12,18 @@ interface LatestTransactionRow {
 }
 
 const dbPath = path.join(process.cwd(), './data/user_data.db');
+const pythonExecutablePath = path.join(process.cwd(), './data/.venv/bin/python');
 
 export async function POST(req: Request) {
     const db = new Database(dbPath);
     try {
+        let autoCategorize = false;
+        try {
+            const body = await req.json();
+            autoCategorize = Boolean(body?.autoCategorize);
+        } catch (_) {
+            // No body provided; default remains false
+        }
         // Retrieve simplefin_url from the single-row user_config table
         const simplefinUrlRow = db
             .prepare('SELECT simplefin_url FROM user_config WHERE id = 1')
@@ -95,8 +104,27 @@ export async function POST(req: Request) {
             }
         })();
 
+        let classifierOutput: string | undefined;
+        if (autoCategorize) {
+            const dataDir = path.join(process.cwd(), 'data');
+            const scriptPath = path.join(dataDir, 'classify_transaction.py');
+            classifierOutput = await new Promise<string>((resolve) => {
+                const proc = spawn(pythonExecutablePath, [scriptPath, String(startDate)], { cwd: dataDir });
+                let stdout = '';
+                let stderr = '';
+                proc.stdout.on('data', (d) => (stdout += d.toString()));
+                proc.stderr.on('data', (d) => (stderr += d.toString()));
+                proc.on('close', (code) => {
+                    const summary = `Classifier exited with code ${code}.\n${stdout}${stderr ? `\nErrors:\n${stderr}` : ''}`;
+                    resolve(summary);
+                });
+                proc.on('error', (err) => {
+                    resolve(`Classifier failed to start: ${err.message}`);
+                });
+            });
+        }
 
-        return new Response(JSON.stringify({ message: 'Accounts and transactions fetched and saved successfully', accounts }), {
+        return new Response(JSON.stringify({ message: 'Accounts and transactions fetched and saved successfully', accounts, classifierOutput }), {
             status: 200,
             headers: { 'Content-Type': 'application/json' },
         });
