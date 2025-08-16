@@ -31,7 +31,8 @@ export function SpendingAnalysisChart({ transactions, accounts, timeRange, chart
             const startDate = new Date(referenceDate);
             startDate.setDate(startDate.getDate() - daysToSubtract);
             return date >= startDate;
-        }).filter(transaction => !transaction.hidden);
+        }).filter(transaction => transaction.category !== "Internal Transfer")
+            ;
     }, [transactions, timeRange]);
 
     const { totalSpending, totalIncome, totalCashFlow } = React.useMemo(() => {

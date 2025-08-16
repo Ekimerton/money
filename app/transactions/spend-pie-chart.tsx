@@ -79,7 +79,7 @@ export function SpendPieChart({ transactions, total }: { transactions: Transacti
                                     >
                                         <tspan
                                             x={viewBox.cx}
-                                            y={viewBox.cy}
+                                            y={viewBox.cy as number + 10}
                                             className="fill-foreground text-2xl font-bold sm:hidden"
                                         >
                                             {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(total)}

@@ -1,7 +1,6 @@
 "use client"
 
 import * as React from "react"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { TimeRangeSelect } from "@/components/time-range-select"
 import { MobileTimeRangeTabs } from "@/components/mobile-time-range-tabs"
 import { Account } from "@/lib/types";
@@ -11,15 +10,7 @@ import { AccountsTableClient } from "./accounts-table-client";
 
 export function AccountBalancePage({ accounts }: { accounts: Account[] }) {
     const [timeRange, setTimeRange] = React.useState("30d");
-    const [chartView, setChartView] = React.useState<"account" | "accountType">("account");
-
-    const sortedAccountsByName = React.useMemo(() => {
-        return [...accounts].sort((a, b) => a.name.localeCompare(b.name));
-    }, [accounts]);
-
-    const sortedAccountTypesByName = React.useMemo(() => {
-        return Array.from(new Set(accounts.map(a => a.type))).sort((a, b) => a.localeCompare(b));
-    }, [accounts]);
+    const chartView = "account";
 
     const fullChartData = React.useMemo(() => {
         const dailyData: { [date: string]: { [key: string]: number } } = {};
@@ -137,22 +128,6 @@ export function AccountBalancePage({ accounts }: { accounts: Account[] }) {
                     </h2>
                 </div>
                 <div className="flex gap-2">
-                    {/*<Select value={chartView} onValueChange={(value: "account" | "accountType") => setChartView(value)}>
-                        <SelectTrigger
-                            className="hidden w-[160px] rounded-lg sm:ml-auto sm:flex"
-                            aria-label="Select a view type"
-                        >
-                            <SelectValue placeholder="Select View" />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xl">
-                            <SelectItem value="account" className="rounded-lg">
-                                By Account
-                            </SelectItem>
-                            <SelectItem value="accountType" className="rounded-lg">
-                                By Account Type
-                            </SelectItem>
-                        </SelectContent>
-                    </Select>*/}
                     <TimeRangeSelect value={timeRange as any} onValueChange={setTimeRange as any} />
                 </div>
             </div >

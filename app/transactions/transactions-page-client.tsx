@@ -12,7 +12,7 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 // import { TransactionsTableClient } from "@/components/transactions-table-client"
-import { TransactionsList } from "@/components/transactions-list"
+import { TransactionsList } from "@/app/transactions/transactions-list"
 import type { Account, Transaction } from "@/lib/types"
 
 interface TransactionsPageClientProps {

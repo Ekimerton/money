@@ -15,7 +15,7 @@ import { Account } from "@/lib/types"
 
 const chartConfig = {
     cash: {
-        label: "Cash (Checking - Credit)",
+        label: "Cash",
         color: "oklch(62% 0.14 155)",
     },
     savings: {
@@ -78,11 +78,39 @@ export function CashSavingsInvestmentsChart({ accounts, timeRange }: { accounts:
         return fullData.filter((d) => new Date(d.date) >= startDate)
     }, [fullData, timeRange])
 
+    const tooltipFormatter = React.useCallback(((value: any, name: any, item: any, _index: number, p: any) => {
+        const indicatorColor = item?.payload?.fill || item?.color
+        const key = String(name)
+        const labelText = (chartConfig as any)[key]?.label ?? key
+        const sum = (p?.cash ?? 0) + (p?.savings ?? 0) + (p?.investments ?? 0)
+        const numericValue = Number(value)
+        const percent = sum > 0 ? (numericValue / sum) : 0
+
+        return (
+            <div className="flex w-full items-center justify-between">
+                <div className="flex items-center gap-2">
+                    <div
+                        className="h-2.5 w-2.5 shrink-0 rounded-[2px] border-(--color-border) bg-(--color-bg)"
+                        style={{ backgroundColor: indicatorColor, borderColor: indicatorColor }}
+                    />
+                    <span className="text-neutral-500 dark:text-neutral-400">
+                        {labelText} ({Intl.NumberFormat("en-US", { style: "percent", maximumFractionDigits: 0 }).format(percent)})
+                    </span>
+                </div>
+                <div className="flex items-center gap-2 ml-8">
+                    <span className="text-neutral-950 font-mono font-medium tabular-nums dark:text-neutral-50">
+                        {Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(numericValue)}
+                    </span>
+                </div>
+            </div>
+        )
+    }) as any, [chartConfig])
+
     return (
         <div className="sm:px-4">
             <ChartContainer
                 config={chartConfig}
-                className="aspect-auto h-[300px] max-sm:h-[300px] w-full"
+                className="aspect-auto h-[300px] w-full"
             >
                 <AreaChart data={filteredData}>
                     <ChartTooltip
@@ -107,6 +135,7 @@ export function CashSavingsInvestmentsChart({ accounts, timeRange }: { accounts:
                                     )
                                 }}
                                 indicator="dot"
+                                formatter={tooltipFormatter}
                             />
                         }
                     />

@@ -12,9 +12,6 @@ export default async function TransactionsPage({ searchParams }: { searchParams:
     }
     const transactionsData = await transactionsResponse.json();
     const transactions: Transaction[] = transactionsData.transactions;
-    const nonInternalTransactions = transactions.filter(
-        (t) => t.category !== 'Internal Transfer'
-    );
 
     const accountsResponse = await fetch('http://localhost:3000/api/get-accounts');
     if (!accountsResponse.ok) {
@@ -32,7 +29,7 @@ export default async function TransactionsPage({ searchParams }: { searchParams:
 
     return (
         <TransactionsPageClient
-            transactions={nonInternalTransactions}
+            transactions={transactions}
             accounts={accounts}
             categories={existingCategories}
         />
