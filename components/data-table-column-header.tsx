@@ -3,13 +3,7 @@ import { ArrowDown, ArrowUp, ChevronsUpDown, EyeOff } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu"
 
 interface DataTableColumnHeaderProps<TData, TValue>
     extends React.HTMLAttributes<HTMLDivElement> {
@@ -28,8 +22,8 @@ export function DataTableColumnHeader<TData, TValue>({
 
     return (
         <div className={cn("flex items-center gap-2", className)}>
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
+            <DropdownMenu.Root>
+                <DropdownMenu.Trigger asChild>
                     <Button
                         variant="ghost"
                         size="sm"
@@ -44,22 +38,22 @@ export function DataTableColumnHeader<TData, TValue>({
                             <ChevronsUpDown />
                         )}
                     </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start">
-                    <DropdownMenuItem onClick={() => column.toggleSorting(false)}>
+                </DropdownMenu.Trigger>
+                <DropdownMenu.Content align="start" className="min-w-[8rem] rounded-md border bg-popover p-1 text-popover-foreground shadow-md">
+                    <DropdownMenu.Item className="flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none focus:bg-accent" onClick={() => column.toggleSorting(false)}>
                         <ArrowUp />
                         Asc
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => column.toggleSorting(true)}>
+                    </DropdownMenu.Item>
+                    <DropdownMenu.Item className="flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none focus:bg-accent" onClick={() => column.toggleSorting(true)}>
                         <ArrowDown />
                         Desc
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => column.toggleSorting(undefined)}>
+                    </DropdownMenu.Item>
+                    <DropdownMenu.Separator className="-mx-1 my-1 h-px bg-border" />
+                    <DropdownMenu.Item className="flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none focus:bg-accent" onClick={() => column.toggleSorting(undefined)}>
                         Turn off sorting
-                    </DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
+                    </DropdownMenu.Item>
+                </DropdownMenu.Content>
+            </DropdownMenu.Root>
         </div>
     )
 }

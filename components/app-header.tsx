@@ -14,7 +14,7 @@ interface AppHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
     title?: string
 }
 
-export function AppHeader({ title, className, ...props }: AppHeaderProps) {
+export function AppHeader({ title, className }: AppHeaderProps) {
     const pathname = usePathname()
     const pathSegments = pathname.split("/").filter(Boolean)
     const searchParams = useSearchParams();

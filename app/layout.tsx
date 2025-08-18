@@ -8,6 +8,7 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppHeader } from "@/components/app-header";
 import { usePathname } from "next/navigation";
 import { Toaster } from "@/components/ui/sonner";
+import { Suspense } from "react";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -49,7 +50,9 @@ export default function RootLayout({
           <div className="flex h-dvh w-screen overflow-hidden">
             <AppSidebar className="h-full" />
             <main className="flex flex-col flex-1">
-              <AppHeader title={pageTitle} />
+              <Suspense fallback={null}>
+                <AppHeader title={pageTitle} />
+              </Suspense>
               <div className="flex-1 overflow-y-auto">
                 {children}
               </div>

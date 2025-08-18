@@ -1,7 +1,7 @@
+import TransactionsPageClient from "@/app/transactions/transactions-page";
 import { Account, Transaction } from "@/lib/types";
-import { TransactionsTableClient } from "@/components/transactions-table-client";
 
-export default async function TransactionsTablePage({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
+export default async function ReportsPage({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
     const resolvedSearchParams = await searchParams;
     // Support both `accountId` (preferred) and legacy `account`
     const accountId = (resolvedSearchParams.accountId ?? resolvedSearchParams.account) as string | undefined;
@@ -29,11 +29,12 @@ export default async function TransactionsTablePage({ searchParams }: { searchPa
     const existingCategories: string[] = categoriesData.categories;
 
     return (
-        <TransactionsTableClient
-            initialTransactions={transactions}
-            initialAccounts={accounts}
-            initialCategories={existingCategories}
-            timeRange={"90d"}
+        <TransactionsPageClient
+            transactions={transactions}
+            accounts={accounts}
+            categories={existingCategories}
         />
     );
 }
+
+
