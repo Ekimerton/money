@@ -9,43 +9,60 @@ import {
     BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { usePathname, useSearchParams } from "next/navigation"
+import { Suspense } from "react"
 
 interface AppHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
     title?: string
 }
 
-export function AppHeader({ title, className }: AppHeaderProps) {
-    const pathname = usePathname()
-    const pathSegments = pathname.split("/").filter(Boolean)
+function AccountCrumb() {
     const searchParams = useSearchParams();
     const accountId = searchParams.get('account');
     const [accountName, setAccountName] = React.useState<string | null>(null);
 
     React.useEffect(() => {
-        if (accountId) {
-            const fetchAccountName = async () => {
-                try {
-                    const response = await fetch('/api/get-accounts');
-                    if (!response.ok) {
-                        throw new Error(`Error fetching accounts: ${response.statusText}`);
-                    }
-                    const data = await response.json();
-                    const account = data.accounts.find((acc: any) => acc.id === accountId);
-                    if (account) {
-                        setAccountName(account.name);
-                    } else {
-                        setAccountName(null);
-                    }
-                } catch (error) {
-                    console.error("Failed to fetch account name:", error);
-                    setAccountName(null);
-                }
-            };
-            fetchAccountName();
-        } else {
+        if (!accountId) {
             setAccountName(null);
+            return;
         }
+        let isMounted = true;
+        const fetchAccountName = async () => {
+            try {
+                const response = await fetch('/api/get-accounts');
+                if (!response.ok) {
+                    throw new Error(`Error fetching accounts: ${response.statusText}`);
+                }
+                const data = await response.json();
+                const account = data.accounts.find((acc: any) => acc.id === accountId);
+                if (isMounted) {
+                    setAccountName(account ? account.name : null);
+                }
+            } catch (error) {
+                console.error("Failed to fetch account name:", error);
+                if (isMounted) setAccountName(null);
+            }
+        };
+        fetchAccountName();
+        return () => {
+            isMounted = false;
+        };
     }, [accountId]);
+
+    if (!accountId || !accountName) return null;
+
+    return (
+        <>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+                <BreadcrumbLink href={`/transactions?account=${accountId}`} className="text-lg font-medium whitespace-nowrap">{accountName}</BreadcrumbLink>
+            </BreadcrumbItem>
+        </>
+    );
+}
+
+export function AppHeader({ title, className }: AppHeaderProps) {
+    const pathname = usePathname()
+    const pathSegments = pathname.split("/").filter(Boolean)
 
     return (
         <div className="flex items-center gap-2 px-2 h-14 border-b w-full bg-white dark:bg-neutral-950">
@@ -65,15 +82,13 @@ export function AppHeader({ title, className }: AppHeaderProps) {
                                         <BreadcrumbLink href={href} className="text-lg font-medium whitespace-nowrap">{segment.charAt(0).toUpperCase() + segment.slice(1)}</BreadcrumbLink>
                                     )}
                                 </BreadcrumbItem>
-                                {(!isLast || (isLast && accountId)) && <BreadcrumbSeparator />}
+                                {!isLast && <BreadcrumbSeparator />}
                             </React.Fragment>
                         )
                     })}
-                    {accountId && accountName && (
-                        <BreadcrumbItem>
-                            <BreadcrumbLink href={`/transactions?account=${accountId}`} className="text-lg font-medium whitespace-nowrap">{accountName}</BreadcrumbLink>
-                        </BreadcrumbItem>
-                    )}
+                    <Suspense fallback={null}>
+                        <AccountCrumb />
+                    </Suspense>
                 </BreadcrumbList>
             </Breadcrumb>
         </div>
