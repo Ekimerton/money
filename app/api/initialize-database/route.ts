@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
         currency TEXT NOT NULL,
         balance TEXT NOT NULL,
         balance_date INTEGER NOT NULL,
-        type TEXT DEFAULT 'checking'
+        type TEXT DEFAULT 'uncategorized'
       );
 
       CREATE TABLE IF NOT EXISTS transactions (
@@ -26,8 +26,8 @@ export async function POST(req: NextRequest) {
         description TEXT NOT NULL,
         payee TEXT,
         transacted_at INTEGER,
-        pending BOOLEAN NOT NULL,
-        hidden BOOLEAN NOT NULL,
+        pending BOOLEAN NOT NULL DEFAULT FALSE,
+        hidden BOOLEAN NOT NULL DEFAULT FALSE,
         category TEXT DEFAULT 'uncategorized',
         FOREIGN KEY (account_id) REFERENCES accounts(id)
       );
