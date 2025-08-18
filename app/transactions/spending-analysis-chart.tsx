@@ -5,6 +5,7 @@ import * as React from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Account, Transaction } from "@/lib/types";
 import { SpendPieChart } from "@/app/transactions/spend-pie-chart";
+import { CumulativeSpendLineChart } from "@/app/transactions/cumulative-spend-line-chart";
 import { IncomePieChart } from "@/app/transactions/income-pie-chart";
 
 interface SpendingAnalysisChartProps {
@@ -48,11 +49,13 @@ export function SpendingAnalysisChart({ transactions, accounts, timeRange, chart
         return { totalSpending: spend, totalIncome: income, totalCashFlow: flow };
     }, [filteredTransactions]);
 
+    const aggregateBy = React.useMemo(() => (timeRange === "90d" || timeRange === "365d") ? "week" : "day", [timeRange]);
+
     return (
         <div className="max-sm:pt-9 max-sm:pb-2">
-            {chartView === "spend" && <SpendPieChart transactions={filteredTransactions} total={totalSpending} />}
+            {chartView === "spend" && <SpendPieChart transactions={filteredTransactions} total={totalSpending} aggregateBy={aggregateBy} />}
             {chartView === "income" && <IncomePieChart transactions={filteredTransactions} accounts={accounts} />}
-            {chartView === "cashFlow" && null}
+            {chartView === "cashFlow" && <CumulativeSpendLineChart transactions={filteredTransactions} />}
         </div>
     )
 }

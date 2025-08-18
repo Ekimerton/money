@@ -1,4 +1,4 @@
-import TransactionsPageClient from "@/app/transactions/transactions-page-client";
+import TransactionsPageClient from "@/app/transactions/transactions-page";
 import { Account, Transaction } from "@/lib/types";
 
 export default async function TransactionsPage({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
