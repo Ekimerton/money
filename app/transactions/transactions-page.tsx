@@ -56,6 +56,55 @@ export default function TransactionsPageClient({ transactions, accounts, categor
         return { totalSpending: spend, totalIncome: income, totalCashFlow: flow };
     }, [filteredTransactions]);
 
+    const { previousSpending, previousIncome, previousCashFlow } = React.useMemo(() => {
+        const referenceDate = new Date();
+        let daysToSubtract = 90;
+        if (timeRange === "30d") {
+            daysToSubtract = 30;
+        } else if (timeRange === "7d") {
+            daysToSubtract = 7;
+        } else if (timeRange === "365d") {
+            daysToSubtract = 365;
+        }
+        const currentStartDate = new Date(referenceDate);
+        currentStartDate.setDate(currentStartDate.getDate() - daysToSubtract);
+        const previousStartDate = new Date(currentStartDate);
+        previousStartDate.setDate(previousStartDate.getDate() - daysToSubtract);
+
+        const prevTx = transactions
+            .filter((transaction) => {
+                const date = new Date(transaction.transacted_at * 1000);
+                return date >= previousStartDate && date < currentStartDate;
+            })
+            .filter(transaction => !transaction.hidden && transaction.category !== "Internal Transfer");
+
+        let spend = 0;
+        let income = 0;
+        let flow = 0;
+        for (const transaction of prevTx) {
+            const amount = parseFloat(transaction.amount);
+            if (amount < 0) spend += Math.abs(amount);
+            else if (amount > 0) income += amount;
+            flow += amount;
+        }
+        return { previousSpending: spend, previousIncome: income, previousCashFlow: flow };
+    }, [transactions, timeRange]);
+
+    const currentTotal = React.useMemo(() => {
+        return chartView === "spend" ? totalSpending : chartView === "income" ? totalIncome : totalCashFlow;
+    }, [chartView, totalSpending, totalIncome, totalCashFlow]);
+
+    const previousTotal = React.useMemo(() => {
+        return chartView === "spend" ? previousSpending : chartView === "income" ? previousIncome : previousCashFlow;
+    }, [chartView, previousSpending, previousIncome, previousCashFlow]);
+
+    const changeTotal = currentTotal - previousTotal;
+    const isInfinitePercent = previousTotal === 0;
+    const percentChangeRounded = isInfinitePercent ? 0 : Math.round((changeTotal / previousTotal) * 100);
+    const changeSign = changeTotal > 0 ? "+" : changeTotal < 0 ? "-" : "";
+    const formattedAbsChange = Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(Math.abs(changeTotal));
+    const formattedPercentChange = isInfinitePercent ? "---" : `${changeSign}${Math.abs(percentChangeRounded)}%`;
+
     const formattedTotal = React.useMemo(() => {
         const value = chartView === "spend" ? totalSpending : chartView === "income" ? totalIncome : totalCashFlow;
         return Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(value);
@@ -71,6 +120,12 @@ export default function TransactionsPageClient({ transactions, accounts, categor
                     <h1 className="text-2xl font-bold max-sm:text-4xl">
                         {formattedTotal}
                     </h1>
+                    <h2 className={`text-base ml-2 font-medium font-mono sm:hidden ${changeTotal > 0 ? "text-green-700" : changeTotal < 0 ? "text-red-700" : ""}`}>
+                        {changeSign}
+                        {formattedAbsChange}
+                        {" "}
+                        <span className={isInfinitePercent ? "text-neutral-500" : ""}>({formattedPercentChange})</span>
+                    </h2>
                 </div>
             </div>
             <div className="flex gap-2 space-y-0 p-4 sm:flex-row max-sm:p-2 max-sm:hidden">
@@ -80,6 +135,12 @@ export default function TransactionsPageClient({ transactions, accounts, categor
                     </h2>
                     <h1 className="text-2xl font-bold">
                         {formattedTotal}
+                        <span className={`text-base ml-2 font-mono max-sm:hidden ${changeTotal > 0 ? "text-green-700" : changeTotal < 0 ? "text-red-700" : ""}`}>
+                            {changeSign}
+                            {formattedAbsChange}
+                            {" "}
+                            <span className={isInfinitePercent ? "text-neutral-500" : ""}>({formattedPercentChange})</span>
+                        </span>
                     </h1>
                 </div>
                 <Select value={chartView} onValueChange={(value: "spend" | "income" | "cashFlow") => setChartView(value)}>

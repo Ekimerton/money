@@ -64,7 +64,7 @@ export function TransactionsList({ transactions, accounts, timeRange }: Transact
     const getAccountFor = React.useCallback((accountId: string) => accounts.find(a => a.id === accountId), [accounts]);
 
     return (
-        <div className="p-4">
+        <div className="p-4 pt-2">
             {groups.map(group => (
                 <div key={group.key}>
                     <div className="px-0 pb-1 pt-4 text-xs text-muted-foreground font-semibold">{group.label}</div>

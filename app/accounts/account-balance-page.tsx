@@ -58,30 +58,6 @@ export function AccountBalancePage({ accounts }: { accounts: Account[] }) {
         return processedData;
     }, [accounts, chartView]);
 
-    // Dynamically add account configurations to chartConfig
-    /*
-    const dynamicChartConfig = React.useMemo(() => {
-        const newConfig: ChartConfig = { ...chartConfig };
-        if (chartView === "account") {
-            accounts.forEach((account, index) => {
-                newConfig[account.id] = {
-                    label: account.name,
-                    color: COLORS[index % COLORS.length], // Use gradient colors
-                };
-            });
-        } else if (chartView === "accountType") {
-            const accountTypes = Array.from(new Set(accounts.map(a => a.type)));
-            accountTypes.forEach((type, index) => {
-                newConfig[type] = {
-                    label: type,
-                    color: COLORS[index % COLORS.length],
-                };
-            });
-        }
-        return newConfig;
-    }, [accounts, chartView]);
-    */
-
     const filteredData = fullChartData.filter((item) => {
         const date = new Date(item.date);
         const referenceDate = new Date();
@@ -101,10 +77,11 @@ export function AccountBalancePage({ accounts }: { accounts: Account[] }) {
     const finalNetWorth = filteredData[filteredData.length - 1]?.totalBalance || 0;
     const startNetWorth = filteredData[0]?.totalBalance || 0;
     const changeNetWorth = finalNetWorth - startNetWorth;
-    const percentChangeRounded = startNetWorth === 0 ? 0 : Math.round(changeNetWorth / startNetWorth * 100);
+    const isInfinitePercent = startNetWorth === 0;
+    const percentChangeRounded = isInfinitePercent ? 0 : Math.round(changeNetWorth / startNetWorth * 100);
     const changeSign = changeNetWorth > 0 ? "+" : changeNetWorth < 0 ? "-" : "";
     const formattedAbsChange = Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(Math.abs(changeNetWorth));
-    const formattedPercentChange = `${changeSign}${Math.abs(percentChangeRounded)}%`;
+    const formattedPercentChange = isInfinitePercent ? "---" : `${changeSign}${Math.abs(percentChangeRounded)}%`;
 
     return (
         <div className="">
@@ -118,26 +95,21 @@ export function AccountBalancePage({ accounts }: { accounts: Account[] }) {
                         <span className={`text-base ml-2 font-mono max-sm:hidden ${changeNetWorth > 0 ? "text-green-700" : changeNetWorth < 0 ? "text-red-700" : ""}`}>
                             {changeSign}
                             {formattedAbsChange}
-                            {" "}({formattedPercentChange})
+                            {" "}
+                            <span className={isInfinitePercent ? "text-neutral-500" : ""}>({formattedPercentChange})</span>
                         </span>
                     </h1>
                     <h2 className={`text-base ml-2 font-medium font-mono sm:hidden ${changeNetWorth > 0 ? "text-green-700" : changeNetWorth < 0 ? "text-red-700" : ""}`}>
                         {changeSign}
                         {formattedAbsChange}
-                        {" "}({formattedPercentChange})
+                        {" "}
+                        <span className={isInfinitePercent ? "text-neutral-500" : ""}>({formattedPercentChange})</span>
                     </h2>
                 </div>
                 <div className="flex gap-2">
                     <TimeRangeSelect value={timeRange as any} onValueChange={setTimeRange as any} />
                 </div>
             </div >
-            {/* <AccountBalanceChart
-                filteredData={filteredData}
-                dynamicChartConfig={dynamicChartConfig}
-                chartView={chartView}
-                sortedAccountsByName={sortedAccountsByName}
-                sortedAccountTypesByName={sortedAccountTypesByName}
-            /> */}
             <CashSavingsInvestmentsChart accounts={accounts} timeRange={timeRange} />
             <MobileTimeRangeTabs value={timeRange as any} onValueChange={setTimeRange as any} />
             <AccountsTableClient accounts={accounts} timeRange={timeRange} />
