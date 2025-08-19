@@ -8,6 +8,7 @@ import {
     BreadcrumbList,
     BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
+import { Button } from "@/components/ui/button"
 import { usePathname, useSearchParams } from "next/navigation"
 import { Suspense } from "react"
 
@@ -63,34 +64,53 @@ function AccountCrumb() {
 export function AppHeader({ title, className }: AppHeaderProps) {
     const pathname = usePathname()
     const pathSegments = pathname.split("/").filter(Boolean)
+    const isDebug = pathname.startsWith("/debug")
+    const isAccounts = pathname.startsWith("/accounts")
+    const isReports = pathname.startsWith("/reports")
 
     return (
-        <div className="flex items-center gap-2 px-2 h-14 border-b w-full bg-white dark:bg-neutral-950">
-            <SidebarTrigger className="mx-1" />
-            <div className="h-4 bg-neutral-800 w-[1px]"></div>
-            <Breadcrumb className="flex-1 overflow-x-auto">
-                <BreadcrumbList className="ml-2 flex-nowrap">
-                    {pathSegments.map((segment, index) => {
-                        const href = "/" + pathSegments.slice(0, index + 1).join("/")
-                        const isLast = index === pathSegments.length - 1
-                        return (
-                            <React.Fragment key={href}>
-                                <BreadcrumbItem>
-                                    {isLast ? (
-                                        <BreadcrumbLink href={href} className="text-lg font-medium whitespace-nowrap">{segment.charAt(0).toUpperCase() + segment.slice(1)}</BreadcrumbLink>
-                                    ) : (
-                                        <BreadcrumbLink href={href} className="text-lg font-medium whitespace-nowrap">{segment.charAt(0).toUpperCase() + segment.slice(1)}</BreadcrumbLink>
-                                    )}
-                                </BreadcrumbItem>
-                                {!isLast && <BreadcrumbSeparator />}
-                            </React.Fragment>
-                        )
-                    })}
-                    <Suspense fallback={null}>
-                        <AccountCrumb />
-                    </Suspense>
-                </BreadcrumbList>
-            </Breadcrumb>
+        <div className="px-2 h-14 border-b w-full bg-white dark:bg-neutral-950">
+            {/* Desktop / tablet navbar */}
+            <div className="hidden sm:flex items-center gap-2 h-full">
+                <SidebarTrigger className="mx-1" />
+                <div className="h-4 bg-neutral-800 w-[1px]"></div>
+                <Breadcrumb className="flex-1 overflow-x-auto">
+                    <BreadcrumbList className="ml-2 flex-nowrap">
+                        {pathSegments.map((segment, index) => {
+                            const href = "/" + pathSegments.slice(0, index + 1).join("/")
+                            const isLast = index === pathSegments.length - 1
+                            return (
+                                <React.Fragment key={href}>
+                                    <BreadcrumbItem>
+                                        {isLast ? (
+                                            <BreadcrumbLink href={href} className="text-lg font-medium whitespace-nowrap">{segment.charAt(0).toUpperCase() + segment.slice(1)}</BreadcrumbLink>
+                                        ) : (
+                                            <BreadcrumbLink href={href} className="text-lg font-medium whitespace-nowrap">{segment.charAt(0).toUpperCase() + segment.slice(1)}</BreadcrumbLink>
+                                        )}
+                                    </BreadcrumbItem>
+                                    {!isLast && <BreadcrumbSeparator />}
+                                </React.Fragment>
+                            )
+                        })}
+                        <Suspense fallback={null}>
+                            <AccountCrumb />
+                        </Suspense>
+                    </BreadcrumbList>
+                </Breadcrumb>
+            </div>
+
+            {/* Mobile buttons */}
+            <div className="sm:hidden h-full flex items-center justify-center gap-2">
+                <Button asChild variant={isDebug ? "secondary" : "ghost"} size="sm">
+                    <a href="/debug">Debug</a>
+                </Button>
+                <Button asChild variant={isAccounts ? "secondary" : "ghost"} size="sm">
+                    <a href="/accounts">Accounts</a>
+                </Button>
+                <Button asChild variant={isReports ? "secondary" : "ghost"} size="sm">
+                    <a href="/reports">Spend</a>
+                </Button>
+            </div>
         </div>
     )
 } 

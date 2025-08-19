@@ -52,7 +52,7 @@ export function SpendingAnalysisChart({ transactions, accounts, timeRange, chart
     const aggregateBy = React.useMemo(() => (timeRange === "90d" || timeRange === "365d") ? "week" : "day", [timeRange]);
 
     return (
-        <div className="max-sm:pt-9 max-sm:pb-2">
+        <div className="">
             {chartView === "spend" && <CumulativeSpendLineChart transactions={filteredTransactions} />}
             {chartView === "income" && <IncomePieChart transactions={filteredTransactions} accounts={accounts} />}
             {chartView === "cashFlow" && <SpendPieChart transactions={filteredTransactions} total={totalSpending} aggregateBy={aggregateBy} />}
