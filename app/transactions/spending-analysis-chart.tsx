@@ -53,9 +53,9 @@ export function SpendingAnalysisChart({ transactions, accounts, timeRange, chart
 
     return (
         <div className="max-sm:pt-9 max-sm:pb-2">
-            {chartView === "spend" && <SpendPieChart transactions={filteredTransactions} total={totalSpending} aggregateBy={aggregateBy} />}
+            {chartView === "spend" && <CumulativeSpendLineChart transactions={filteredTransactions} />}
             {chartView === "income" && <IncomePieChart transactions={filteredTransactions} accounts={accounts} />}
-            {chartView === "cashFlow" && <CumulativeSpendLineChart transactions={filteredTransactions} />}
+            {chartView === "cashFlow" && <SpendPieChart transactions={filteredTransactions} total={totalSpending} aggregateBy={aggregateBy} />}
         </div>
     )
 }

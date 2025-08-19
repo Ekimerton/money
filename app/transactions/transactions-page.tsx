@@ -40,7 +40,7 @@ export default function TransactionsPageClient({ transactions, accounts, categor
             const startDate = new Date(referenceDate);
             startDate.setDate(startDate.getDate() - daysToSubtract);
             return date >= startDate;
-        }).filter(transaction => !transaction.hidden);
+        }).filter(transaction => !transaction.hidden && transaction.category !== "Internal Transfer");
     }, [transactions, timeRange]);
 
     const { totalSpending, totalIncome, totalCashFlow } = React.useMemo(() => {
@@ -63,6 +63,16 @@ export default function TransactionsPageClient({ transactions, accounts, categor
 
     return (
         <div className="w-full">
+            <div className="p-4 flex max-sm:pt-12 sm:hidden">
+                <div className="grid flex-1 gap-1 max-sm:text-center ">
+                    <h2 className="font-bold text-muted-foreground uppercase text-sm font-mono max-sm:hidden">
+                        Net {chartView === "spend" ? "Spend" : chartView === "income" ? "Income" : "Cash Flow"}
+                    </h2>
+                    <h1 className="text-2xl font-bold max-sm:text-4xl">
+                        {formattedTotal}
+                    </h1>
+                </div>
+            </div>
             <div className="flex gap-2 space-y-0 p-4 sm:flex-row max-sm:p-2 max-sm:hidden">
                 <div className="grid flex-1 gap-1">
                     <h2 className="font-bold text-muted-foreground uppercase text-sm font-mono">
