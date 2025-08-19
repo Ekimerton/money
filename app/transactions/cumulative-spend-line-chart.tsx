@@ -92,11 +92,15 @@ export function CumulativeSpendLineChart({ transactions }: { transactions: Trans
         return { chartData: rows, categories: allCategories, chartConfig: cfg }
     }, [transactions])
 
-    const tooltipFormatter = React.useCallback(((value: any, name: any, item: any) => {
+    const tooltipFormatter = React.useCallback(((value: any, name: any, item: any, _index: number, p: any) => {
         const indicatorColor = item?.payload?.stroke || item?.color
         const key = String(name)
         const labelText = (chartConfig as any)[key]?.label ?? key
         const numericValue = Number(value)
+        const sum = Array.isArray(categories) && p
+            ? categories.reduce((acc, cat) => acc + (Number(p?.[cat]) || 0), 0)
+            : 0
+        const percent = sum > 0 ? numericValue / sum : 0
         return (
             <div className="flex w-full items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -104,7 +108,9 @@ export function CumulativeSpendLineChart({ transactions }: { transactions: Trans
                         className="h-2.5 w-2.5 shrink-0 rounded-[2px] border-(--color-border) bg-(--color-bg)"
                         style={{ backgroundColor: indicatorColor, borderColor: indicatorColor }}
                     />
-                    <span className="text-neutral-500 dark:text-neutral-400">{labelText}</span>
+                    <span className="text-neutral-500 dark:text-neutral-400">
+                        {labelText} ({Intl.NumberFormat("en-US", { style: "percent", maximumFractionDigits: 0 }).format(percent)})
+                    </span>
                 </div>
                 <div className="flex items-center gap-2 ml-8">
                     <span className="text-neutral-950 font-mono font-medium tabular-nums dark:text-neutral-50">
@@ -113,7 +119,7 @@ export function CumulativeSpendLineChart({ transactions }: { transactions: Trans
                 </div>
             </div>
         )
-    }) as any, [chartConfig])
+    }) as any, [chartConfig, categories])
 
     return (
         <ChartContainer config={chartConfig} className="aspect-auto h-[300px] w-full">
@@ -124,11 +130,24 @@ export function CumulativeSpendLineChart({ transactions }: { transactions: Trans
                         <ChartTooltipContent
                             labelFormatter={(_, payload) => {
                                 if (!payload || payload.length === 0) return ""
-                                const dateValue = payload[0].payload.date
-                                return new Date(dateValue + "T00:00:00").toLocaleDateString("en-US", {
-                                    month: "short",
-                                    day: "numeric",
-                                })
+                                const row = payload[0].payload
+                                const dateValue = row.date
+                                const total = Array.isArray(categories)
+                                    ? categories.reduce((acc, cat) => acc + (Number(row?.[cat]) || 0), 0)
+                                    : 0
+                                return (
+                                    <div className="flex justify-between w-full pb-2">
+                                        <p>
+                                            {new Date(dateValue + "T00:00:00").toLocaleDateString("en-US", {
+                                                month: "short",
+                                                day: "numeric",
+                                            })}
+                                        </p>
+                                        <p className="font-mono">
+                                            {Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(total)}
+                                        </p>
+                                    </div>
+                                )
                             }}
                             indicator="dot"
                             formatter={tooltipFormatter}
