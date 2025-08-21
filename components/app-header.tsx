@@ -67,7 +67,7 @@ export function AppHeader({ title, className }: AppHeaderProps) {
     const pathSegments = pathname.split("/").filter(Boolean)
     const isDebug = pathname.startsWith("/debug")
     const isAccounts = pathname.startsWith("/accounts")
-    const isReports = pathname.startsWith("/reports")
+    const isSpending = pathname.startsWith("/spending")
 
     return (
         <div className="px-2 h-14 border-b w-full bg-white dark:bg-neutral-950 relative">
@@ -108,8 +108,8 @@ export function AppHeader({ title, className }: AppHeaderProps) {
                 <Button asChild variant={isAccounts ? "secondary" : "ghost"} size="sm">
                     <a href="/accounts">Accounts</a>
                 </Button>
-                <Button asChild variant={isReports ? "secondary" : "ghost"} size="sm">
-                    <a href="/reports">Spend</a>
+                <Button asChild variant={isSpending ? "secondary" : "ghost"} size="sm">
+                    <a href="/spending">Spending</a>
                 </Button>
             </div>
 

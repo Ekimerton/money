@@ -1,7 +1,7 @@
-import TransactionsPageClient from "@/app/transactions/transactions-page";
+import SpendingPageClient from "@/app/spending/spending-page";
 import { Account, Transaction } from "@/lib/types";
 
-export default async function ReportsPage({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
+export default async function SpendingPage({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
     const resolvedSearchParams = await searchParams;
     // Support both `accountId` (preferred) and legacy `account`
     const accountId = (resolvedSearchParams.accountId ?? resolvedSearchParams.account) as string | undefined;
@@ -21,18 +21,10 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
     const accountsData = await accountsResponse.json();
     const accounts: Account[] = accountsData.accounts;
 
-    const categoriesResponse = await fetch('http://localhost:3000/api/get-categories');
-    if (!categoriesResponse.ok) {
-        throw new Error(`Error fetching categories: ${categoriesResponse.status}`);
-    }
-    const categoriesData = await categoriesResponse.json();
-    const existingCategories: string[] = categoriesData.categories;
-
     return (
-        <TransactionsPageClient
+        <SpendingPageClient
             transactions={transactions}
             accounts={accounts}
-            categories={existingCategories}
         />
     );
 }

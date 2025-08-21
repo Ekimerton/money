@@ -1,20 +1,18 @@
 "use client"
 
 import * as React from "react"
-import { CumulativeSpendLineChart } from "@/app/transactions/cumulative-spend-line-chart"
+import { CumulativeSpendLineChart } from "@/app/spending/cumulative-spend-line-chart"
 import { TimeRangeSelect, type TimeRangeValue } from "@/components/time-range-select"
 import { MobileTimeRangeTabs } from "@/components/mobile-time-range-tabs"
-// import { TransactionsTableClient } from "@/components/transactions-table-client"
 import { TransactionsList } from "@/app/transactions/transactions-list"
 import type { Account, Transaction } from "@/lib/types"
 
-interface TransactionsPageClientProps {
+interface SpendingPageProps {
     transactions: Transaction[]
     accounts: Account[]
-    categories: string[]
 }
 
-export default function TransactionsPageClient({ transactions, accounts, categories }: TransactionsPageClientProps) {
+export default function SpendingPageClient({ transactions, accounts }: SpendingPageProps) {
     const [timeRange, setTimeRange] = React.useState<TimeRangeValue>("30d")
 
     const filteredTransactions = React.useMemo(() => {
@@ -125,12 +123,6 @@ export default function TransactionsPageClient({ transactions, accounts, categor
             />
             <MobileTimeRangeTabs value={timeRange} onValueChange={setTimeRange} />
             <div>
-                {/* <TransactionsTableClient
-                    initialTransactions={transactions}
-                    initialAccounts={accounts}
-                    initialCategories={categories}
-                    timeRange={timeRange}
-                /> */}
                 <TransactionsList
                     transactions={transactions}
                     accounts={accounts}
