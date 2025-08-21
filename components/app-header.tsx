@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { usePathname, useSearchParams } from "next/navigation"
 import { Suspense } from "react"
+import { User } from "lucide-react"
 
 interface AppHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
     title?: string
@@ -69,7 +70,7 @@ export function AppHeader({ title, className }: AppHeaderProps) {
     const isReports = pathname.startsWith("/reports")
 
     return (
-        <div className="px-2 h-14 border-b w-full bg-white dark:bg-neutral-950">
+        <div className="px-2 h-14 border-b w-full bg-white dark:bg-neutral-950 relative">
             {/* Desktop / tablet navbar */}
             <div className="hidden sm:flex items-center gap-2 h-full">
                 <SidebarTrigger className="mx-1" />
@@ -109,6 +110,15 @@ export function AppHeader({ title, className }: AppHeaderProps) {
                 </Button>
                 <Button asChild variant={isReports ? "secondary" : "ghost"} size="sm">
                     <a href="/reports">Spend</a>
+                </Button>
+            </div>
+
+            {/* Mobile top-right person icon linking to debug */}
+            <div className="sm:hidden absolute right-2 top-1/2 -translate-y-1/2">
+                <Button asChild variant={isDebug ? "secondary" : "ghost"} size="sm-icon">
+                    <a href="/debug" aria-label="Debug">
+                        <User />
+                    </a>
                 </Button>
             </div>
         </div>

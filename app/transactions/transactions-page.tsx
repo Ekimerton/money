@@ -120,7 +120,7 @@ export default function TransactionsPageClient({ transactions, accounts, categor
                     <h1 className="text-2xl font-bold max-sm:text-4xl">
                         {formattedTotal}
                     </h1>
-                    <h2 className={`text-base ml-2 font-medium font-mono sm:hidden ${changeTotal > 0 ? "text-green-700" : changeTotal < 0 ? "text-red-700" : ""}`}>
+                    <h2 className={`text-base ml-2 font-medium font-mono sm:hidden ${changeTotal < 0 ? "text-green-700" : changeTotal < 0 ? "text-red-700" : ""}`}>
                         {changeSign}
                         {formattedAbsChange}
                         {" "}
@@ -135,7 +135,7 @@ export default function TransactionsPageClient({ transactions, accounts, categor
                     </h2>
                     <h1 className="text-2xl font-bold">
                         {formattedTotal}
-                        <span className={`text-base ml-2 font-mono max-sm:hidden ${changeTotal > 0 ? "text-green-700" : changeTotal < 0 ? "text-red-700" : ""}`}>
+                        <span className={`text-base ml-2 font-mono max-sm:hidden ${changeTotal < 0 ? "text-green-700" : changeTotal < 0 ? "text-red-700" : ""}`}>
                             {changeSign}
                             {formattedAbsChange}
                             {" "}

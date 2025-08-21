@@ -110,7 +110,7 @@ export function CashSavingsInvestmentsChart({ accounts, timeRange }: { accounts:
         <div className="sm:px-4">
             <ChartContainer
                 config={chartConfig}
-                className="aspect-auto h-[300px] w-full"
+                className="aspect-auto h-[300px] max-sm:h-[220px] w-full"
             >
                 <AreaChart data={filteredData}>
                     <ChartTooltip
@@ -141,7 +141,7 @@ export function CashSavingsInvestmentsChart({ accounts, timeRange }: { accounts:
                     />
                     <Area
                         dataKey="investments"
-                        type="natural"
+                        type="bump"
                         stroke={chartConfig.investments.color}
                         fill={chartConfig.investments.color}
                         fillOpacity={0.15}
@@ -151,7 +151,7 @@ export function CashSavingsInvestmentsChart({ accounts, timeRange }: { accounts:
                     />
                     <Area
                         dataKey="savings"
-                        type="natural"
+                        type="bump"
                         stroke={chartConfig.savings.color}
                         fill={chartConfig.savings.color}
                         fillOpacity={0.15}
@@ -161,7 +161,7 @@ export function CashSavingsInvestmentsChart({ accounts, timeRange }: { accounts:
                     />
                     <Area
                         dataKey="cash"
-                        type="natural"
+                        type="bump"
                         stroke="oklch(62% 0.14 155)"
                         fill="oklch(62% 0.14 155)"
                         fillOpacity={0.15}

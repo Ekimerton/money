@@ -2,7 +2,6 @@
 
 import * as React from "react"
 
-import { Card, CardContent } from "@/components/ui/card"
 import { Account, Transaction } from "@/lib/types";
 import { SpendPieChart } from "@/app/transactions/spend-pie-chart";
 import { CumulativeSpendLineChart } from "@/app/transactions/cumulative-spend-line-chart";

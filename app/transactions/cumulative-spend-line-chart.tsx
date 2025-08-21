@@ -122,7 +122,7 @@ export function CumulativeSpendLineChart({ transactions }: { transactions: Trans
     }) as any, [chartConfig, categories])
 
     return (
-        <ChartContainer config={chartConfig} className="aspect-auto h-[300px] w-full">
+        <ChartContainer config={chartConfig} className="aspect-auto h-[300px] max-sm:h-[220px] w-full">
             <AreaChart data={chartData}>
                 <ChartTooltip
                     cursor={false}
@@ -158,7 +158,7 @@ export function CumulativeSpendLineChart({ transactions }: { transactions: Trans
                     <Area
                         key={cat}
                         dataKey={cat}
-                        type="natural"
+                        type="bump"
                         stroke={(chartConfig as any)[cat]?.color}
                         fill={(chartConfig as any)[cat]?.color}
                         fillOpacity={0.15}
