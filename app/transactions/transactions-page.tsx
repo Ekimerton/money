@@ -1,16 +1,9 @@
 "use client"
 
 import * as React from "react"
-import { SpendingAnalysisChart } from "@/app/transactions/spending-analysis-chart"
+import { CumulativeSpendLineChart } from "@/app/transactions/cumulative-spend-line-chart"
 import { TimeRangeSelect, type TimeRangeValue } from "@/components/time-range-select"
 import { MobileTimeRangeTabs } from "@/components/mobile-time-range-tabs"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
 // import { TransactionsTableClient } from "@/components/transactions-table-client"
 import { TransactionsList } from "@/app/transactions/transactions-list"
 import type { Account, Transaction } from "@/lib/types"
@@ -23,7 +16,6 @@ interface TransactionsPageClientProps {
 
 export default function TransactionsPageClient({ transactions, accounts, categories }: TransactionsPageClientProps) {
     const [timeRange, setTimeRange] = React.useState<TimeRangeValue>("30d")
-    const [chartView, setChartView] = React.useState<"spend" | "income" | "cashFlow">("spend")
 
     const filteredTransactions = React.useMemo(() => {
         return transactions.filter((transaction) => {
@@ -43,20 +35,16 @@ export default function TransactionsPageClient({ transactions, accounts, categor
         }).filter(transaction => !transaction.hidden && transaction.category !== "Internal Transfer");
     }, [transactions, timeRange]);
 
-    const { totalSpending, totalIncome, totalCashFlow } = React.useMemo(() => {
+    const totalSpending = React.useMemo(() => {
         let spend = 0;
-        let income = 0;
-        let flow = 0;
         for (const transaction of filteredTransactions) {
             const amount = parseFloat(transaction.amount);
             if (amount < 0) spend += Math.abs(amount);
-            else if (amount > 0) income += amount;
-            flow += amount;
         }
-        return { totalSpending: spend, totalIncome: income, totalCashFlow: flow };
+        return spend;
     }, [filteredTransactions]);
 
-    const { previousSpending, previousIncome, previousCashFlow } = React.useMemo(() => {
+    const previousSpending = React.useMemo(() => {
         const referenceDate = new Date();
         let daysToSubtract = 90;
         if (timeRange === "30d") {
@@ -79,48 +67,35 @@ export default function TransactionsPageClient({ transactions, accounts, categor
             .filter(transaction => !transaction.hidden && transaction.category !== "Internal Transfer");
 
         let spend = 0;
-        let income = 0;
-        let flow = 0;
         for (const transaction of prevTx) {
             const amount = parseFloat(transaction.amount);
             if (amount < 0) spend += Math.abs(amount);
-            else if (amount > 0) income += amount;
-            flow += amount;
         }
-        return { previousSpending: spend, previousIncome: income, previousCashFlow: flow };
+        return spend;
     }, [transactions, timeRange]);
 
-    const currentTotal = React.useMemo(() => {
-        return chartView === "spend" ? totalSpending : chartView === "income" ? totalIncome : totalCashFlow;
-    }, [chartView, totalSpending, totalIncome, totalCashFlow]);
-
-    const previousTotal = React.useMemo(() => {
-        return chartView === "spend" ? previousSpending : chartView === "income" ? previousIncome : previousCashFlow;
-    }, [chartView, previousSpending, previousIncome, previousCashFlow]);
-
-    const changeTotal = currentTotal - previousTotal;
+    const previousTotal = previousSpending;
+    const changeTotal = totalSpending - previousTotal;
     const isInfinitePercent = previousTotal === 0;
     const percentChangeRounded = isInfinitePercent ? 0 : Math.round((changeTotal / previousTotal) * 100);
     const changeSign = changeTotal > 0 ? "+" : changeTotal < 0 ? "-" : "";
     const formattedAbsChange = Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(Math.abs(changeTotal));
     const formattedPercentChange = isInfinitePercent ? "---" : `${changeSign}${Math.abs(percentChangeRounded)}%`;
-
     const formattedTotal = React.useMemo(() => {
-        const value = chartView === "spend" ? totalSpending : chartView === "income" ? totalIncome : totalCashFlow;
-        return Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(value);
-    }, [chartView, totalSpending, totalIncome, totalCashFlow]);
+        return Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(totalSpending);
+    }, [totalSpending]);
 
     return (
         <div className="w-full">
             <div className="p-4 flex max-sm:pt-12 sm:hidden">
                 <div className="grid flex-1 gap-1 max-sm:text-center ">
                     <h2 className="font-bold text-muted-foreground uppercase text-sm font-mono max-sm:hidden">
-                        Net {chartView === "spend" ? "Spend" : chartView === "income" ? "Income" : "Cash Flow"}
+                        Net Spend
                     </h2>
                     <h1 className="text-2xl font-bold max-sm:text-4xl">
                         {formattedTotal}
                     </h1>
-                    <h2 className={`text-base ml-2 font-medium font-mono sm:hidden ${changeTotal < 0 ? "text-green-700" : changeTotal < 0 ? "text-red-700" : ""}`}>
+                    <h2 className={`text-base ml-2 font-medium font-mono sm:hidden ${changeTotal < 0 ? "text-green-700" : changeTotal > 0 ? "text-red-700" : ""}`}>
                         {changeSign}
                         {formattedAbsChange}
                         {" "}
@@ -131,11 +106,11 @@ export default function TransactionsPageClient({ transactions, accounts, categor
             <div className="flex gap-2 space-y-0 p-4 sm:flex-row max-sm:p-2 max-sm:hidden">
                 <div className="grid flex-1 gap-1">
                     <h2 className="font-bold text-muted-foreground uppercase text-sm font-mono">
-                        Net {chartView === "spend" ? "Spend" : chartView === "income" ? "Income" : "Cash Flow"}
+                        Net Spend
                     </h2>
                     <h1 className="text-2xl font-bold">
                         {formattedTotal}
-                        <span className={`text-base ml-2 font-mono max-sm:hidden ${changeTotal < 0 ? "text-green-700" : changeTotal < 0 ? "text-red-700" : ""}`}>
+                        <span className={`text-base ml-2 font-mono max-sm:hidden ${changeTotal < 0 ? "text-green-700" : changeTotal > 0 ? "text-red-700" : ""}`}>
                             {changeSign}
                             {formattedAbsChange}
                             {" "}
@@ -143,32 +118,10 @@ export default function TransactionsPageClient({ transactions, accounts, categor
                         </span>
                     </h1>
                 </div>
-                <Select value={chartView} onValueChange={(value: "spend" | "income" | "cashFlow") => setChartView(value)}>
-                    <SelectTrigger
-                        className="hidden w-[160px] rounded-lg sm:ml-auto sm:flex"
-                        aria-label="Select a view type"
-                    >
-                        <SelectValue placeholder="Select View" />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-xl">
-                        <SelectItem value="spend" className="rounded-lg">
-                            By Spend
-                        </SelectItem>
-                        <SelectItem value="income" className="rounded-lg">
-                            By Income
-                        </SelectItem>
-                        <SelectItem value="cashFlow" className="rounded-lg">
-                            Cash Flow
-                        </SelectItem>
-                    </SelectContent>
-                </Select>
                 <TimeRangeSelect value={timeRange} onValueChange={setTimeRange} />
             </div>
-            <SpendingAnalysisChart
-                transactions={transactions}
-                accounts={accounts}
-                timeRange={timeRange}
-                chartView={chartView}
+            <CumulativeSpendLineChart
+                transactions={filteredTransactions}
             />
             <MobileTimeRangeTabs value={timeRange} onValueChange={setTimeRange} />
             <div>
