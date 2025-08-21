@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { usePathname, useSearchParams } from "next/navigation"
 import { Suspense } from "react"
-import { User } from "lucide-react"
+import { User, Bell } from "lucide-react"
 
 interface AppHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
     title?: string
@@ -102,14 +102,21 @@ export function AppHeader({ title, className }: AppHeaderProps) {
 
             {/* Mobile buttons */}
             <div className="sm:hidden h-full flex items-center justify-center gap-2">
-                <Button asChild variant={isDebug ? "secondary" : "ghost"} size="sm">
-                    <a href="/debug">Debug</a>
+                <Button asChild variant={isDebug ? "secondary" : "ghost"} size="sm" className="w-20">
+                    <a href="/debug">Insights</a>
                 </Button>
-                <Button asChild variant={isAccounts ? "secondary" : "ghost"} size="sm">
+                <Button asChild variant={isAccounts ? "secondary" : "ghost"} size="sm" className="w-20">
                     <a href="/accounts">Accounts</a>
                 </Button>
-                <Button asChild variant={isSpending ? "secondary" : "ghost"} size="sm">
+                <Button asChild variant={isSpending ? "secondary" : "ghost"} size="sm" className="w-20">
                     <a href="/spending">Spending</a>
+                </Button>
+            </div>
+
+            {/* Mobile top-left notifications icon */}
+            <div className="sm:hidden absolute left-2 top-1/2 -translate-y-1/2">
+                <Button variant="ghost" size="sm-icon" aria-label="Notifications">
+                    <Bell />
                 </Button>
             </div>
 
