@@ -3,7 +3,8 @@
 import * as React from "react"
 import { CumulativeSpendLineChart } from "@/app/spending/cumulative-spend-line-chart"
 import { TimeRangeSelect, type TimeRangeValue } from "@/components/time-range-select"
-import { MobileTimeRangeTabs } from "@/components/mobile-time-range-tabs"
+import { DesktopMonthSelect } from "@/components/desktop-month-select"
+import { MobileMonthNavigator } from "@/components/mobile-month-navigator"
 import { TransactionsList } from "@/app/transactions/transactions-list"
 import type { Account, Transaction } from "@/lib/types"
 
@@ -14,24 +15,22 @@ interface SpendingPageProps {
 
 export default function SpendingPageClient({ transactions, accounts }: SpendingPageProps) {
     const [timeRange, setTimeRange] = React.useState<TimeRangeValue>("30d")
+    const [currentMonth, setCurrentMonth] = React.useState<Date>(() => {
+        const now = new Date()
+        return new Date(now.getFullYear(), now.getMonth(), 1)
+    })
+
+    const monthStart = React.useMemo(() => new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1), [currentMonth])
+    const monthEnd = React.useMemo(() => new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0, 23, 59, 59, 999), [currentMonth])
 
     const filteredTransactions = React.useMemo(() => {
-        return transactions.filter((transaction) => {
-            const date = new Date(transaction.transacted_at * 1000);
-            const referenceDate = new Date();
-            let daysToSubtract = 90;
-            if (timeRange === "30d") {
-                daysToSubtract = 30;
-            } else if (timeRange === "7d") {
-                daysToSubtract = 7;
-            } else if (timeRange === "365d") {
-                daysToSubtract = 365;
-            }
-            const startDate = new Date(referenceDate);
-            startDate.setDate(startDate.getDate() - daysToSubtract);
-            return date >= startDate;
-        }).filter(transaction => !transaction.hidden && transaction.category !== "Internal Transfer");
-    }, [transactions, timeRange]);
+        return transactions
+            .filter((transaction) => {
+                const date = new Date(transaction.transacted_at * 1000)
+                return date >= monthStart && date <= monthEnd
+            })
+            .filter(transaction => !transaction.hidden && transaction.category !== "Internal Transfer")
+    }, [transactions, monthStart, monthEnd])
 
     const totalSpending = React.useMemo(() => {
         let spend = 0;
@@ -43,34 +42,23 @@ export default function SpendingPageClient({ transactions, accounts }: SpendingP
     }, [filteredTransactions]);
 
     const previousSpending = React.useMemo(() => {
-        const referenceDate = new Date();
-        let daysToSubtract = 90;
-        if (timeRange === "30d") {
-            daysToSubtract = 30;
-        } else if (timeRange === "7d") {
-            daysToSubtract = 7;
-        } else if (timeRange === "365d") {
-            daysToSubtract = 365;
-        }
-        const currentStartDate = new Date(referenceDate);
-        currentStartDate.setDate(currentStartDate.getDate() - daysToSubtract);
-        const previousStartDate = new Date(currentStartDate);
-        previousStartDate.setDate(previousStartDate.getDate() - daysToSubtract);
+        const prevStart = new Date(monthStart.getFullYear(), monthStart.getMonth() - 1, 1)
+        const prevEnd = new Date(monthStart.getFullYear(), monthStart.getMonth(), 0, 23, 59, 59, 999)
 
         const prevTx = transactions
             .filter((transaction) => {
-                const date = new Date(transaction.transacted_at * 1000);
-                return date >= previousStartDate && date < currentStartDate;
+                const date = new Date(transaction.transacted_at * 1000)
+                return date >= prevStart && date <= prevEnd
             })
-            .filter(transaction => !transaction.hidden && transaction.category !== "Internal Transfer");
+            .filter(transaction => !transaction.hidden && transaction.category !== "Internal Transfer")
 
-        let spend = 0;
+        let spend = 0
         for (const transaction of prevTx) {
-            const amount = parseFloat(transaction.amount);
-            if (amount < 0) spend += Math.abs(amount);
+            const amount = parseFloat(transaction.amount)
+            if (amount < 0) spend += Math.abs(amount)
         }
-        return spend;
-    }, [transactions, timeRange]);
+        return spend
+    }, [transactions, monthStart])
 
     const previousTotal = previousSpending;
     const changeTotal = totalSpending - previousTotal;
@@ -116,17 +104,20 @@ export default function SpendingPageClient({ transactions, accounts }: SpendingP
                         </span>
                     </h1>
                 </div>
-                <TimeRangeSelect value={timeRange} onValueChange={setTimeRange} />
+                <DesktopMonthSelect value={currentMonth} onValueChange={setCurrentMonth} monthsBack={6} />
             </div>
             <CumulativeSpendLineChart
                 transactions={filteredTransactions}
             />
-            <MobileTimeRangeTabs value={timeRange} onValueChange={setTimeRange} />
+            <MobileMonthNavigator
+                currentMonth={currentMonth}
+                onMonthChange={setCurrentMonth}
+                maxMonth={new Date()}
+            />
             <div>
                 <TransactionsList
-                    transactions={transactions}
+                    transactions={filteredTransactions}
                     accounts={accounts}
-                    timeRange={timeRange}
                 />
             </div>
         </div>

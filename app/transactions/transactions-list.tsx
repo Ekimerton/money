@@ -2,30 +2,20 @@
 
 import * as React from "react"
 import type { Account, Transaction } from "@/lib/types"
-import type { TimeRangeValue } from "@/components/time-range-select"
 
 interface TransactionsListProps {
     transactions: Transaction[]
     accounts: Account[]
-    timeRange: TimeRangeValue
 }
 
-export function TransactionsList({ transactions, accounts, timeRange }: TransactionsListProps) {
+export function TransactionsList({ transactions, accounts }: TransactionsListProps) {
     const filteredTransactions = React.useMemo(() => {
-        const referenceDate = new Date();
-        let daysToSubtract = 90;
-        if (timeRange === "30d") daysToSubtract = 30;
-        else if (timeRange === "7d") daysToSubtract = 7;
-        else if (timeRange === "365d") daysToSubtract = 365;
-        const startDate = new Date(referenceDate);
-        startDate.setDate(startDate.getDate() - daysToSubtract);
         return transactions.filter(t => {
             if (t.hidden) return false;
-            if (typeof t.transacted_at !== "number" || t.transacted_at === null) return true;
-            const date = new Date(t.transacted_at * 1000);
-            return date >= startDate;
+            if (Number(t.amount) > 0) return false;
+            return true;
         });
-    }, [transactions, timeRange]);
+    }, [transactions]);
 
     type Group = { key: string; label: string; sortKey: number; items: Transaction[] };
 
