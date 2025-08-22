@@ -11,7 +11,7 @@ interface MobileTimeRangeTabsProps {
 
 export function MobileTimeRangeTabs({ value, onValueChange }: MobileTimeRangeTabsProps) {
     return (
-        <div className="sm:hidden px-2 flex justify-center w-full pt-4 pb-0">
+        <div className="sm:hidden px-4 flex justify-center w-full pt-4 pb-0">
             <Tabs value={value} onValueChange={(v) => onValueChange(v as TimeRangeValue)} className="w-full justify-center flex">
                 <TabsList className="w-full">
                     <TabsTrigger value="7d" className="flex-1">7D</TabsTrigger>

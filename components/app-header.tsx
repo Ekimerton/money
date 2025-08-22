@@ -101,14 +101,14 @@ export function AppHeader({ title, className }: AppHeaderProps) {
             </div>
 
             {/* Mobile buttons */}
-            <div className="sm:hidden h-full flex items-center justify-center gap-2">
-                <Button asChild variant={isDebug ? "secondary" : "ghost"} size="sm" className="w-20">
+            <div className="sm:hidden h-full flex items-center justify-center">
+                <Button asChild variant={isDebug ? "secondary" : "ghost"} size="sm">
                     <a href="/debug">Insights</a>
                 </Button>
-                <Button asChild variant={isAccounts ? "secondary" : "ghost"} size="sm" className="w-20">
+                <Button asChild variant={isAccounts ? "secondary" : "ghost"} size="sm">
                     <a href="/accounts">Accounts</a>
                 </Button>
-                <Button asChild variant={isSpending ? "secondary" : "ghost"} size="sm" className="w-20">
+                <Button asChild variant={isSpending ? "secondary" : "ghost"} size="sm">
                     <a href="/spending">Spending</a>
                 </Button>
             </div>
