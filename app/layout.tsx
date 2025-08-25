@@ -47,7 +47,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <SidebarProvider>
-          <div className="flex h-dvh w-screen dark">
+          <div className="flex h-dvh w-screen">
             <AppSidebar className="h-full" />
             <main className="flex flex-col flex-1">
               <AppHeader title={pageTitle} />
