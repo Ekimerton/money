@@ -1,5 +1,6 @@
 import * as React from "react"
-import { Cog, Banknote, Landmark, LayoutDashboard, BanknoteArrowDown, Link } from "lucide-react"
+import { Cog, Banknote, Landmark, LayoutDashboard, BanknoteArrowDown } from "lucide-react"
+import Link from "next/link"
 
 import {
   Sidebar,
@@ -20,7 +21,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent className="p-2 z-10">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild>
+            <SidebarMenuButton>
               <Link href={"/accounts"}>
                 <Landmark />
                 Accounts
