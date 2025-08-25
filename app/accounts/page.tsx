@@ -4,7 +4,9 @@ import { Account } from "@/lib/types";
 
 export default async function AccountsPage() {
     const accountsResponse = await fetch('http://localhost:3000/api/get-accounts?days=365', {
-        cache: 'no-store'
+        next: {
+            tags: ['accounts', 'transactions']
+        }
     });
     if (!accountsResponse.ok) {
         throw new Error(`Error: ${accountsResponse.status}`);

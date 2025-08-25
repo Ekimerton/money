@@ -7,21 +7,33 @@ export default async function TransactionsTablePage({ searchParams }: { searchPa
     const accountId = (resolvedSearchParams.accountId ?? resolvedSearchParams.account) as string | undefined;
 
     const transactionsUrl = accountId ? `http://localhost:3000/api/get-transactions?accountId=${encodeURIComponent(accountId)}` : 'http://localhost:3000/api/get-transactions';
-    const transactionsResponse = await fetch(transactionsUrl);
+    const transactionsResponse = await fetch(transactionsUrl, {
+        next: {
+            tags: ['accounts', 'transactions']
+        }
+    });
     if (!transactionsResponse.ok) {
         throw new Error(`Error: ${transactionsResponse.status}`);
     }
     const transactionsData = await transactionsResponse.json();
     const transactions: Transaction[] = transactionsData.transactions;
 
-    const accountsResponse = await fetch('http://localhost:3000/api/get-accounts');
+    const accountsResponse = await fetch('http://localhost:3000/api/get-accounts', {
+        next: {
+            tags: ['accounts', 'transactions']
+        }
+    });
     if (!accountsResponse.ok) {
         throw new Error(`Error: ${accountsResponse.status}`);
     }
     const accountsData = await accountsResponse.json();
     const accounts: Account[] = accountsData.accounts;
 
-    const categoriesResponse = await fetch('http://localhost:3000/api/get-categories');
+    const categoriesResponse = await fetch('http://localhost:3000/api/get-categories', {
+        next: {
+            tags: ['accounts', 'transactions']
+        }
+    });
     if (!categoriesResponse.ok) {
         throw new Error(`Error fetching categories: ${categoriesResponse.status}`);
     }

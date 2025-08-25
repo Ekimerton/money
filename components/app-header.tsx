@@ -30,7 +30,11 @@ function AccountCrumb() {
         let isMounted = true;
         const fetchAccountName = async () => {
             try {
-                const response = await fetch('/api/get-accounts');
+                const response = await fetch('/api/get-accounts', {
+                    next: {
+                        tags: ['accounts', 'transactions']
+                    }
+                });
                 if (!response.ok) {
                     throw new Error(`Error fetching accounts: ${response.statusText}`);
                 }
