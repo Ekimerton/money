@@ -8,6 +8,7 @@ import {
     BreadcrumbList,
     BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { usePathname, useSearchParams } from "next/navigation"
 import { Suspense } from "react"
@@ -107,13 +108,13 @@ export function AppHeader({ title, className }: AppHeaderProps) {
             {/* Mobile buttons */}
             <div className="sm:hidden h-full flex items-center justify-center">
                 <Button asChild variant={isDebug ? "secondary" : "ghost"} size="sm">
-                    <a href="/debug">Insights</a>
+                    <Link href="/debug">Insights</Link>
                 </Button>
                 <Button asChild variant={isAccounts ? "secondary" : "ghost"} size="sm">
-                    <a href="/accounts">Accounts</a>
+                    <Link href="/accounts">Accounts</Link>
                 </Button>
                 <Button asChild variant={isSpending ? "secondary" : "ghost"} size="sm">
-                    <a href="/spending">Spending</a>
+                    <Link href="/spending">Spending</Link>
                 </Button>
             </div>
 
@@ -127,9 +128,9 @@ export function AppHeader({ title, className }: AppHeaderProps) {
             {/* Mobile top-right person icon linking to debug */}
             <div className="sm:hidden absolute right-2 top-1/2 -translate-y-1/2">
                 <Button asChild variant={isDebug ? "secondary" : "ghost"} size="sm-icon">
-                    <a href="/debug" aria-label="Debug">
+                    <Link href="/debug" aria-label="Debug">
                         <User />
-                    </a>
+                    </Link>
                 </Button>
             </div>
         </div>
