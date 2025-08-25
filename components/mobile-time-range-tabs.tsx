@@ -13,7 +13,7 @@ export function MobileTimeRangeTabs({ value, onValueChange }: MobileTimeRangeTab
     return (
         <div className="sm:hidden px-4 flex justify-center w-full pt-4 pb-0">
             <Tabs value={value} onValueChange={(v) => onValueChange(v as TimeRangeValue)} className="w-full justify-center flex">
-                <TabsList className="w-full">
+                <TabsList className="w-full bg-neutral-100 dark:bg-neutral-900">
                     <TabsTrigger value="7d" className="flex-1">7D</TabsTrigger>
                     <TabsTrigger value="30d" className="flex-1">30D</TabsTrigger>
                     <TabsTrigger value="90d" className="flex-1">3M</TabsTrigger>

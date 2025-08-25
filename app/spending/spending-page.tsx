@@ -78,10 +78,10 @@ export default function SpendingPageClient({ transactions, accounts }: SpendingP
                     <h2 className="font-bold text-muted-foreground uppercase text-sm font-mono max-sm:hidden">
                         Net Spend
                     </h2>
-                    <h1 className="text-2xl font-bold max-sm:text-4xl">
+                    <h1 className="text-2xl font-bold max-sm:text-4xl text-neutral-950 dark:text-neutral-50">
                         {formattedTotal}
                     </h1>
-                    <h2 className={`text-base ml-2 font-medium font-mono sm:hidden ${changeTotal < 0 ? "text-green-700" : changeTotal > 0 ? "text-red-700" : ""}`}>
+                    <h2 className={`text-base ml-2 font-medium font-mono sm:hidden ${changeTotal < 0 ? "text-green-700" : changeTotal > 0 ? "text-red-700" : "text-neutral-500"} `}>
                         {changeSign}
                         {formattedAbsChange}
                         {" "}
@@ -94,7 +94,7 @@ export default function SpendingPageClient({ transactions, accounts }: SpendingP
                     <h2 className="font-bold text-muted-foreground uppercase text-sm font-mono">
                         Net Spend
                     </h2>
-                    <h1 className="text-2xl font-bold">
+                    <h1 className="text-2xl font-bold text-neutral-950 dark:text-neutral-50">
                         {formattedTotal}
                         <span className={`text-base ml-2 font-mono max-sm:hidden ${changeTotal < 0 ? "text-green-700" : changeTotal > 0 ? "text-red-700" : ""}`}>
                             {changeSign}

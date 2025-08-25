@@ -53,27 +53,27 @@ export function MobileMonthNavigator({
     }
 
     return (
-        <div className={`sm:hidden px-4 pt-4 pb-0 w-full flex justify-center ${className}`}>
+        <div className={`sm:hidden px-4 pt-4 pb-0 w-full flex justify-center ${className} text-neutral-950 dark:text-neutral-50`}>
             <div className="w-full flex items-center justify-between gap-2">
                 <Button
                     type="button"
                     variant="outline"
                     size="icon"
-                    className="rounded-lg"
+                    className="rounded-lg bg-neutral-100 dark:bg-neutral-900"
                     onClick={() => changeMonth(-1)}
                     disabled={!canGoBack}
                     aria-label="Previous month"
                 >
                     &lt;
                 </Button>
-                <div className="flex-1 text-center text-sm font-medium py-2 rounded-lg border bg-background">
+                <div className="flex-1 text-center text-sm font-medium py-2 rounded-lg border bg-neutral-100 dark:bg-neutral-900">
                     {formatMonthLabel(normalizedCurrent)}
                 </div>
                 <Button
                     type="button"
                     variant="outline"
                     size="icon"
-                    className="rounded-lg"
+                    className="rounded-lg bg-neutral-100 dark:bg-neutral-900"
                     onClick={() => changeMonth(1)}
                     disabled={!canGoForward}
                     aria-label="Next month"

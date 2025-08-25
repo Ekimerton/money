@@ -136,7 +136,7 @@ export function CumulativeSpendLineChart({ transactions }: { transactions: Trans
                                     ? categories.reduce((acc, cat) => acc + (Number(row?.[cat]) || 0), 0)
                                     : 0
                                 return (
-                                    <div className="flex justify-between w-full pb-2">
+                                    <div className="flex justify-between w-full pb-2 text-neutral-950 dark:text-neutral-50">
                                         <p>
                                             {new Date(dateValue + "T00:00:00").toLocaleDateString("en-US", {
                                                 month: "short",
@@ -167,7 +167,7 @@ export function CumulativeSpendLineChart({ transactions }: { transactions: Trans
                         stackId={1}
                     />
                 ))}
-                <ChartLegend content={<ChartLegendContent />} className="max-sm:hidden" />
+                <ChartLegend content={<ChartLegendContent />} className="max-sm:hidden text-neutral-950 dark:text-neutral-50" />
             </AreaChart>
         </ChartContainer>
     )

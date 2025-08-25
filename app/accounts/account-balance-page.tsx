@@ -90,9 +90,9 @@ export function AccountBalancePage({ accounts }: { accounts: Account[] }) {
                     <h2 className="font-bold text-muted-foreground uppercase text-sm font-mono max-sm:hidden">
                         Net Worth
                     </h2>
-                    <h1 className="text-2xl font-bold max-sm:text-4xl">
+                    <h1 className="text-2xl font-bold max-sm:text-4xl text-neutral-900 dark:text-neutral-100">
                         {Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(finalNetWorth)}
-                        <span className={`text-base ml-2 font-mono max-sm:hidden ${changeNetWorth > 0 ? "text-green-700" : changeNetWorth < 0 ? "text-red-700" : ""}`}>
+                        <span className={`text-base ml-2 font-mono max-sm:hidden ${changeNetWorth > 0 ? "text-green-700" : changeNetWorth < 0 ? "text-red-700" : "text-neutral-500"} `}>
                             {changeSign}
                             {formattedAbsChange}
                             {" "}

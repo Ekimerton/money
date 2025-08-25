@@ -57,7 +57,7 @@ export function TransactionsList({ transactions, accounts }: TransactionsListPro
         <div className="p-4 pt-2">
             {groups.map(group => (
                 <div key={group.key}>
-                    <div className="px-0 pb-1 pt-4 text-xs text-muted-foreground font-semibold">{group.label}</div>
+                    <div className="px-0 pb-1 pt-4 text-xs text-neutral-950 dark:text-neutral-50 font-semibold">{group.label}</div>
                     {group.items.map((t) => {
                         const account = getAccountFor(t.account_id);
                         const currency = account?.currency || 'USD';
@@ -68,17 +68,17 @@ export function TransactionsList({ transactions, accounts }: TransactionsListPro
                             <div key={t.id} className="block border-b last:border-b-0 pt-1 pb-2 hover:bg-muted/60">
                                 <div className="flex w-full items-center justify-between text-left font-medium">
                                     <div className="flex items-center space-x-1">
-                                        <span className="truncate max-w-[60vw]">{t.payee} [{t.description}]</span>
+                                        <span className="truncate max-w-[60vw] text-neutral-800 dark:text-neutral-300">{t.payee} [{t.description}]</span>
                                     </div>
-                                    <div className="flex items-center space-x-1">
+                                    <div className="flex items-center space-x-1 text-neutral-800 dark:text-neutral-300">
                                         <span>
                                             {new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amountNumber)}
                                         </span>
                                     </div>
                                 </div>
-                                <div className="text-sm text-neutral-600">
+                                <div className="text-sm">
                                     <div className="flex justify-between">
-                                        <span className={`truncate max-w-[60vw] ${categoryClass}`}>{t.category}</span>
+                                        <span className={`truncate max-w-[60vw] text-neutral-600 dark:text-neutral-400 ${categoryClass}`}>{t.category}</span>
                                         <span className="truncate max-w-[40vw]">{ }</span>
                                     </div>
                                 </div>

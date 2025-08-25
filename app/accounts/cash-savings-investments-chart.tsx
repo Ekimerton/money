@@ -121,7 +121,7 @@ export function CashSavingsInvestmentsChart({ accounts, timeRange }: { accounts:
                                     if (!payload || payload.length === 0) return ""
                                     const dateValue = payload[0].payload.date
                                     return (
-                                        <div className="flex justify-between w-full pb-2">
+                                        <div className="flex justify-between w-full pb-2 text-neutral-950 dark:text-neutral-50">
                                             <p>
                                                 {new Date(dateValue + "T00:00:00").toLocaleDateString("en-US", {
                                                     month: "short",
@@ -169,7 +169,7 @@ export function CashSavingsInvestmentsChart({ accounts, timeRange }: { accounts:
                         dot={false}
                         stackId={1}
                     />
-                    <ChartLegend content={<ChartLegendContent />} className="max-sm:hidden" />
+                    <ChartLegend content={<ChartLegendContent />} className="max-sm:hidden text-neutral-950 dark:text-neutral-50" />
                 </AreaChart>
             </ChartContainer>
         </div>

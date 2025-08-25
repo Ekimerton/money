@@ -146,11 +146,11 @@ export function AccountsTableClient({ accounts, timeRange }: AccountsTableClient
                     <Link
                         key={account.id}
                         prefetch={true}
-                        href={`/reports/?account=${encodeURIComponent(account.id)}`}
+                        href={`/spending/?account=${encodeURIComponent(account.id)}`}
                         className="block border-b last:border-b-0 py-2 hover:bg-muted/60"
                     >
                         <div className="flex w-full items-center justify-between text-left font-medium">
-                            <div className="flex items-center space-x-1">
+                            <div className="flex items-center space-x-1 text-neutral-900 dark:text-neutral-100">
                                 <span>{account.name}</span>
                                 <Button
                                     variant="ghost"
@@ -165,7 +165,7 @@ export function AccountsTableClient({ accounts, timeRange }: AccountsTableClient
                                     <EllipsisIcon className="size-4 text-muted-foreground" />
                                 </Button>
                             </div>
-                            <div className="flex items-center space-x-2">
+                            <div className="flex items-center space-x-2 text-neutral-900 dark:text-neutral-100">
                                 <span className="">
                                     {new Intl.NumberFormat('en-US', {
                                         style: 'currency',
@@ -174,7 +174,7 @@ export function AccountsTableClient({ accounts, timeRange }: AccountsTableClient
                                 </span>
                             </div>
                         </div>
-                        <div className="pt-1 text-sm text-neutral-600">
+                        <div className="pt-1 text-sm text-neutral-600 dark:text-neutral-400">
                             <div className="flex justify-between">
                                 {account.type}
                                 <span className={change.className}>{change.percentValue}</span>
