@@ -2,6 +2,8 @@
 
 import * as React from "react"
 import type { Account, Transaction } from "@/lib/types"
+import { CategoryPopover } from "@/components/ui/category-popover"
+import { toast } from "sonner"
 
 interface TransactionsListProps {
     transactions: Transaction[]
@@ -9,13 +11,80 @@ interface TransactionsListProps {
 }
 
 export function TransactionsList({ transactions, accounts }: TransactionsListProps) {
+    const [localTransactions, setLocalTransactions] = React.useState<Transaction[]>(transactions)
+    const [existingCategories, setExistingCategories] = React.useState<string[]>([])
+
+    React.useEffect(() => {
+        setLocalTransactions(transactions)
+    }, [transactions])
+
+    React.useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const res = await fetch('/api/get-categories', { next: { tags: ['accounts', 'transactions'] } as any })
+                if (!res.ok) throw new Error(`Failed to fetch categories: ${res.status}`)
+                const data = await res.json()
+                setExistingCategories(data.categories ?? [])
+            } catch (e) {
+                console.error(e)
+            }
+        }
+        fetchCategories()
+    }, [])
+
+    const updateTransactionCategory = React.useCallback(async (transactionId: string, newCategory: string) => {
+        try {
+            const response = await fetch('/api/update-transaction-category', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ transactionId, newCategory })
+            })
+            if (!response.ok) throw new Error(`Error updating category: ${response.statusText}`)
+            const updated = await response.json()
+            setLocalTransactions(prev => {
+                const next = prev.map(t => t.id === transactionId ? { ...t, category: updated.category } : t)
+                const original = prev.find(t => t.id === transactionId)
+                if (original?.payee) {
+                    const byPayee = next.filter(t => t.payee === original.payee)
+                    if (byPayee.length > 3) {
+                        toast(`Would you like to categorize all transactions from ${original.payee} as ${newCategory}?`, {
+                            id: `bulk-category-prompt-${original.payee}-${newCategory}`,
+                            action: {
+                                label: "Yes",
+                                onClick: async () => {
+                                    try {
+                                        const bulkRes = await fetch('/api/update-transactions-by-payee', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ payee: original.payee, newCategory })
+                                        })
+                                        if (!bulkRes.ok) throw new Error(`Error bulk updating categories: ${bulkRes.statusText}`)
+                                        setLocalTransactions(prev2 => prev2.map(t => t.payee === original.payee ? { ...t, category: newCategory } : t))
+                                        toast.success(`Updated ${byPayee.length} transactions from ${original.payee} to ${newCategory}.`)
+                                    } catch (err) {
+                                        console.error(err)
+                                        toast.error("Failed to update transactions.")
+                                    }
+                                }
+                            }
+                        })
+                    }
+                }
+                return next
+            })
+        } catch (err: any) {
+            console.error("Failed to update category:", err)
+            toast.error("Failed to update category: " + err.message)
+        }
+    }, [])
+
     const filteredTransactions = React.useMemo(() => {
-        return transactions.filter(t => {
+        return localTransactions.filter(t => {
             if (t.hidden) return false;
             if (Number(t.amount) > 0) return false;
             return true;
         });
-    }, [transactions]);
+    }, [localTransactions]);
 
     type Group = { key: string; label: string; sortKey: number; items: Transaction[] };
 
@@ -65,24 +134,32 @@ export function TransactionsList({ transactions, accounts }: TransactionsListPro
                         const categoryClass = t.category === "Uncategorized" ? "text-red-700" : "text-neutral-700";
 
                         return (
-                            <div key={t.id} className="block border-b last:border-b-0 pt-1 pb-2 hover:bg-muted/60">
-                                <div className="flex w-full items-center justify-between text-left font-medium">
-                                    <div className="flex items-center space-x-1">
-                                        <span className="truncate max-w-[60vw] text-neutral-800 dark:text-neutral-300">{t.payee} [{t.description}]</span>
+                            <CategoryPopover
+                                key={t.id}
+                                defaultValue={t.category}
+                                suggestions={[...new Set([...existingCategories, 'Groceries', 'Rent', 'Salary', 'Transport', 'Utilities', 'Dining'])]}
+                                onSubmit={(newCategory) => updateTransactionCategory(t.id, newCategory)}
+                                trigger={
+                                    <div className="block border-b last:border-b-0 pt-1 pb-2 hover:bg-muted/60">
+                                        <div className="flex w-full items-center justify-between text-left font-medium">
+                                            <div className="flex items-center space-x-1">
+                                                <span className="truncate max-w-[60vw] text-neutral-800 dark:text-neutral-300">{t.payee} [{t.description}]</span>
+                                            </div>
+                                            <div className="flex items-center space-x-1 text-neutral-800 dark:text-neutral-300">
+                                                <span>
+                                                    {new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amountNumber)}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className="text-sm">
+                                            <div className="flex justify-between">
+                                                <span className={`truncate max-w-[60vw] text-neutral-600 dark:text-neutral-400 ${categoryClass}`}>{t.category}</span>
+                                                <span className="truncate max-w-[40vw]">{ }</span>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div className="flex items-center space-x-1 text-neutral-800 dark:text-neutral-300">
-                                        <span>
-                                            {new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amountNumber)}
-                                        </span>
-                                    </div>
-                                </div>
-                                <div className="text-sm">
-                                    <div className="flex justify-between">
-                                        <span className={`truncate max-w-[60vw] text-neutral-600 dark:text-neutral-400 ${categoryClass}`}>{t.category}</span>
-                                        <span className="truncate max-w-[40vw]">{ }</span>
-                                    </div>
-                                </div>
-                            </div>
+                                }
+                            />
                         );
                     })}
                 </div>

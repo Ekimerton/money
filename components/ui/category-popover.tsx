@@ -1,17 +1,22 @@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface CategoryPopoverProps {
     defaultValue: string;
     suggestions: string[];
     onSubmit: (value: string) => void;
+    trigger?: React.ReactNode;
 }
 
-export function CategoryPopover({ defaultValue, suggestions, onSubmit }: CategoryPopoverProps) {
+export function CategoryPopover({ defaultValue, suggestions, onSubmit, trigger }: CategoryPopoverProps) {
     const [inputValue, setInputValue] = useState(defaultValue);
     const [open, setOpen] = useState(false); // Add state to control popover open/closed state
+
+    useEffect(() => {
+        setInputValue(defaultValue);
+    }, [defaultValue]);
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
@@ -28,12 +33,16 @@ export function CategoryPopover({ defaultValue, suggestions, onSubmit }: Categor
     return (
         <Popover open={open} onOpenChange={setOpen}> {/* Bind open state to Popover component */}
             <PopoverTrigger asChild>
-                <Badge
-                    variant={defaultValue === 'Uncategorized' ? 'outline' : 'default'}
-                    className="cursor-pointer"
-                >
-                    {defaultValue}
-                </Badge>
+                {trigger ? (
+                    trigger
+                ) : (
+                    <Badge
+                        variant={defaultValue === 'Uncategorized' ? 'outline' : 'default'}
+                        className="cursor-pointer"
+                    >
+                        {defaultValue}
+                    </Badge>
+                )}
             </PopoverTrigger>
             <PopoverContent className="w-64">
                 <div className="grid gap-2">
