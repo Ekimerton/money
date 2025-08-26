@@ -2,6 +2,7 @@
 
 import React from "react"
 import { Button } from "@/components/ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface MobileMonthNavigatorProps {
     currentMonth: Date
@@ -9,6 +10,9 @@ interface MobileMonthNavigatorProps {
     minMonth?: Date
     maxMonth?: Date
     className?: string
+    categories?: string[]
+    selectedCategory?: string
+    onCategoryChange?: (category: string) => void
 }
 
 function getStartOfMonth(date: Date): Date {
@@ -28,6 +32,9 @@ export function MobileMonthNavigator({
     minMonth,
     maxMonth,
     className = "",
+    categories = [],
+    selectedCategory = "",
+    onCategoryChange,
 }: MobileMonthNavigatorProps) {
     const normalizedCurrent = React.useMemo(() => getStartOfMonth(currentMonth), [currentMonth])
     const normalizedMin = React.useMemo(() => (minMonth ? getStartOfMonth(minMonth) : undefined), [minMonth])
@@ -83,7 +90,21 @@ export function MobileMonthNavigator({
                 </Button>
             </div>
             <div className="flex-1 flex justify-end">
-                <Button type="button" variant="outline" size="default" className="ml-auto">Filter</Button>
+                {/** Radix Select does not allow empty string as an item value, use a sentinel */}
+                <Select
+                    value={selectedCategory && selectedCategory.trim() !== "" ? selectedCategory : "__ALL__"}
+                    onValueChange={(value) => onCategoryChange?.(value === "__ALL__" ? "" : value)}
+                >
+                    <SelectTrigger className="ml-auto rounded-lg w-20">
+                        <SelectValue>{selectedCategory || "All"}</SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="__ALL__">All</SelectItem>
+                        {categories.map((cat) => (
+                            <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
             </div>
         </div>
     )

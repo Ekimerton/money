@@ -7,6 +7,7 @@ import { DesktopMonthSelect } from "@/components/desktop-month-select"
 import { MobileMonthNavigator } from "@/components/mobile-month-navigator"
 import { TransactionsList } from "@/app/transactions/transactions-list"
 import type { Account, Transaction } from "@/lib/types"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface SpendingPageProps {
     transactions: Transaction[]
@@ -19,6 +20,7 @@ export default function SpendingPageClient({ transactions, accounts }: SpendingP
         const now = new Date()
         return new Date(now.getFullYear(), now.getMonth(), 1)
     })
+    const [selectedCategory, setSelectedCategory] = React.useState<string>("")
 
     const monthStart = React.useMemo(() => new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1), [currentMonth])
     const monthEnd = React.useMemo(() => new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0, 23, 59, 59, 999), [currentMonth])
@@ -31,6 +33,21 @@ export default function SpendingPageClient({ transactions, accounts }: SpendingP
             })
             .filter(transaction => !transaction.hidden && transaction.category !== "Internal Transfer")
     }, [transactions, monthStart, monthEnd])
+
+    const categories = React.useMemo(() => {
+        const set = new Set<string>()
+        for (const tx of filteredTransactions) {
+            const amount = Number(tx.amount)
+            if (!(amount < 0)) continue
+            set.add(tx.category || "Uncategorized")
+        }
+        return Array.from(set).sort((a, b) => a.localeCompare(b))
+    }, [filteredTransactions])
+
+    const listTransactions = React.useMemo(() => {
+        if (!selectedCategory) return filteredTransactions
+        return filteredTransactions.filter(t => (t.category || "Uncategorized") === selectedCategory)
+    }, [filteredTransactions, selectedCategory])
 
     const totalSpending = React.useMemo(() => {
         let spend = 0;
@@ -113,10 +130,30 @@ export default function SpendingPageClient({ transactions, accounts }: SpendingP
                 currentMonth={currentMonth}
                 onMonthChange={setCurrentMonth}
                 maxMonth={new Date()}
+                categories={categories}
+                selectedCategory={selectedCategory}
+                onCategoryChange={setSelectedCategory}
             />
+            {/* Desktop-only category filter above the transactions list */}
+            <div className="hidden sm:flex justify-end px-4 mt-2">
+                <Select
+                    value={selectedCategory && selectedCategory.trim() !== "" ? selectedCategory : "__ALL__"}
+                    onValueChange={(value) => setSelectedCategory(value === "__ALL__" ? "" : value)}
+                >
+                    <SelectTrigger className="rounded-lg w-40">
+                        <SelectValue>{selectedCategory || "All"}</SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="__ALL__">All</SelectItem>
+                        {categories.map((cat) => (
+                            <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
             <div>
                 <TransactionsList
-                    transactions={filteredTransactions}
+                    transactions={listTransactions}
                     accounts={accounts}
                 />
             </div>
