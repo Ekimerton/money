@@ -71,6 +71,7 @@ export function AppHeader({ title, className }: AppHeaderProps) {
     const pathname = usePathname()
     const pathSegments = pathname.split("/").filter(Boolean)
     const isDebug = pathname.startsWith("/debug")
+    const isInsights = pathname.startsWith("/insights")
     const isAccounts = pathname.startsWith("/accounts")
     const isSpending = pathname.startsWith("/spending")
 
@@ -107,8 +108,8 @@ export function AppHeader({ title, className }: AppHeaderProps) {
 
             {/* Mobile buttons */}
             <div className="sm:hidden h-full flex items-center justify-center">
-                <Button asChild variant={isDebug ? "secondary" : "ghost"} size="sm">
-                    <Link href="/debug">Insights</Link>
+                <Button asChild variant={isInsights ? "secondary" : "ghost"} size="sm">
+                    <Link href="/insights">Insights</Link>
                 </Button>
                 <Button asChild variant={isAccounts ? "secondary" : "ghost"} size="sm">
                     <Link href="/accounts">Accounts</Link>
