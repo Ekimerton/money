@@ -60,6 +60,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild>
+              <Link href={"/settings"}>
+                <Cog />
+                Settings
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
         </SidebarMenu>
       </SidebarContent>
       <SidebarRail />

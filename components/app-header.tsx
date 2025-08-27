@@ -70,7 +70,7 @@ function AccountCrumb() {
 export function AppHeader({ title, className }: AppHeaderProps) {
     const pathname = usePathname()
     const pathSegments = pathname.split("/").filter(Boolean)
-    const isDebug = pathname.startsWith("/debug")
+    const isSettings = pathname.startsWith("/settings")
     const isInsights = pathname.startsWith("/insights")
     const isAccounts = pathname.startsWith("/accounts")
     const isSpending = pathname.startsWith("/spending")
@@ -126,10 +126,10 @@ export function AppHeader({ title, className }: AppHeaderProps) {
                 </Button>
             </div>
 
-            {/* Mobile top-right person icon linking to debug */}
+            {/* Mobile top-right person icon linking to settings */}
             <div className="sm:hidden absolute right-2 top-1/2 -translate-y-1/2">
-                <Button asChild variant={isDebug ? "secondary" : "ghost"} size="sm-icon">
-                    <Link href="/debug" aria-label="Debug">
+                <Button asChild variant={isSettings ? "secondary" : "ghost"} size="sm-icon">
+                    <Link href="/settings" aria-label="Settings">
                         <User />
                     </Link>
                 </Button>
