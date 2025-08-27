@@ -70,7 +70,7 @@ export function CumulativeSpendLineChart({ transactions }: { transactions: Trans
             return { chartData: [], categories: [], chartConfig: {} as ChartConfig }
         }
 
-        const allCategories = Object.keys(categoryTotals).sort((a, b) => categoryTotals[b] - categoryTotals[a])
+        const allCategories = Object.keys(categoryTotals).sort((a, b) => a.localeCompare(b))
         const allDates = enumerateDatesInclusive(minISO, maxISO)
 
         const running: Record<string, number> = {}
