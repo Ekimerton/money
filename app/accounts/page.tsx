@@ -1,22 +1,67 @@
-import { AccountBalancePage } from "./account-balance-page";
-import { AccountsTableClient } from "./accounts-table-client";
 import { Account } from "@/lib/types";
+import Database from 'better-sqlite3';
+import path from 'path';
+import { AccountBalancePage } from "./account-balance-page";
 
 export default async function AccountsPage() {
-    const accountsResponse = await fetch('http://localhost:3000/api/get-accounts?days=365', {
-        next: {
-            tags: ['accounts', 'transactions']
-        }
-    });
-    if (!accountsResponse.ok) {
-        throw new Error(`Error: ${accountsResponse.status}`);
-    }
-    const accountsData = await accountsResponse.json();
-    const accounts: Account[] = accountsData.accounts;
+    const dbPath = path.join(process.cwd(), './data/user_data.db');
+    const db = new Database(dbPath);
+    try {
+        const days = 365;
+        const rows = db.prepare('SELECT * FROM accounts').all() as any[];
 
-    return (
-        <div>
-            <AccountBalancePage accounts={accounts} />
-        </div>
-    );
+        const accounts: Account[] = rows.map((r) => ({
+            id: String(r.id),
+            name: String(r.name ?? ''),
+            currency: String(r.currency ?? 'USD'),
+            balance: String(r.balance),
+            "balance-date": Number(r.balance_date ?? 0),
+            type: String(r.type ?? ''),
+            balanceHistory: [],
+        }));
+
+        for (const account of accounts) {
+            const transactions = db.prepare(
+                `SELECT * FROM transactions WHERE account_id = ? ORDER BY transacted_at DESC`
+            ).all(account.id) as Array<{ amount: number; transacted_at: number }>;
+
+            const balanceHistory: { date: string; balance: number }[] = [];
+            let currentBalance = parseFloat(account.balance);
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            for (let i = 0; i < days; i++) {
+                const date = new Date(today);
+                date.setDate(today.getDate() - i);
+                const dateString = date.toISOString().split('T')[0];
+
+                const transactionsForDay = transactions.filter((t) => {
+                    const transactedDate = new Date(Number(t.transacted_at) * 1000);
+                    const transactedDateString = transactedDate.toISOString().split('T')[0];
+                    return transactedDateString === dateString;
+                });
+
+                let dailyTransactionsSum = 0;
+                for (const transaction of transactionsForDay) {
+                    dailyTransactionsSum += Number(transaction.amount);
+                }
+
+                const balanceAtStartOfDay = currentBalance - dailyTransactionsSum;
+                balanceHistory.unshift({ date: dateString, balance: parseFloat(balanceAtStartOfDay.toFixed(2)) });
+
+                currentBalance = balanceAtStartOfDay;
+            }
+
+            account.balanceHistory = balanceHistory;
+        }
+
+        return (
+            <div>
+                <AccountBalancePage accounts={accounts} />
+            </div>
+        );
+    } finally {
+        db.close();
+    }
 } 
