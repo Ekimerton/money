@@ -41,9 +41,17 @@ export async function POST(req: NextRequest) {
         display_name TEXT,
         simplefin_url TEXT,
         classifier_training_date TEXT DEFAULT NULL,
-        auto_categorize BOOLEAN DEFAULT FALSE
+        auto_categorize BOOLEAN DEFAULT FALSE,
+        auto_mark_duplicates BOOLEAN DEFAULT FALSE
       );
     `);
+
+    // Ensure new column exists on already-initialized databases
+    try {
+      db.prepare(`ALTER TABLE user_config ADD COLUMN auto_mark_duplicates BOOLEAN DEFAULT FALSE`).run();
+    } catch (e) {
+      // ignore if column already exists
+    }
 
     db.close();
 

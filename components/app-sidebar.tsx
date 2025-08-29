@@ -15,7 +15,7 @@ import {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar {...props} className="border-r z-10 bg-white dark:bg-neutral-950">
-      <SidebarHeader className="h-14 px-4 flex justify-center border-b">
+      <SidebarHeader className="h-14 px-4 flex justify-center">
         <h1 className="text-xl font-bold">Money App</h1>
       </SidebarHeader>
       <SidebarContent className="p-2 z-10">

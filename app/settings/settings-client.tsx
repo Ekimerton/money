@@ -2,27 +2,32 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import Link from "next/link";
+import { SquareArrowOutUpRightIcon } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { setAutoCategorize as setAutoCategorizeAction, setAutoMarkInternalTransfers, refreshRecent as refreshRecentAction } from "@/app/settings/actions";
+import { toast } from "sonner";
 
 interface SettingsClientProps {
     initialDisplayName: string;
     initialClassifierTrainingDate: string | null;
     initialAutoCategorize: boolean;
+    initialMarkDuplicates?: boolean;
 }
 
 export default function SettingsClient({
     initialDisplayName,
     initialClassifierTrainingDate,
     initialAutoCategorize,
+    initialMarkDuplicates = false,
 }: SettingsClientProps) {
     const [displayName, setDisplayName] = useState<string>(initialDisplayName);
-    const [autoCategorize] = useState<boolean>(initialAutoCategorize);
+    const [autoCategorize, setAutoCategorize] = useState<boolean>(initialAutoCategorize);
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const [selectedRefreshTime, setSelectedRefreshTime] = useState<string>("none");
+    const [markDuplicates, setMarkDuplicates] = useState<boolean>(initialMarkDuplicates);
 
     const saveUserName = async () => {
         setLoading(true);
@@ -39,6 +44,7 @@ export default function SettingsClient({
             }
         } catch (err: any) {
             setError(err.message);
+            toast.error(err.message || 'Failed to save user name.');
         } finally {
             setLoading(false);
         }
@@ -48,20 +54,38 @@ export default function SettingsClient({
         setLoading(true);
         setError(null);
         try {
-            const response = await fetch('/api/refresh-recent', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ autoCategorize }),
-            });
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Failed to refresh recent data.');
-            }
-            await response.json();
+            const result = await refreshRecentAction();
+            const newTx = result.newTransactions ?? 0;
+            const cat = result.categorizedCount ?? 0;
+            const dup = result.updatedDuplicates ?? 0;
+            toast.success(`Fetched ${newTx} new transactions, ${cat} categorized, ${dup} marked duplicate`);
         } catch (err: any) {
-            setError(err.message);
+            const msg = err?.message || 'Failed to refresh recent data.';
+            setError(msg);
+            toast.error(msg);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleAutoCategorizeToggle = async (newValue: boolean) => {
+        if (!initialClassifierTrainingDate) return;
+        const prev = autoCategorize;
+        setAutoCategorize(newValue);
+        try {
+            await setAutoCategorizeAction(newValue);
+        } catch (err) {
+            setAutoCategorize(prev);
+        }
+    };
+
+    const handleMarkDuplicatesToggle = async (newValue: boolean) => {
+        const prev = markDuplicates;
+        setMarkDuplicates(newValue);
+        try {
+            await setAutoMarkInternalTransfers(newValue);
+        } catch (err) {
+            setMarkDuplicates(prev);
         }
     };
 
@@ -70,67 +94,89 @@ export default function SettingsClient({
             {error && <p className="text-red-500">{error}</p>}
 
             {/* Basic Info */}
+            { /*
             <section className="flex flex-col gap-4">
                 <h2 className="text-lg font-semibold border-b border-border pb-2">Basic Info</h2>
 
-                {/* Name Row */}
-                <div className="flex flex-row sm:items-center sm:justify-between gap-16 max-sm:gap-2">
-                    <div className="flex flex-col sm:pr-8 w-48 sm:w-64 sm:flex-shrink-0">
+                <div className="flex flex-col gap-2">
+                    <div className="flex flex-col sm:pr-8 w-60 sm:w-96 sm:flex-shrink-0">
                         <Label htmlFor="displayName">Name</Label>
-                        <p className="text-xs text-muted-foreground">Your display name in the app</p>
                     </div>
-                    <div className="flex items-center gap-16 max-sm:gap-2 sm:flex-1">
+                    <div className="flex items-center gap-2 max-sm:gap-2 sm:flex-1">
                         <Input
                             id="displayName"
                             placeholder="Name"
                             value={displayName}
                             onChange={(e) => setDisplayName(e.target.value)}
-                            className="max-w-sm w-full"
+                            className="max-w-60 w-full"
                         />
-                        <Button onClick={saveUserName} disabled={loading}>
+                        <Button size="sm" onClick={saveUserName} disabled={loading}>
                             {loading ? 'Saving...' : 'Save'}
                         </Button>
                     </div>
                 </div>
             </section>
+            */}
 
             {/* SimpleFin Settings */}
             <section className="flex flex-col gap-4">
                 <h2 className="text-lg font-semibold border-b border-border pb-2">SimpleFin Settings</h2>
 
                 {/* Simplefin Login Row */}
-                <div className="flex flex-row sm:items-center sm:justify-between gap-16 max-sm:gap-2">
-                    <div className="flex flex-col sm:pr-8 w-48 sm:w-64 sm:flex-shrink-0">
+                <div className="flex flex-row sm:items-center gap-16 max-sm:gap-2">
+                    <div className="flex flex-col sm:pr-8 w-60 sm:w-96 sm:flex-shrink-0">
                         <Label>Simplefin Login</Label>
-                        <p className="text-xs text-muted-foreground">Open Simplefin Bridge to manage your token</p>
+                        <p className="text-xs text-muted-foreground">Open Simplefin Bridge to add new accounts or check connection health.</p>
                     </div>
-                    <div className="flex items-center gap-16 max-sm:gap-2 sm:flex-1">
-                        <Button asChild variant="secondary">
-                            <a href="https://beta-bridge.simplefin.org/" target="_blank" rel="noopener noreferrer">Open</a>
+                    <div className="flex items-center max-sm:justify-end gap-16 max-sm:gap-2 flex-1">
+                        <Button size="sm" variant="secondary" asChild>
+                            <a href="https://beta-bridge.simplefin.org/" target="_blank" rel="noopener noreferrer">Open <SquareArrowOutUpRightIcon className="ml-1 size-3" aria-hidden="true" /></a>
                         </Button>
+                    </div>
+                </div>
+
+                {/* Mark Duplicates Row */}
+                <div className="flex flex-row sm:items-center gap-16 max-sm:gap-2">
+                    <div className="flex flex-col sm:pr-8 w-60 sm:w-96 sm:flex-shrink-0">
+                        <Label>Mark Duplicate Transactions</Label>
+                        <p className="text-xs text-muted-foreground">Automatically mark transfers between connected accounts as internal transfers.</p>
+                    </div>
+                    <div className="flex items-center max-sm:justify-end gap-3 flex-1">
+                        <Switch checked={markDuplicates} onCheckedChange={handleMarkDuplicatesToggle} />
+                    </div>
+                </div>
+
+                {/* Auto-Classify Row */}
+                <div className="flex flex-row sm:items-center gap-16 max-sm:gap-2">
+                    <div className="flex flex-col sm:pr-8 w-60 sm:w-96 sm:flex-shrink-0">
+                        <Label>Auto-Classify Transactions</Label>
+                        <p className="text-xs text-muted-foreground">Requires a trained classification model before enabling.</p>
+                    </div>
+                    <div className="flex items-center max-sm:justify-end gap-3 flex-1">
+                        <Switch disabled={!initialClassifierTrainingDate} checked={autoCategorize} onCheckedChange={handleAutoCategorizeToggle} />
                     </div>
                 </div>
 
                 {/* Refresh Row */}
-                <div className="flex flex-row sm:items-center sm:justify-between gap-16 max-sm:gap-2">
-                    <div className="flex flex-col sm:pr-8 w-48 sm:w-64 sm:flex-shrink-0">
-                        <Label>Refresh</Label>
-                        <p className="text-xs text-muted-foreground">this will fetch and override your data</p>
+                <div className="flex flex-row sm:items-center gap-16 max-sm:gap-2">
+                    <div className="flex flex-col sm:pr-8 w-60 sm:w-96 sm:flex-shrink-0">
+                        <Label>Refresh Data Manually</Label>
+                        <p className="text-xs text-muted-foreground">This will fetch all data since last refresh.</p>
                     </div>
-                    <div className="flex items-center gap-16 max-sm:gap-2 sm:flex-1">
-                        <Button onClick={refreshRecent} disabled={loading}>
-                            {loading ? 'Refreshing...' : 'Refresh recent'}
+                    <div className="flex items-center max-sm:justify-end gap-16 max-sm:gap-2 flex-1">
+                        <Button size="sm" variant="secondary" onClick={refreshRecent} disabled={loading} >
+                            {loading ? 'Refreshing...' : 'Refresh'}
                         </Button>
                     </div>
                 </div>
 
-                {/* Auto refresh time Row */}
-                <div className="flex flex-row sm:items-center sm:justify-between gap-16 max-sm:gap-2">
-                    <div className="flex flex-col sm:pr-8 w-48 sm:w-64 sm:flex-shrink-0">
+                {/* Auto refresh time Row 
+                <div className="flex flex-row sm:items-center gap-16 max-sm:gap-2">
+                    <div className="flex flex-col sm:pr-8 w-60 sm:w-96 sm:flex-shrink-0">
                         <Label>Auto refresh time</Label>
                         <p className="text-xs text-muted-foreground">doesn't do anything for now</p>
                     </div>
-                    <div className="flex items-center gap-16 max-sm:gap-2 sm:flex-1">
+                    <div className="flex items-center max-sm:justify-end gap-16 max-sm:gap-2 flex-1">
                         <Select value={selectedRefreshTime} onValueChange={setSelectedRefreshTime}>
                             <SelectTrigger className="w-32">
                                 <SelectValue placeholder="Select time" />
@@ -144,48 +190,49 @@ export default function SettingsClient({
                         </Select>
                     </div>
                 </div>
+                */}
 
-                {/* Delete simplefin settings Row */}
-                <div className="flex flex-row sm:items-center sm:justify-between gap-16 max-sm:gap-2">
-                    <div className="flex flex-col sm:pr-8 w-48 sm:w-64 sm:flex-shrink-0">
-                        <Label>Delete saved simplefin settings</Label>
-                        <p className="text-xs text-muted-foreground">does nothing for now</p>
-                    </div>
-                    <div className="flex items-center gap-16 max-sm:gap-2 sm:flex-1">
-                        <Button variant="destructive" onClick={() => { /* no-op for now */ }}>
-                            Delete
-                        </Button>
-                    </div>
-                </div>
-            </section>
+            </section >
 
             {/* Classification Model */}
-            <section className="flex flex-col gap-4">
+            < section className="flex flex-col gap-4" >
                 <h2 className="text-lg font-semibold border-b border-border pb-2">Classification Model</h2>
 
                 {/* Training info Row */}
-                <div className="flex flex-row sm:items-center sm:justify-between gap-16 max-sm:gap-2">
-                    <div className="flex flex-col sm:pr-8 w-48 sm:w-64 sm:flex-shrink-0">
+                <div className="flex flex-row sm:items-center gap-16 max-sm:gap-2">
+                    <div className="flex flex-col sm:pr-8 w-60 sm:w-96 sm:flex-shrink-0">
                         <Label>Training info</Label>
                         <p className="text-xs text-muted-foreground">Last time the model was trained</p>
                     </div>
-                    <div className="flex items-center gap-16 max-sm:gap-2 sm:flex-1">
+                    <div className="flex items-center max-sm:justify-end gap-16 max-sm:gap-2 flex-1">
                         <p className="text-sm">
                             {initialClassifierTrainingDate
-                                ? new Date(initialClassifierTrainingDate).toLocaleString()
+                                ? (() => {
+                                    const now = new Date();
+                                    const trained = new Date(initialClassifierTrainingDate);
+                                    const diffMs = now.getTime() - trained.getTime();
+                                    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+                                    return diffDays === 0
+                                        ? 'Today'
+                                        : diffDays === 1
+                                            ? '1 day ago'
+                                            : `${diffDays} days ago`;
+                                })()
                                 : 'Not trained yet'}
                         </p>
                     </div>
                 </div>
 
                 {/* Retrain model Row */}
-                <div className="flex flex-row sm:items-center sm:justify-between gap-16 max-sm:gap-2">
-                    <div className="flex flex-col sm:pr-8 w-48 sm:w-64 sm:flex-shrink-0">
+                <div className="flex flex-row sm:items-center gap-16 max-sm:gap-2">
+                    <div className="flex flex-col sm:pr-8 w-60 sm:w-96 sm:flex-shrink-0">
                         <Label>Retrain model</Label>
                         <p className="text-xs text-muted-foreground">Recomputes the classifier</p>
                     </div>
-                    <div className="flex items-center gap-16 max-sm:gap-2 sm:flex-1">
+                    <div className="flex items-center max-sm:justify-end gap-16 max-sm:gap-2 flex-1">
                         <Button
+                            variant="secondary"
+                            size="sm"
                             onClick={async () => {
                                 setLoading(true);
                                 setError(null);
@@ -195,8 +242,10 @@ export default function SettingsClient({
                                         const errorData = await response.json();
                                         throw new Error(errorData.error || 'Failed to train model.');
                                     }
+                                    toast.success('Model training started');
                                 } catch (err: any) {
                                     setError(err.message);
+                                    toast.error(err.message || 'Failed to train model.');
                                 } finally {
                                     setLoading(false);
                                 }
@@ -207,8 +256,26 @@ export default function SettingsClient({
                         </Button>
                     </div>
                 </div>
+            </section >
+
+            {/* Local Data */}
+            <section className="flex flex-col gap-4">
+                <h2 className="text-lg font-semibold border-b border-border pb-2">Local Data</h2>
+
+                {/* Delete simplefin settings Row */}
+                <div className="flex flex-row sm:items-center gap-16 max-sm:gap-2">
+                    <div className="flex flex-col sm:pr-8 w-60 sm:w-96 sm:flex-shrink-0">
+                        <Label>Delete Saved Simplefin Token</Label>
+                        <p className="text-xs text-muted-foreground">does nothing for now</p>
+                    </div>
+                    <div className="flex items-center max-sm:justify-end gap-16 max-sm:gap-2 flex-1">
+                        <Button size="sm" variant="secondary" onClick={() => { /* no-op for now */ }}>
+                            Delete
+                        </Button>
+                    </div>
+                </div>
             </section>
-        </div>
+        </div >
     );
 }
 

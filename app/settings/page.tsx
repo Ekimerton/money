@@ -15,15 +15,16 @@ export default async function SettingsPage() {
         simplefin_url: string | null;
         classifier_training_date: string | null;
         auto_categorize: boolean;
+        auto_mark_duplicates?: boolean;
     };
 
     return (
         <div className="p-4">
             <SettingsClient
                 initialDisplayName={userConfig.display_name || ''}
-                initialSimplefinUrl={userConfig.simplefin_url || ''}
                 initialClassifierTrainingDate={userConfig.classifier_training_date}
                 initialAutoCategorize={userConfig.auto_categorize || false}
+                initialMarkDuplicates={userConfig.auto_mark_duplicates || false}
             />
         </div>
     );
