@@ -6,6 +6,13 @@ export default async function SettingsPage() {
     const dbPath = path.join(process.cwd(), './data/user_data.db');
     const db = new Database(dbPath);
     try {
+        // Defensive migration to ensure the column exists TODO: remove this once we're sure the column exists
+        try {
+            db.prepare(`ALTER TABLE user_config ADD COLUMN auto_mark_duplicates BOOLEAN DEFAULT FALSE`).run();
+        } catch (_) {
+            // ignore if column already exists
+        }
+
         const userConfig = db
             .prepare(
                 'SELECT display_name, simplefin_url, classifier_training_date, auto_categorize, auto_mark_duplicates FROM user_config WHERE id = 1'
