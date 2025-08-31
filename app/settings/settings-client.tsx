@@ -110,7 +110,7 @@ export default function SettingsClient({
     };
 
     return (
-        <div className="flex flex-col gap-4 w-screen p-4">
+        <div className="flex flex-col gap-4 sm:w-full max-sm:w-screen p-4">
             {error && <p className="text-red-500">{error}</p>}
 
             {/* Basic Info */}
