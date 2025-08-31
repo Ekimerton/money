@@ -8,6 +8,67 @@ import { revalidateTag } from "next/cache";
 const dbPath = path.join(process.cwd(), "./data/user_data.db");
 const pythonExecutablePath = path.join(process.cwd(), "./data/.venv/bin/python");
 
+async function classifyTransactionsByIds(transactionIds: string[]): Promise<{ output: string; categorizedCount?: number; }> {
+    const dataDir = path.join(process.cwd(), 'data');
+    const scriptPath = path.join(dataDir, 'classify_transaction.py');
+    if (transactionIds.length === 0) {
+        return { output: 'No transactions to classify.' };
+    }
+    const idsArg = transactionIds.join(',');
+    const output = await new Promise<string>((resolve) => {
+        const proc = spawn(pythonExecutablePath, [scriptPath, '--ids', idsArg], { cwd: dataDir });
+        let stdout = '';
+        let stderr = '';
+        proc.stdout.on('data', (d) => (stdout += d.toString()));
+        proc.stderr.on('data', (d) => (stderr += d.toString()));
+        proc.on('close', (code) => {
+            const summary = `Classifier exited with code ${code}.\n${stdout}${stderr ? `\nErrors:\n${stderr}` : ''}`;
+            resolve(summary);
+        });
+        proc.on('error', (err) => {
+            resolve(`Classifier failed to start: ${err.message}`);
+        });
+    });
+    let categorizedCount: number | undefined;
+    try {
+        const match = output.match(/(\d+)\s+transactions were auto-categorized/i);
+        if (match && match[1]) {
+            categorizedCount = parseInt(match[1], 10);
+        }
+    } catch { }
+    return { output, categorizedCount };
+}
+
+function markInternalTransfersForTransactions(db: any, transactionIds: string[]): number {
+    if (transactionIds.length === 0) return 0;
+    const threeDaysInSeconds = 3 * 24 * 60 * 60;
+    const placeholders = transactionIds.map(() => 'SELECT ? AS id').join(' UNION ALL ');
+    const updateSql = `
+      WITH provided_ids(id) AS (
+        ${placeholders}
+      ),
+      pairs AS (
+        SELECT t1.id AS id1, t2.id AS id2
+        FROM transactions t1
+        JOIN transactions t2
+          ON t1.id < t2.id
+         AND t1.account_id != t2.account_id
+         AND CAST(t1.amount AS REAL) = -CAST(t2.amount AS REAL)
+         AND ABS(COALESCE(t1.transacted_at, t1.posted) - COALESCE(t2.transacted_at, t2.posted)) <= ${threeDaysInSeconds}
+        WHERE t1.id IN (SELECT id FROM provided_ids) OR t2.id IN (SELECT id FROM provided_ids)
+      )
+      UPDATE transactions
+         SET category = 'Internal Transfer'
+       WHERE id IN (
+         SELECT id1 FROM pairs
+         UNION
+         SELECT id2 FROM pairs
+       );
+    `;
+    const result = db.prepare(updateSql).run(...transactionIds);
+    return result.changes || 0;
+}
+
 export async function setAutoCategorize(autoCategorize: boolean): Promise<void> {
     const db = new Database(dbPath);
     try {
@@ -38,7 +99,7 @@ export async function setAutoMarkInternalTransfers(enabled: boolean): Promise<vo
     }
 }
 
-export async function refreshRecent(): Promise<{ message: string; classifierOutput?: string; updatedDuplicates?: number; newTransactions?: number; categorizedCount?: number; }> {
+export async function refreshRecent(startDateOverride?: number): Promise<{ message: string; classifierOutput?: string; updatedDuplicates?: number; newTransactions?: number; categorizedCount?: number; }> {
     const db = new Database(dbPath);
     try {
         const userConfig = db.prepare(
@@ -58,17 +119,18 @@ export async function refreshRecent(): Promise<{ message: string; classifierOutp
         const baseUrl = urlParts[1];
         const [username, password] = authString.split(':');
 
-        const latestTransactionRow = db.prepare('SELECT MAX(posted) as latest_posted FROM transactions').get() as { latest_posted?: number };
-        let startDate = 0;
-        if (latestTransactionRow && latestTransactionRow.latest_posted) {
-            startDate = latestTransactionRow.latest_posted - (24 * 60 * 60);
-        } else {
-            startDate = Math.floor(new Date('2000-01-01').getTime() / 1000);
-        }
+        let startDate = typeof startDateOverride === 'number' && !Number.isNaN(startDateOverride)
+            ? startDateOverride
+            : (() => {
+                const latestTransactionRow = db.prepare('SELECT MAX(posted) as latest_posted FROM transactions').get() as { latest_posted?: number };
+                if (latestTransactionRow && latestTransactionRow.latest_posted) {
+                    return latestTransactionRow.latest_posted - (24 * 60 * 60);
+                }
+                return Math.floor(new Date('2000-01-01').getTime() / 1000);
+            })();
         const endDate = Math.floor(Date.now() / 1000);
 
-        const beforeCountRow = db.prepare('SELECT COUNT(*) as c FROM transactions WHERE posted >= ?').get(startDate) as { c: number };
-        const beforeCount = beforeCountRow?.c ?? 0;
+        const newTransactionIds: string[] = [];
 
         const authHeader = Buffer.from(`${username}:${password}`).toString('base64');
         const response = await fetch(`https://${baseUrl}/accounts?pending=1&start-date=${startDate}&end-date=${endDate}`, {
@@ -92,6 +154,7 @@ export async function refreshRecent(): Promise<{ message: string; classifierOutp
             'INSERT INTO accounts (id, name, currency, balance, balance_date) VALUES (?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET currency=excluded.currency, balance=excluded.balance, balance_date=excluded.balance_date'
         );
 
+        const existsTransaction = db.prepare('SELECT 1 FROM transactions WHERE id = ? LIMIT 1');
         db.transaction(() => {
             for (const account of accounts) {
                 insertAccount.run(
@@ -106,6 +169,7 @@ export async function refreshRecent(): Promise<{ message: string; classifierOutp
                     'INSERT INTO transactions (id, account_id, posted, amount, description, payee, transacted_at, pending, category) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET account_id=excluded.account_id, posted=excluded.posted, amount=excluded.amount, description=excluded.description, payee=excluded.payee, transacted_at=excluded.transacted_at, pending=excluded.pending, hidden=excluded.hidden'
                 );
                 for (const transaction of account.transactions) {
+                    const exists = existsTransaction.get(transaction.id);
                     insertTransaction.run(
                         transaction.id,
                         account.id,
@@ -117,66 +181,26 @@ export async function refreshRecent(): Promise<{ message: string; classifierOutp
                         transaction.pending ? 1 : 0,
                         'Uncategorized'
                     );
+                    if (!exists) {
+                        newTransactionIds.push(String(transaction.id));
+                    }
                 }
             }
         })();
 
-        const afterCountRow = db.prepare('SELECT COUNT(*) as c FROM transactions WHERE posted >= ?').get(startDate) as { c: number };
-        const afterCount = afterCountRow?.c ?? beforeCount;
-        const newTransactions = Math.max(0, afterCount - beforeCount);
+        const newTransactions = newTransactionIds.length;
 
         let updatedDuplicates: number | undefined;
-        if (autoMarkDuplicates) {
-            const threeDaysInSeconds = 3 * 24 * 60 * 60;
-            const updateSql = `
-      WITH pairs AS (
-        SELECT t1.id AS id1, t2.id AS id2
-        FROM transactions t1
-        JOIN transactions t2
-          ON t1.id < t2.id
-         AND t1.account_id != t2.account_id
-         AND CAST(t1.amount AS REAL) = -CAST(t2.amount AS REAL)
-         AND ABS(COALESCE(t1.transacted_at, t1.posted) - COALESCE(t2.transacted_at, t2.posted)) <= ${threeDaysInSeconds}
-      )
-      UPDATE transactions
-         SET category = 'Internal Transfer'
-       WHERE id IN (
-         SELECT id1 FROM pairs
-         UNION
-         SELECT id2 FROM pairs
-       );
-    `;
-            const result = db.prepare(updateSql).run();
-            updatedDuplicates = result.changes || 0;
+        if (autoMarkDuplicates && newTransactionIds.length > 0) {
+            updatedDuplicates = markInternalTransfersForTransactions(db, newTransactionIds);
         }
 
         let classifierOutput: string | undefined;
         let categorizedCount: number | undefined;
-        if (autoCategorize) {
-            const dataDir = path.join(process.cwd(), 'data');
-            const scriptPath = path.join(dataDir, 'classify_transaction.py');
-            classifierOutput = await new Promise<string>((resolve) => {
-                const proc = spawn(pythonExecutablePath, [scriptPath, String(startDate)], { cwd: dataDir });
-                let stdout = '';
-                let stderr = '';
-                proc.stdout.on('data', (d) => (stdout += d.toString()));
-                proc.stderr.on('data', (d) => (stderr += d.toString()));
-                proc.on('close', (code) => {
-                    const summary = `Classifier exited with code ${code}.\n${stdout}${stderr ? `\nErrors:\n${stderr}` : ''}`;
-                    resolve(summary);
-                });
-                proc.on('error', (err) => {
-                    resolve(`Classifier failed to start: ${err.message}`);
-                });
-            });
-            try {
-                const match = classifierOutput.match(/(\d+)\s+transactions were auto-categorized/i);
-                if (match && match[1]) {
-                    categorizedCount = parseInt(match[1], 10);
-                }
-            } catch {
-                // ignore parse errors
-            }
+        if (autoCategorize && newTransactionIds.length > 0) {
+            const result = await classifyTransactionsByIds(newTransactionIds);
+            classifierOutput = result.output;
+            categorizedCount = result.categorizedCount;
         }
 
         revalidateTag('accounts');

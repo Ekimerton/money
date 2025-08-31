@@ -78,15 +78,30 @@ if __name__ == "__main__":
     nltk.download('punkt_tab', quiet=True)
 
     if len(sys.argv) < 2:
-        print("Usage: python classify_transaction.py <start_timestamp>")
+        print("Usage: python classify_transaction.py <start_timestamp> OR python classify_transaction.py --ids id1,id2,id3")
         sys.exit(1)
 
-    # Directly use the timestamp from command-line argument
-    try:
-        start_timestamp = int(sys.argv[1])
-    except ValueError:
-        print(f"Invalid timestamp: {sys.argv[1]}. Please provide an integer Unix timestamp.")
-        sys.exit(1)
+    use_ids_mode = False
+    provided_ids = []
+    start_timestamp = None
+
+    if sys.argv[1] == '--ids':
+        if len(sys.argv) < 3:
+            print("When using --ids, provide a comma-separated list of IDs.")
+            sys.exit(1)
+        ids_arg = sys.argv[2]
+        provided_ids = [i.strip() for i in ids_arg.split(',') if i.strip()]
+        if not provided_ids:
+            print("No valid IDs provided.")
+            sys.exit(1)
+        use_ids_mode = True
+    else:
+        # Directly use the timestamp from command-line argument (legacy mode)
+        try:
+            start_timestamp = int(sys.argv[1])
+        except ValueError:
+            print(f"Invalid timestamp: {sys.argv[1]}. Please provide an integer Unix timestamp.")
+            sys.exit(1)
 
     db_path = "user_data.db"
 
@@ -99,28 +114,32 @@ if __name__ == "__main__":
         conn = None
         try:
             conn = sqlite3.connect(db_path)
-            # Query using posted column and integer timestamp directly
-            query = "SELECT id, payee, description, amount, account_id, posted FROM transactions WHERE category = 'Uncategorized' AND posted >= ?"
-            uncategorized_df = pd.read_sql_query(query, conn, params=(start_timestamp,))
+            if use_ids_mode:
+                placeholders = ",".join(["?"] * len(provided_ids))
+                query = f"SELECT id, payee, description, amount, account_id, posted FROM transactions WHERE category = 'Uncategorized' AND id IN ({placeholders})"
+                uncategorized_df = pd.read_sql_query(query, conn, params=tuple(provided_ids))
+                context_desc = f"IDs list ({len(provided_ids)} provided)"
+            else:
+                # Query using posted column and integer timestamp directly
+                query = "SELECT id, payee, description, amount, account_id, posted FROM transactions WHERE category = 'Uncategorized' AND posted >= ?"
+                uncategorized_df = pd.read_sql_query(query, conn, params=(start_timestamp,))
+                context_desc = f"timestamp {start_timestamp}"
             
             if not uncategorized_df.empty:
-                print(f"Found {len(uncategorized_df)} uncategorized transactions since timestamp {start_timestamp}.\n")
+                print(f"Found {len(uncategorized_df)} uncategorized transactions for {context_desc}.\n")
                 updated_count = 0
-                for index, row in uncategorized_df.iterrows():
+                for _, row in uncategorized_df.iterrows():
                     transaction_id = row['id']
                     payee = row['payee']
                     description = row['description']
                     amount = row['amount']
                     account_id = row['account_id']
-                    posted_at = row['posted'] # Get posted timestamp
+                    posted_at = row['posted']  # Get posted timestamp
 
                     predicted_category, confidence = classify_new_transaction(
                         payee, description, amount, account_id, model, tfidf_combined, le_account, scaler_amount
                     )
 
-                    # Convert posted_at timestamp back to readable date for printing (optional, keep for user info)
-                    # import datetime # Added datetime import
-                    # import datetime
                     readable_date = datetime.datetime.fromtimestamp(posted_at).strftime('%Y-%m-%d')
                     print(f"Transaction ID: {transaction_id}, Date: {readable_date}, Payee: {payee}, Desc: {description[:30]}...")
                     print(f"  Predicted: {predicted_category}, Confidence: {confidence:.2f}")
@@ -133,7 +152,7 @@ if __name__ == "__main__":
                         print(f"  -> Not auto-categorized (Confidence too low: {confidence:.2f})\n")
                 print(f"Finished processing. {updated_count} transactions were auto-categorized.")
             else:
-                print(f"No uncategorized transactions found since timestamp {start_timestamp}.")
+                print(f"No uncategorized transactions found for {context_desc}.")
 
         except sqlite3.Error as e:
             print(f"Database error: {e}")

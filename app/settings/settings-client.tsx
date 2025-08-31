@@ -28,6 +28,7 @@ export default function SettingsClient({
     const [error, setError] = useState<string | null>(null);
     const [selectedRefreshTime, setSelectedRefreshTime] = useState<string>("none");
     const [markDuplicates, setMarkDuplicates] = useState<boolean>(initialMarkDuplicates);
+    const [detectRecurring, setDetectRecurring] = useState<boolean>(false);
 
     const saveUserName = async () => {
         setLoading(true);
@@ -61,6 +62,25 @@ export default function SettingsClient({
             toast.success(`Fetched ${newTx} new transactions, ${cat} categorized, ${dup} marked duplicate`);
         } catch (err: any) {
             const msg = err?.message || 'Failed to refresh recent data.';
+            setError(msg);
+            toast.error(msg);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const refreshAll = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const since2000 = Math.floor(new Date('2000-01-01').getTime() / 1000);
+            const result = await refreshRecentAction(since2000);
+            const newTx = result.newTransactions ?? 0;
+            const cat = result.categorizedCount ?? 0;
+            const dup = result.updatedDuplicates ?? 0;
+            toast.success(`Full refresh: ${newTx} new transactions, ${cat} categorized, ${dup} marked duplicate`);
+        } catch (err: any) {
+            const msg = err?.message || 'Failed to perform full refresh.';
             setError(msg);
             toast.error(msg);
         } finally {
@@ -157,6 +177,17 @@ export default function SettingsClient({
                     </div>
                 </div>
 
+                {/* Detect Recurring Transactions Row */}
+                <div className="flex flex-row sm:items-center gap-16 max-sm:gap-2">
+                    <div className="flex flex-col sm:pr-8 w-60 sm:w-96 sm:flex-shrink-0">
+                        <Label>Detect Recurring Transactions</Label>
+                        <p className="text-xs text-muted-foreground">No effect yet; toggle is for future functionality.</p>
+                    </div>
+                    <div className="flex items-center max-sm:justify-end gap-3 flex-1">
+                        <Switch checked={detectRecurring} onCheckedChange={setDetectRecurring} />
+                    </div>
+                </div>
+
                 {/* Refresh Row */}
                 <div className="flex flex-row sm:items-center gap-16 max-sm:gap-2">
                     <div className="flex flex-col sm:pr-8 w-60 sm:w-96 sm:flex-shrink-0">
@@ -165,7 +196,7 @@ export default function SettingsClient({
                     </div>
                     <div className="flex items-center max-sm:justify-end gap-16 max-sm:gap-2 flex-1">
                         <Button size="sm" variant="secondary" onClick={refreshRecent} disabled={loading} >
-                            {loading ? 'Refreshing...' : 'Refresh'}
+                            {loading ? 'Refreshing...' : 'Refresh Recent'}
                         </Button>
                     </div>
                 </div>
@@ -261,6 +292,19 @@ export default function SettingsClient({
             {/* Local Data */}
             <section className="flex flex-col gap-4">
                 <h2 className="text-lg font-semibold border-b border-border pb-2">Local Data</h2>
+
+                {/* Refresh All Row */}
+                <div className="flex flex-row sm:items-center gap-16 max-sm:gap-2">
+                    <div className="flex flex-col sm:pr-8 w-60 sm:w-96 sm:flex-shrink-0">
+                        <Label>Refresh All Data</Label>
+                        <p className="text-xs text-muted-foreground">Fetches all historical data (since 2000-01-01).</p>
+                    </div>
+                    <div className="flex items-center max-sm:justify-end gap-16 max-sm:gap-2 flex-1">
+                        <Button size="sm" variant="secondary" onClick={refreshAll} disabled={loading}>
+                            {loading ? 'Refreshing...' : 'Refresh All'}
+                        </Button>
+                    </div>
+                </div>
 
                 {/* Delete simplefin settings Row */}
                 <div className="flex flex-row sm:items-center gap-16 max-sm:gap-2">
