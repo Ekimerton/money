@@ -99,7 +99,7 @@ export async function setAutoMarkInternalTransfers(enabled: boolean): Promise<vo
     }
 }
 
-export async function refreshRecent(startDateOverride?: number): Promise<{ message: string; classifierOutput?: string; updatedDuplicates?: number; newTransactions?: number; categorizedCount?: number; }> {
+export async function refreshRecent(processAll?: boolean): Promise<{ message: string; classifierOutput?: string; updatedDuplicates?: number; newTransactions?: number; categorizedCount?: number; }> {
     const db = new Database(dbPath);
     try {
         const userConfig = db.prepare(
@@ -119,8 +119,8 @@ export async function refreshRecent(startDateOverride?: number): Promise<{ messa
         const baseUrl = urlParts[1];
         const [username, password] = authString.split(':');
 
-        let startDate = typeof startDateOverride === 'number' && !Number.isNaN(startDateOverride)
-            ? startDateOverride
+        let startDate = processAll
+            ? Math.floor(new Date('2000-01-01').getTime() / 1000)
             : (() => {
                 const latestTransactionRow = db.prepare('SELECT MAX(posted) as latest_posted FROM transactions').get() as { latest_posted?: number };
                 if (latestTransactionRow && latestTransactionRow.latest_posted) {
@@ -191,16 +191,65 @@ export async function refreshRecent(startDateOverride?: number): Promise<{ messa
         const newTransactions = newTransactionIds.length;
 
         let updatedDuplicates: number | undefined;
-        if (autoMarkDuplicates && newTransactionIds.length > 0) {
-            updatedDuplicates = markInternalTransfersForTransactions(db, newTransactionIds);
+        if (autoMarkDuplicates) {
+            if (processAll) {
+                const threeDaysInSeconds = 3 * 24 * 60 * 60;
+                const updateSql = `
+      WITH pairs AS (
+        SELECT t1.id AS id1, t2.id AS id2
+        FROM transactions t1
+        JOIN transactions t2
+          ON t1.id < t2.id
+         AND t1.account_id != t2.account_id
+         AND CAST(t1.amount AS REAL) = -CAST(t2.amount AS REAL)
+         AND ABS(COALESCE(t1.transacted_at, t1.posted) - COALESCE(t2.transacted_at, t2.posted)) <= ${threeDaysInSeconds}
+      )
+      UPDATE transactions
+         SET category = 'Internal Transfer'
+       WHERE id IN (
+         SELECT id1 FROM pairs
+         UNION
+         SELECT id2 FROM pairs
+       );
+    `;
+                const result = db.prepare(updateSql).run();
+                updatedDuplicates = result.changes || 0;
+            } else if (newTransactionIds.length > 0) {
+                updatedDuplicates = markInternalTransfersForTransactions(db, newTransactionIds);
+            }
         }
 
         let classifierOutput: string | undefined;
         let categorizedCount: number | undefined;
-        if (autoCategorize && newTransactionIds.length > 0) {
-            const result = await classifyTransactionsByIds(newTransactionIds);
-            classifierOutput = result.output;
-            categorizedCount = result.categorizedCount;
+        if (autoCategorize) {
+            if (processAll) {
+                const dataDir = path.join(process.cwd(), 'data');
+                const scriptPath = path.join(dataDir, 'classify_transaction.py');
+                classifierOutput = await new Promise<string>((resolve) => {
+                    const proc = spawn(pythonExecutablePath, [scriptPath, String(startDate)], { cwd: dataDir });
+                    let stdout = '';
+                    let stderr = '';
+                    proc.stdout.on('data', (d) => (stdout += d.toString()));
+                    proc.stderr.on('data', (d) => (stderr += d.toString()));
+                    proc.on('close', (code) => {
+                        const summary = `Classifier exited with code ${code}.\n${stdout}${stderr ? `\nErrors:\n${stderr}` : ''}`;
+                        resolve(summary);
+                    });
+                    proc.on('error', (err) => {
+                        resolve(`Classifier failed to start: ${err.message}`);
+                    });
+                });
+                try {
+                    const match = classifierOutput.match(/(\d+)\s+transactions were auto-categorized/i);
+                    if (match && match[1]) {
+                        categorizedCount = parseInt(match[1], 10);
+                    }
+                } catch { }
+            } else if (newTransactionIds.length > 0) {
+                const result = await classifyTransactionsByIds(newTransactionIds);
+                classifierOutput = result.output;
+                categorizedCount = result.categorizedCount;
+            }
         }
 
         revalidateTag('accounts');

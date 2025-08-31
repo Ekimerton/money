@@ -73,8 +73,7 @@ export default function SettingsClient({
         setLoading(true);
         setError(null);
         try {
-            const since2000 = Math.floor(new Date('2000-01-01').getTime() / 1000);
-            const result = await refreshRecentAction(since2000);
+            const result = await refreshRecentAction(true);
             const newTx = result.newTransactions ?? 0;
             const cat = result.categorizedCount ?? 0;
             const dup = result.updatedDuplicates ?? 0;
