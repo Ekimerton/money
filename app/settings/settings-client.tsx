@@ -120,7 +120,7 @@ export default function SettingsClient({
 
             {/* SimpleFin Settings */}
             <section className="flex flex-col gap-4">
-                <h2 className="text-lg font-semibold border-b border-border pb-2">SimpleFin Settings</h2>
+                <h2 className="text-lg font-semibold border-b border-border pb-2">Data Fetching</h2>
 
                 {/* Simplefin Login Row */}
                 <div className="flex flex-row sm:items-center gap-16 max-sm:gap-2">
