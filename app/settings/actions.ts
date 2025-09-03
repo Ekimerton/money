@@ -264,7 +264,6 @@ export async function refreshRecent(processAll?: boolean): Promise<{ message: st
     }
 }
 
-
 export async function getUncategorizedCount(): Promise<number> {
     const db = new Database(dbPath);
     try {
@@ -273,5 +272,35 @@ export async function getUncategorizedCount(): Promise<number> {
     } finally {
         db.close();
     }
+}
+
+export async function getTop3PredictionsForTransaction(tx: { payee: string | null; description: string | null; amount: string | number; account_id: string; }): Promise<Array<{ category: string; confidence: number }>> {
+    const dataDir = path.join(process.cwd(), 'data');
+    const scriptPath = path.join(dataDir, 'classify_transaction.py');
+    const payee = (tx.payee ?? '').toString();
+    const description = (tx.description ?? '').toString();
+    const amount = typeof tx.amount === 'string' ? parseFloat(tx.amount) : (tx.amount ?? 0);
+    const accountId = tx.account_id;
+
+    const output = await new Promise<string>((resolve, reject) => {
+        const args = [scriptPath, '--topk', payee, description, String(amount), accountId];
+        const proc = spawn(pythonExecutablePath, args, { cwd: dataDir });
+        let stdout = '';
+        let stderr = '';
+        proc.stdout.on('data', (d) => (stdout += d.toString()));
+        proc.stderr.on('data', (d) => (stderr += d.toString()));
+        proc.on('close', (_code) => resolve((stdout + '\n' + stderr).trim()));
+        proc.on('error', (err) => reject(err));
+    });
+
+    // Extract first JSON object from mixed output
+    const jsonMatch = output.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+        try {
+            const parsed = JSON.parse(jsonMatch[0]);
+            if (parsed && Array.isArray(parsed.predictions)) return parsed.predictions;
+        } catch { }
+    }
+    return [];
 }
 

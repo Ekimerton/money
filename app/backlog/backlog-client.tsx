@@ -5,6 +5,8 @@ import { Transaction } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CategoryPopover } from "@/components/ui/category-popover";
+import { getTop3PredictionsForTransaction } from "@/app/settings/actions";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface BacklogClientProps {
     initialTransactions: Transaction[];
@@ -18,6 +20,37 @@ export function BacklogClient({ initialTransactions, initialCategories }: Backlo
     const current = queue[currentIndex];
 
     const suggestedCategories = React.useMemo(() => categories.slice(0, 3), [categories]);
+
+    const [modelSuggestions, setModelSuggestions] = React.useState<string[] | null>(null);
+    const [predictionsLoading, setPredictionsLoading] = React.useState<boolean>(true);
+    React.useEffect(() => {
+        let active = true;
+        const fetchTop3 = async () => {
+            if (!current) return;
+            setPredictionsLoading(true);
+            try {
+                const preds = await getTop3PredictionsForTransaction({
+                    payee: current.payee,
+                    description: current.description,
+                    amount: current.amount,
+                    account_id: current.account_id,
+                });
+                if (active && preds && preds.length) {
+                    setModelSuggestions(preds.map((p) => p.category));
+                } else if (active) {
+                    setModelSuggestions(null);
+                }
+                if (active) setPredictionsLoading(false);
+            } catch {
+                if (active) {
+                    setModelSuggestions(null);
+                    setPredictionsLoading(false);
+                }
+            }
+        };
+        fetchTop3();
+        return () => { active = false };
+    }, [current?.id]);
 
     const markCategory = async (category: string) => {
         if (!current) return;
@@ -94,18 +127,26 @@ export function BacklogClient({ initialTransactions, initialCategories }: Backlo
             </Card>
             {/* Actions below the card */}
             <div className="flex flex-col gap-2 mt-4 items-stretch">
-                {suggestedCategories.map((c) => (
-                    <Button key={c} className="w-full" variant="secondary" onClick={() => markCategory(c)}>
-                        {c}
-                    </Button>
-                ))}
+                {predictionsLoading ? (
+                    <>
+                        <Skeleton className="h-9 w-full" />
+                        <Skeleton className="h-9 w-full" />
+                        <Skeleton className="h-9 w-full" />
+                    </>
+                ) : (
+                    (modelSuggestions && modelSuggestions.length > 0 ? modelSuggestions : suggestedCategories).map((c) => (
+                        <Button key={c} className="w-full" variant="secondary" onClick={() => markCategory(c)}>
+                            {c}
+                        </Button>
+                    ))
+                )}
                 <CategoryPopover
                     defaultValue={""}
                     suggestions={categories}
                     onSubmit={markCategory}
                     trigger={<Button className="w-full" variant="outline">Custom</Button>}
                 />
-                <Button className="w-full" variant="secondary" onClick={() => markCategory("Internal Transfer")}>
+                <Button className="w-full" variant="outline" onClick={() => markCategory("Internal Transfer")}>
                     Mark Internal Transfer
                 </Button>
                 <Button className="w-full" variant="ghost" onClick={skip}>

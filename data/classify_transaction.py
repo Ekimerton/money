@@ -5,6 +5,7 @@ import sqlite3
 import sys
 import datetime
 import nltk
+import json
 
 from preprocess_text import custom_tokenizer, stemmer, lemmatizer
 
@@ -59,6 +60,32 @@ def classify_new_transaction(payee, description, amount, account_id, model, tfid
 
     return predicted_category, confidence
 
+def predict_top_k_categories(payee, description, amount, account_id, model, tfidf_combined, le_account, scaler_amount, k=3):
+    new_df = pd.DataFrame([{
+        'payee': payee,
+        'description': description,
+        'amount': amount,
+        'account_id': account_id
+    }])
+
+    new_df['payee'] = new_df['payee'].fillna('')
+    new_df['description'] = new_df['description'].fillna('')
+
+    new_df['combined_text'] = new_df['payee'] + " " + new_df['description']
+    new_combined_features = tfidf_combined.transform(new_df['combined_text'])
+    new_combined_df = pd.DataFrame(new_combined_features.toarray(), columns=tfidf_combined.get_feature_names_out(), index=new_df.index)
+    new_combined_df.columns = [f"combined_tfidf_{i}" for i in range(new_combined_df.shape[1])]
+
+    new_df['account_encoded'] = le_account.transform(new_df['account_id'])
+    new_df['amount_scaled'] = scaler_amount.transform(new_df[['amount']])
+
+    new_features_df = pd.concat([new_combined_df, new_df[['amount_scaled', 'account_encoded']]], axis=1)
+
+    proba = model.predict_proba(new_features_df)[0]
+    classes = list(model.classes_)
+    ranked = sorted(zip(classes, proba), key=lambda x: x[1], reverse=True)[:k]
+    return [(c, float(p)) for c, p in ranked]
+
 def update_transaction_category_in_db(db_path, transaction_id, category):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
@@ -78,7 +105,7 @@ if __name__ == "__main__":
     nltk.download('punkt_tab', quiet=True)
 
     if len(sys.argv) < 2:
-        print("Usage: python classify_transaction.py <start_timestamp> OR python classify_transaction.py --ids id1,id2,id3")
+        print("Usage: python classify_transaction.py <start_timestamp> | --ids id1,id2,id3 | --topk payee description amount account_id")
         sys.exit(1)
 
     use_ids_mode = False
@@ -95,6 +122,27 @@ if __name__ == "__main__":
             print("No valid IDs provided.")
             sys.exit(1)
         use_ids_mode = True
+    elif sys.argv[1] == '--topk':
+        if len(sys.argv) < 6:
+            print("When using --topk, provide payee, description, amount, account_id")
+            sys.exit(1)
+        payee = sys.argv[2]
+        description = sys.argv[3]
+        try:
+            amount = float(sys.argv[4])
+        except ValueError:
+            amount = 0.0
+        account_id = sys.argv[5]
+
+        # Load model and preprocessors (quiet, JSON-only output below)
+        model, tfidf_combined, le_account, scaler_amount = load_model_and_preprocessors("model/")
+        if not (model and tfidf_combined and le_account and scaler_amount):
+            print(json.dumps({"error": "Model not available"}))
+            sys.exit(1)
+        topk = predict_top_k_categories(payee, description, amount, account_id, model, tfidf_combined, le_account, scaler_amount, k=3)
+        output = {"predictions": [{"category": c, "confidence": p} for c, p in topk]}
+        print(json.dumps(output))
+        sys.exit(0)
     else:
         # Directly use the timestamp from command-line argument (legacy mode)
         try:
