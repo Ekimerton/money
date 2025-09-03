@@ -265,3 +265,13 @@ export async function refreshRecent(processAll?: boolean): Promise<{ message: st
 }
 
 
+export async function getUncategorizedCount(): Promise<number> {
+    const db = new Database(dbPath);
+    try {
+        const row = db.prepare("SELECT COUNT(*) as count FROM transactions WHERE category = 'Uncategorized' AND hidden = 0").get() as any;
+        return Number(row?.count ?? 0);
+    } finally {
+        db.close();
+    }
+}
+

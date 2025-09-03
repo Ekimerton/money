@@ -146,7 +146,7 @@ export function AccountsTableClient({ accounts, timeRange }: AccountsTableClient
                     <Link
                         key={account.id}
                         prefetch={true}
-                        href={`/spending/?account=${encodeURIComponent(account.id)}`}
+                        href={`/transactions/?account=${encodeURIComponent(account.id)}`}
                         className="block border-b last:border-b-0 py-2 hover:bg-muted/60"
                     >
                         <div className="flex w-full items-center justify-between text-left font-medium">
