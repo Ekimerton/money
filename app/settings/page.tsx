@@ -1,8 +1,9 @@
 import SettingsClient from "@/app/settings/settings-client";
 import Database from 'better-sqlite3';
 import path from 'path';
+import { unstable_cache } from 'next/cache';
 
-export default async function SettingsPage() {
+const getSettingsData = unstable_cache(async () => {
     const dbPath = path.join(process.cwd(), './data/user_data.db');
     const db = new Database(dbPath);
     try {
@@ -23,20 +24,24 @@ export default async function SettingsPage() {
             auto_categorize: 0,
             auto_mark_duplicates: 0,
         };
-
-        return (
-            <div>
-                <SettingsClient
-                    initialDisplayName={userConfig?.display_name || ''}
-                    initialClassifierTrainingDate={userConfig?.classifier_training_date}
-                    initialAutoCategorize={Boolean(userConfig?.auto_categorize)}
-                    initialMarkDuplicates={Boolean(userConfig?.auto_mark_duplicates)}
-                />
-            </div>
-        );
+        return userConfig;
     } finally {
         db.close();
     }
+}, ["settings-v1"], { tags: ["settings", "model"] });
+
+export default async function SettingsPage() {
+    const userConfig = await getSettingsData();
+    return (
+        <div>
+            <SettingsClient
+                initialDisplayName={userConfig?.display_name || ''}
+                initialClassifierTrainingDate={userConfig?.classifier_training_date}
+                initialAutoCategorize={Boolean(userConfig?.auto_categorize)}
+                initialMarkDuplicates={Boolean(userConfig?.auto_mark_duplicates)}
+            />
+        </div>
+    );
 }
 
 

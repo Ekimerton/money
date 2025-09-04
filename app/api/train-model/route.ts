@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import Database from 'better-sqlite3';
 import path from 'path';
 import { exec } from 'child_process';
+import { revalidateTag } from 'next/cache';
 
 const dbPath = path.join(process.cwd(), './data/user_data.db');
 const trainModelScriptPath = path.join(process.cwd(), './data/train_model.py');
@@ -21,6 +22,9 @@ export async function POST(req: NextRequest) {
             }
             console.log(`stdout: ${stdout}`);
             console.error(`stderr: ${stderr}`);
+            // Invalidate any caches depending on model or settings
+            revalidateTag('model');
+            revalidateTag('settings');
         });
 
         // Update classifier_training_date in single-row user_config (id = 1)
