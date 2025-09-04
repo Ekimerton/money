@@ -195,7 +195,7 @@ export default function SettingsClient({
                     </div>
                     <div className="flex items-center max-sm:justify-end gap-16 max-sm:gap-2 flex-1">
                         <Button size="sm" variant="secondary" onClick={refreshRecent} disabled={loading} >
-                            {loading ? 'Refreshing...' : 'Refresh Recent'}
+                            {loading ? 'Refreshing...' : 'Refresh'}
                         </Button>
                     </div>
                 </div>
@@ -300,7 +300,7 @@ export default function SettingsClient({
                     </div>
                     <div className="flex items-center max-sm:justify-end gap-16 max-sm:gap-2 flex-1">
                         <Button size="sm" variant="secondary" onClick={refreshAll} disabled={loading}>
-                            {loading ? 'Refreshing...' : 'Refresh All'}
+                            {loading ? 'Refreshing...' : 'Refresh'}
                         </Button>
                     </div>
                 </div>
