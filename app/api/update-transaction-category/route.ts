@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidateTag } from 'next/cache';
 import Database from 'better-sqlite3';
 
 export async function POST(req: NextRequest) {
@@ -14,6 +15,9 @@ export async function POST(req: NextRequest) {
         const stmt = db.prepare('UPDATE transactions SET category = ? WHERE id = ?');
         stmt.run(newCategory, transactionId);
         db.close();
+
+        // Invalidate cached transaction-backed pages and fetches
+        revalidateTag('transactions');
 
         return NextResponse.json({ id: transactionId, category: newCategory });
     } catch (error) {
