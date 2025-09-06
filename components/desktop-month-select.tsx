@@ -23,7 +23,7 @@ function getStartOfMonth(date: Date): Date {
 }
 
 function formatMonthLabel(date: Date): string {
-    return date.toLocaleDateString(undefined, { month: "short", year: "numeric" })
+    return date.toLocaleDateString("en-US", { month: "short", year: "numeric" })
 }
 
 export function DesktopMonthSelect({
