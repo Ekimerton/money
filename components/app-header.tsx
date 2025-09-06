@@ -75,6 +75,7 @@ export function AppHeader({ title, className }: AppHeaderProps) {
     const isAccounts = pathname.startsWith("/accounts")
     const isSpending = pathname.startsWith("/spending")
     const isBacklog = pathname.startsWith("/backlog")
+    const loading = false
 
     const [uncatCount, setUncatCount] = React.useState<number | null>(null)
     React.useEffect(() => {
@@ -157,6 +158,15 @@ export function AppHeader({ title, className }: AppHeaderProps) {
                     </Link>
                 </Button>
             </div>
+            {loading && (
+                <div
+                    className="sm:hidden absolute bottom-0 left-0 right-0 h-0.5 animate-pulse pointer-events-none"
+                    style={{
+                        background:
+                            "linear-gradient(90deg, oklch(62% 0.14 155) 0%, oklch(62% 0.15 240) 50%, oklch(62% 0.13 300) 100%)",
+                    }}
+                />
+            )}
         </div>
     )
 } 
