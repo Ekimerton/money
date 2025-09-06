@@ -88,22 +88,22 @@ export function AccountsTableClient({ accounts, timeRange }: AccountsTableClient
     // Compute percent change using first and last history entries inside the selected time window
     const getAccountBalanceChange = (account: Account) => {
         const history = (account.balanceHistory || [])
-            .map((h) => ({ ...h, dateObj: new Date(h.date) }))
-            .filter((h) => !isNaN(h.dateObj.getTime()))
-            .sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime());
+            .map((h) => ({ ...h, dateStr: h.date }))
+            .filter((h) => Boolean(h.dateStr))
+            .sort((a, b) => (a.dateStr < b.dateStr ? -1 : a.dateStr > b.dateStr ? 1 : 0));
 
         if (history.length === 0) {
             return { percentValue: "N/A", className: "" };
         }
 
         const daysToSubtract = getDaysForTimeRange(timeRange);
-        const referenceDate = new Date();
-        referenceDate.setHours(0, 0, 0, 0);
-        const startDate = new Date(referenceDate);
-        startDate.setDate(startDate.getDate() - daysToSubtract);
-        startDate.setHours(0, 0, 0, 0);
+        const now = new Date();
+        const utcMidnight = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+        const startUTC = new Date(utcMidnight);
+        startUTC.setUTCDate(startUTC.getUTCDate() - daysToSubtract);
+        const startDateStr = startUTC.toISOString().split("T")[0];
 
-        const historyInRange = history.filter((h) => h.dateObj >= startDate);
+        const historyInRange = history.filter((h) => h.dateStr >= startDateStr);
 
         // If there is at least one point, use first and last within the range.
         // If there is exactly one point, change is 0.

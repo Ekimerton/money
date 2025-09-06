@@ -35,12 +35,12 @@ export async function GET(request: Request) {
       const balanceHistory: { date: string; balance: number }[] = [];
       let currentBalance = Number(account.balance);
 
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      const now = new Date();
+      const todayUtcMidnight = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
 
       for (let i = 0; i < days; i++) {
-        const date = new Date(today);
-        date.setDate(today.getDate() - i);
+        const date = new Date(todayUtcMidnight);
+        date.setUTCDate(todayUtcMidnight.getUTCDate() - i);
         const dateString = date.toISOString().split('T')[0];
 
         const transactionsForDay = transactions.filter((t: Transaction) => {

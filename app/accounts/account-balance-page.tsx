@@ -58,9 +58,7 @@ export function AccountBalancePage({ accounts }: { accounts: Account[] }) {
         return processedData;
     }, [accounts, chartView]);
 
-    const filteredData = fullChartData.filter((item) => {
-        const date = new Date(item.date);
-        const referenceDate = new Date();
+    const startDateStr = React.useMemo(() => {
         let daysToSubtract = 90;
         if (timeRange === "30d") {
             daysToSubtract = 30;
@@ -69,10 +67,14 @@ export function AccountBalancePage({ accounts }: { accounts: Account[] }) {
         } else if (timeRange === "365d") {
             daysToSubtract = 365;
         }
-        const startDate = new Date(referenceDate);
-        startDate.setDate(startDate.getDate() - daysToSubtract);
-        return date >= startDate;
-    });
+        const now = new Date();
+        const utcMidnight = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+        const startUTC = new Date(utcMidnight);
+        startUTC.setUTCDate(startUTC.getUTCDate() - daysToSubtract);
+        return startUTC.toISOString().split("T")[0];
+    }, [timeRange]);
+
+    const filteredData = fullChartData.filter((item) => item.date >= startDateStr);
 
     const finalNetWorth = filteredData[filteredData.length - 1]?.totalBalance || 0;
     const startNetWorth = filteredData[0]?.totalBalance || 0;

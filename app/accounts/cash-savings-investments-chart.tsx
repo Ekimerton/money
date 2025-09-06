@@ -65,18 +65,21 @@ export function CashSavingsInvestmentsChart({ accounts, timeRange }: { accounts:
         })
     }, [accounts])
 
-    const filteredData = React.useMemo(() => {
-        const referenceDate = new Date()
+    const startDateStr = React.useMemo(() => {
         let daysToSubtract = 90
         if (timeRange === "30d") daysToSubtract = 30
         else if (timeRange === "7d") daysToSubtract = 7
         else if (timeRange === "365d") daysToSubtract = 365
-        const startDate = new Date(referenceDate)
-        startDate.setDate(startDate.getDate() - daysToSubtract)
-        startDate.setHours(0, 0, 0, 0)
+        const now = new Date()
+        const utcMidnight = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
+        const startUTC = new Date(utcMidnight)
+        startUTC.setUTCDate(startUTC.getUTCDate() - daysToSubtract)
+        return startUTC.toISOString().split("T")[0]
+    }, [timeRange])
 
-        return fullData.filter((d) => new Date(d.date) >= startDate)
-    }, [fullData, timeRange])
+    const filteredData = React.useMemo(() => {
+        return fullData.filter((d) => d.date >= startDateStr)
+    }, [fullData, startDateStr])
 
     const tooltipFormatter = React.useCallback(((value: any, name: any, item: any, _index: number, p: any) => {
         const indicatorColor = item?.payload?.fill || item?.color

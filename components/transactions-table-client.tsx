@@ -215,17 +215,21 @@ export function TransactionsTableClient({
     ];
 
     const filteredTransactions = useMemo(() => {
-        const referenceDate = new Date();
         let daysToSubtract = 90;
         if (timeRange === "30d") daysToSubtract = 30;
         else if (timeRange === "7d") daysToSubtract = 7;
         else if (timeRange === "365d") daysToSubtract = 365;
-        const startDate = new Date(referenceDate);
-        startDate.setDate(startDate.getDate() - daysToSubtract);
+
+        const now = new Date();
+        const utcMidnight = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+        const startUTC = new Date(utcMidnight);
+        startUTC.setUTCDate(startUTC.getUTCDate() - daysToSubtract);
+        const startDateStr = startUTC.toISOString().split("T")[0];
+
         return transactions.filter(t => {
             if (typeof t.transacted_at !== "number" || t.transacted_at === null) return true;
-            const date = new Date(t.transacted_at * 1000);
-            return date >= startDate;
+            const dateStr = new Date(t.transacted_at * 1000).toISOString().split("T")[0];
+            return dateStr >= startDateStr;
         });
     }, [transactions, timeRange]);
 
