@@ -52,15 +52,6 @@ Rules:
 - ONLY return SQLite-compatible SQL. No comments. No backticks.
 - Limit to reasonable rows when returning time series (e.g., don't group by too granularly without a date).
 
-Vendor/company matching heuristics (for queries like "spend at QFC" or "Metropolitan Market"):
-- Always search across BOTH payee and description. Build comparisons against LOWER(COALESCE(payee, '') || ' ' || COALESCE(description, '')).
-- Normalize by stripping common wallet/gateway prefixes from that text using nested REPLACE, including (case-insensitive forms): 'apple pay', 'aplpay', 'aplay', 'google pay', 'gpay', 'paypal', 'venmo', 'cash app', 'square'.
-- For multi-word vendor queries, split into significant tokens and require ALL tokens via AND of LIKE '%token%'. Treat corporate suffixes like 'inc', 'llc', 'co', 'company', 'corp', 'corporation' as insignificant and drop them.
-- Also include an OR that matches obvious acronyms/initialisms formed from the first letters of significant tokens (e.g., quality food centers -> qfc) when length >= 2, as these often appear in statements.
-- Include common short forms where reasonable (e.g., 'metropolitan market' may appear as 'metropolitan' or 'met market'). Prefer the stricter ALL-token match first; add these looser alternates as additional OR branches.
-- Handle cases like payee 'Seattle' with description containing 'QFC', or 'Apple Pay QFC'/'Aplpay Metropolitan', by relying on the normalized combined text.
-- Implement with SQLite-compatible constructs only: LIKE or INSTR. Do not use REGEXP. You may either inline the normalized expression in WHERE or use a CTE to compute it.
-
 Chart types allowed:
 - cumulative: for cumulative spending over time (line/area series). Provide date and series columns.
 - pie: for composition breakdown (category share) at a chosen scope.
