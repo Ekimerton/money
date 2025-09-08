@@ -198,14 +198,16 @@ export default function InsightsClient() {
     };
 
     return (
-        <div className="grid gap-2">
-            {error ? (
-                <div className="px-4 text-sm text-red-600 dark:text-red-400">{error}</div>
-            ) : null}
+        <div className="grid min-h-[100svh] grid-rows-[1fr_auto]">
+            <div className="flex flex-col gap-2 overflow-auto">
+                {error ? (
+                    <div className="px-4 text-sm text-red-600 dark:text-red-400">{error}</div>
+                ) : null}
 
-            {renderChart()}
+                {renderChart()}
+            </div>
 
-            <form onSubmit={onSubmit} className="p-4 flex gap-2 absolute bottom-0 left-0 right-0">
+            <form onSubmit={onSubmit} className="p-4 flex gap-2">
                 <Input
                     placeholder="Ask: show me my spending on Amazon over time"
                     value={prompt}
