@@ -198,7 +198,7 @@ export default function InsightsClient() {
     };
 
     return (
-        <div className="grid gap-2 h-full">
+        <div className="grid gap-2">
             {error ? (
                 <div className="px-4 text-sm text-red-600 dark:text-red-400">{error}</div>
             ) : null}
