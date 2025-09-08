@@ -56,7 +56,7 @@ export default function InsightsClient() {
 
     const EmptyChartSpace = () => (
         <div className="sm:px-4">
-            <div className="aspect-auto h-[300px] max-sm:h-[220px] w-full" />
+            <div className="aspect-auto h-[300px] w-full" />
         </div>
     );
 
@@ -102,7 +102,7 @@ export default function InsightsClient() {
 
             return (
                 <div className="sm:px-4">
-                    <ChartContainer config={chartConfig} className="aspect-auto h-[300px] w-full">
+                    <ChartContainer config={chartConfig} className="aspect-auto h-[300px] max-sm:h-[220px] w-full">
                         <AreaChart data={rows}>
                             <ChartTooltip
                                 cursor={false}
@@ -198,18 +198,16 @@ export default function InsightsClient() {
     };
 
     return (
-        <div className="flex h-[100dvh] flex-col">
-            <div className="flex-1 flex flex-col gap-2 overflow-auto">
-                {error ? (
-                    <div className="px-4 text-sm text-red-600 dark:text-red-400">{error}</div>
-                ) : null}
+        <div className="grid gap-2">
+            {error ? (
+                <div className="px-4 text-sm text-red-600 dark:text-red-400">{error}</div>
+            ) : null}
 
-                {renderChart()}
-            </div>
+            {renderChart()}
 
-            <form onSubmit={onSubmit} className="sticky bottom-0 left-0 right-0 p-4 pb-[env(safe-area-inset-bottom)] flex gap-2 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t">
+            <form onSubmit={onSubmit} className="p-4 flex gap-2">
                 <Input
-                    placeholder="Ask: show me my spending on Amazon over time"
+                    placeholder="Show me my spending on Amazon over time"
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
                 />
