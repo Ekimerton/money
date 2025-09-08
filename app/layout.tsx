@@ -51,7 +51,7 @@ export default function RootLayout({
             <AppSidebar className="h-full" />
             <main className="flex flex-col flex-1">
               <AppHeader title={pageTitle} />
-              <div className="flex-1 overflow-y-auto bg-white dark:bg-neutral-950">
+              <div className="overflow-y-auto bg-white dark:bg-neutral-950">
                 {children}
               </div>
             </main>
