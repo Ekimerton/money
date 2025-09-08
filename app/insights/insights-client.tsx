@@ -102,7 +102,7 @@ export default function InsightsClient() {
 
             return (
                 <div className="sm:px-4">
-                    <ChartContainer config={chartConfig} className="aspect-auto h-[300px] max-sm:h-[220px] w-full">
+                    <ChartContainer config={chartConfig} className="aspect-auto h-[300px] w-full">
                         <AreaChart data={rows}>
                             <ChartTooltip
                                 cursor={false}
@@ -164,7 +164,7 @@ export default function InsightsClient() {
             const total = rows.reduce((acc, r) => acc + Number(r?.[valueKey] || 0), 0);
             return (
                 <div className="sm:px-4">
-                    <ChartContainer config={{}} className="aspect-auto h-[300px] max-sm:h-[220px] w-full">
+                    <ChartContainer config={{}} className="aspect-auto h-[300px] w-full">
                         <PieChart>
                             <ChartTooltip
                                 content={

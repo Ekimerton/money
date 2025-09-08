@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import Database from 'better-sqlite3';
 import path from 'path';
+import fs from 'fs';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 type ChartType = 'cumulative' | 'pie';
@@ -13,9 +14,17 @@ type ModelResponse = {
 const dbPath = path.join(process.cwd(), './data/user_data.db');
 
 function getGeminiClient() {
-    const apiKey = process.env.GOOGLE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || '';
+    const settingsPath = path.join(process.cwd(), './data/user-settings.json');
+    let apiKey = '';
+    try {
+        const raw = fs.readFileSync(settingsPath, 'utf8');
+        const parsed = JSON.parse(raw);
+        apiKey = String(parsed?.geminiApiKey || '').trim();
+    } catch (_) {
+        // fall through to error below
+    }
     if (!apiKey) {
-        throw new Error('Missing Gemini API key. Set GOOGLE_GEMINI_API_KEY in your environment.');
+        throw new Error('Missing Gemini API key. Please add geminiApiKey to data/user-settings.json');
     }
     return new GoogleGenerativeAI(apiKey);
 }

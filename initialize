@@ -40,6 +40,18 @@ fi
 # Create virtual environment in data/.venv
 VENV_DIR="$SCRIPT_DIR/data/.venv"
 mkdir -p "$SCRIPT_DIR/data"
+# Initialize user settings file if missing
+USER_SETTINGS_FILE="$SCRIPT_DIR/data/user-settings.json"
+if [ ! -f "$USER_SETTINGS_FILE" ]; then
+  echo "Creating default user settings at $USER_SETTINGS_FILE ..."
+  cat > "$USER_SETTINGS_FILE" <<'EOF'
+{
+  "geminiApiKey": ""
+}
+EOF
+else
+  echo "User settings already present at $USER_SETTINGS_FILE"
+fi
 if [ ! -d "$VENV_DIR" ]; then
   echo "Creating virtual environment at $VENV_DIR ..."
   "$PYTHON_BIN" -m venv "$VENV_DIR"
