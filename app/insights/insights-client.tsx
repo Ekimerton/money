@@ -2,7 +2,6 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Area, AreaChart, Pie, PieChart, Cell } from "recharts";
 
@@ -205,15 +204,19 @@ export default function InsightsClient() {
 
             {renderChart()}
 
-            <form onSubmit={onSubmit} className="p-4 flex gap-2">
-                <Input
+            <form onSubmit={onSubmit} className="p-4 grid gap-2">
+                <textarea
                     placeholder="Show me my spending on Amazon over time"
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
+                    rows={4}
+                    className="placeholder:text-neutral-500 selection:bg-neutral-900 selection:text-neutral-50 dark:bg-neutral-200/30 border-neutral-200 w-full min-w-0 rounded-md border bg-transparent px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:placeholder:text-neutral-400 dark:selection:bg-neutral-50 dark:selection:text-neutral-900 dark:border-neutral-800 focus-visible:border-neutral-950 focus-visible:ring-neutral-950/50 focus-visible:ring-[3px] dark:focus-visible:border-neutral-300 dark:focus-visible:ring-neutral-300/50 aria-invalid:ring-red-500/20 aria-invalid:border-red-500 dark:aria-invalid:ring-red-900/20 dark:aria-invalid:border-red-900 h-32 resize-vertical"
                 />
-                <Button type="submit" disabled={loading || !prompt.trim()}>
-                    {loading ? "Thinking..." : "Generate"}
-                </Button>
+                <div className="flex justify-end">
+                    <Button type="submit" disabled={loading || !prompt.trim()}>
+                        {loading ? "Thinking..." : "Generate"}
+                    </Button>
+                </div>
             </form>
         </div>
     );

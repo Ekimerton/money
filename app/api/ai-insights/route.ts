@@ -29,22 +29,40 @@ function getGeminiClient() {
     return new GoogleGenerativeAI(apiKey);
 }
 
-const schemaDescription = `
-You are helping generate SQLite SQL for a personal finance app. Use only these tables/columns:
+function buildSchemaDescription(categories: string[]): string {
+    const categoriesSection = categories.length
+        ? `\nCategory values present in data (case-sensitive; exclude 'Internal Transfer' in queries):\n${categories
+            .map((c) => `- ${c}`)
+            .join('\n')}\n`
+        : '';
+
+    return `
+You are helping generate SQLite SQL for a personal finance app.
+
+Database schema (SQLite) - use only these tables/columns:
+
+Table accounts (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  currency TEXT NOT NULL,
+  balance TEXT NOT NULL,           -- string amount
+  balance_date INTEGER NOT NULL,   -- unix seconds
+  type TEXT DEFAULT 'uncategorized'
+);
 
 Table transactions (
   id TEXT PRIMARY KEY,
   account_id TEXT,
-  posted INTEGER,            -- unix seconds
-  amount TEXT,               -- signed string; expenses are negative
-  description TEXT,
+  posted INTEGER,                  -- unix seconds
+  amount TEXT,                     -- signed string; expenses are negative
+  description TEXT,                -- sometimes can be used in place of payee
   payee TEXT NULL,
-  transacted_at INTEGER,     -- unix seconds
-  pending INTEGER,           -- 0/1
-  hidden INTEGER,            -- 0/1
-  category TEXT              -- includes 'Internal Transfer'
+  transacted_at INTEGER,           -- unix seconds
+  pending INTEGER,                 -- 0/1
+  hidden INTEGER,                  -- 0/1
+  category TEXT                    -- includes 'Internal Transfer'
 );
-
+${categoriesSection}
 Rules:
 - Always filter out hidden = 1 and category = 'Internal Transfer'.
 - For spend analyses, use amount < 0 and ABS(CAST(amount AS REAL)) for magnitude.
@@ -56,6 +74,7 @@ Chart types allowed:
 - cumulative: for cumulative spending over time (line/area series). Provide date and series columns.
 - pie: for composition breakdown (category share) at a chosen scope.
 `;
+}
 
 export async function POST(req: NextRequest) {
     try {
@@ -65,10 +84,28 @@ export async function POST(req: NextRequest) {
             return new Response(JSON.stringify({ error: 'Missing prompt' }), { status: 400 });
         }
 
+        // Read existing categories from the database to help guide the model
+        let categories: string[] = [];
+        try {
+            const catDb = new Database(dbPath, { readonly: true });
+            try {
+                const rows = catDb
+                    .prepare(
+                        "SELECT DISTINCT category AS category FROM transactions WHERE hidden = 0 AND category IS NOT NULL AND TRIM(category) <> '' AND category <> 'Internal Transfer' ORDER BY category ASC"
+                    )
+                    .all() as Array<{ category: string }>;
+                categories = rows.map((r) => r.category);
+            } finally {
+                catDb.close();
+            }
+        } catch (_) {
+            // ignore and proceed without categories context
+        }
+
         const genAI = getGeminiClient();
         const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
-        const systemPrompt = `${schemaDescription}\nUser request: ${prompt}\nReturn a strict JSON with keys sql and chart where chart is one of [cumulative, pie].`;
+        const systemPrompt = `${buildSchemaDescription(categories)}\nUser request: ${prompt}\nReturn a strict JSON with keys sql and chart where chart is one of [cumulative, pie].`;
 
         const result = await model.generateContent({ contents: [{ role: 'user', parts: [{ text: systemPrompt }] }] });
         const text = result.response.text();
