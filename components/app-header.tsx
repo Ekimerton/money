@@ -97,7 +97,7 @@ export function AppHeader({ title, className }: AppHeaderProps) {
     return (
         <div className="px-2 h-14 sm:border-b w-full bg-white dark:bg-neutral-950 relative">
             {/* Desktop / tablet navbar */}
-            <div className="hidden sm:flex items-center gap-2 h-full">
+            <div className="hidden sm:flex items-center gap-2 h-14">
                 <SidebarTrigger className="mx-1" />
                 <div className="h-4 bg-neutral-800 w-[1px]"></div>
                 <Breadcrumb className="flex-1 overflow-x-auto">
