@@ -4,6 +4,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Area, AreaChart, Pie, PieChart, Cell } from "recharts";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 type ChartType = "cumulative" | "pie";
 
@@ -30,6 +31,7 @@ export default function InsightsClient() {
     const [loading, setLoading] = React.useState(false);
     const [error, setError] = React.useState<string | null>(null);
     const [data, setData] = React.useState<ApiResponse | null>(null);
+    const [sqlOpen, setSqlOpen] = React.useState(false);
 
     const onSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -203,6 +205,25 @@ export default function InsightsClient() {
             ) : null}
 
             {renderChart()}
+
+            {data?.sql ? (
+                <div className="px-4">
+                    <Collapsible open={sqlOpen} onOpenChange={setSqlOpen}>
+                        <CollapsibleTrigger asChild>
+                            <Button variant="ghost" size="sm" className="mb-2">
+                                {sqlOpen ? "Hide SQL" : "Show SQL"}
+                            </Button>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                            <div className="rounded-md border border-neutral-200 bg-neutral-50 p-3 dark:border-neutral-800 dark:bg-neutral-900/30">
+                                <pre className="whitespace-pre-wrap break-words font-mono text-xs overflow-x-auto">
+                                    {data.sql}
+                                </pre>
+                            </div>
+                        </CollapsibleContent>
+                    </Collapsible>
+                </div>
+            ) : null}
 
             <form onSubmit={onSubmit} className="p-4 grid gap-2">
                 <textarea
