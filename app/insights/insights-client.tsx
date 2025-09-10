@@ -3,10 +3,10 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { Area, AreaChart, Pie, PieChart, Cell } from "recharts";
+import { Area, AreaChart, Pie, PieChart, Cell, BarChart, Bar } from "recharts";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
-type ChartType = "cumulative" | "pie";
+type ChartType = "cumulative" | "pie" | "area" | "bar";
 
 type ApiResponse = {
     chart: ChartType;
@@ -153,6 +153,198 @@ export default function InsightsClient() {
                     </ChartContainer>
                 </div>
             );
+        }
+        if (data.chart === "area") {
+            const rows = data.rows as any[];
+            if (!rows.length) return <EmptyChartSpace />;
+            const categories = Object.keys(rows[0]).filter((k) => k !== "date");
+            const chartConfig: any = {};
+            categories.forEach((cat, idx) => {
+                chartConfig[cat] = { label: cat, color: COLORS[idx % COLORS.length] };
+            });
+            const tooltipFormatter = ((value: any, name: any, item: any, _index: number, p: any) => {
+                const indicatorColor = item?.payload?.stroke || item?.color;
+                const key = String(name);
+                const labelText = chartConfig[key]?.label ?? key;
+                const numericValue = Number(value);
+                const sum = Array.isArray(categories) && p
+                    ? categories.reduce((acc, cat) => acc + (Number(p?.[cat]) || 0), 0)
+                    : 0;
+                const percent = sum > 0 ? numericValue / sum : 0;
+                return (
+                    <div className="flex w-full items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <div
+                                className="h-2.5 w-2.5 shrink-0 rounded-[2px] border-(--color-border) bg-(--color-bg)"
+                                style={{ backgroundColor: indicatorColor, borderColor: indicatorColor }}
+                            />
+                            <span className="text-neutral-500 dark:text-neutral-400">
+                                {labelText} ({Intl.NumberFormat("en-US", { style: "percent", maximumFractionDigits: 0 }).format(percent)})
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-2 ml-8">
+                            <span className="text-neutral-950 font-mono font-medium tabular-nums dark:text-neutral-50">
+                                {Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(numericValue)}
+                            </span>
+                        </div>
+                    </div>
+                );
+            }) as any;
+            return (
+                <div className="sm:px-4">
+                    <ChartContainer config={chartConfig} className="aspect-auto h-[300px] max-sm:h-[220px] w-full">
+                        <AreaChart data={rows}>
+                            <ChartTooltip
+                                cursor={false}
+                                content={
+                                    <ChartTooltipContent
+                                        labelFormatter={(_, payload) => {
+                                            if (!payload || payload.length === 0) return "";
+                                            const row = payload[0].payload as any;
+                                            const dateValue = row.date;
+                                            return (
+                                                <div className="flex justify-between w-full pb-2 text-neutral-950 dark:text-neutral-50">
+                                                    <p>
+                                                        {new Date(String(dateValue) + "T00:00:00").toLocaleDateString("en-US", {
+                                                            month: "short",
+                                                            day: "numeric",
+                                                        })}
+                                                    </p>
+                                                </div>
+                                            );
+                                        }}
+                                        indicator="dot"
+                                        formatter={tooltipFormatter}
+                                    />
+                                }
+                            />
+                            {categories.map((cat) => (
+                                <Area
+                                    key={cat}
+                                    dataKey={cat}
+                                    type="bump"
+                                    stroke={chartConfig[cat]?.color}
+                                    fill={chartConfig[cat]?.color}
+                                    fillOpacity={0.12}
+                                    strokeWidth={2}
+                                    dot={false}
+                                    stackId={1}
+                                />
+                            ))}
+                            <ChartLegend content={<ChartLegendContent />} className="max-sm:hidden text-neutral-950 dark:text-neutral-50" />
+                        </AreaChart>
+                    </ChartContainer>
+                </div>
+            );
+        }
+        if (data.chart === "bar") {
+            const rows = data.rows as any[];
+            if (!rows.length) return <EmptyChartSpace />;
+            const keys = Object.keys(rows[0]);
+            const dateKey = keys.find((k) => /^(date|day|posted|transacted_at)$/i.test(k)) || "date";
+            const isTimeSeries = keys.includes(dateKey);
+            if (isTimeSeries) {
+                const categories = keys.filter((k) => k !== dateKey);
+                const chartConfig: any = {};
+                categories.forEach((cat, idx) => {
+                    chartConfig[cat] = { label: cat, color: COLORS[idx % COLORS.length] };
+                });
+                const tooltipFormatter = ((value: any, name: any, item: any, _index: number, p: any) => {
+                    const indicatorColor = item?.payload?.fill || item?.color;
+                    const key = String(name);
+                    const labelText = chartConfig[key]?.label ?? key;
+                    const numericValue = Number(value);
+                    const sum = Array.isArray(categories) && p
+                        ? categories.reduce((acc, cat) => acc + (Number(p?.[cat]) || 0), 0)
+                        : 0;
+                    const percent = sum > 0 ? numericValue / sum : 0;
+                    return (
+                        <div className="flex w-full items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <div
+                                    className="h-2.5 w-2.5 shrink-0 rounded-[2px] border-(--color-border) bg-(--color-bg)"
+                                    style={{ backgroundColor: indicatorColor, borderColor: indicatorColor }}
+                                />
+                                <span className="text-neutral-500 dark:text-neutral-400">
+                                    {labelText} ({Intl.NumberFormat("en-US", { style: "percent", maximumFractionDigits: 0 }).format(percent)})
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-2 ml-8">
+                                <span className="text-neutral-950 font-mono font-medium tabular-nums dark:text-neutral-50">
+                                    {Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(numericValue)}
+                                </span>
+                            </div>
+                        </div>
+                    );
+                }) as any;
+                return (
+                    <div className="sm:px-4">
+                        <ChartContainer config={chartConfig} className="aspect-auto h-[300px] max-sm:h-[220px] w-full">
+                            <BarChart data={rows}>
+                                <ChartTooltip
+                                    content={
+                                        <ChartTooltipContent
+                                            indicator="dot"
+                                            labelFormatter={(_, payload) => {
+                                                if (!payload || payload.length === 0) return "";
+                                                const row = payload[0].payload as any;
+                                                const dateValue = row[dateKey] ?? row.date;
+                                                return (
+                                                    <div className="flex justify-between w-full pb-2 text-neutral-950 dark:text-neutral-50">
+                                                        <p>
+                                                            {new Date(String(dateValue) + "T00:00:00").toLocaleDateString("en-US", {
+                                                                month: "short",
+                                                                day: "numeric",
+                                                            })}
+                                                        </p>
+                                                    </div>
+                                                );
+                                            }}
+                                            formatter={tooltipFormatter}
+                                        />
+                                    }
+                                />
+                                {categories.map((cat) => (
+                                    <Bar key={cat} dataKey={cat} fill={chartConfig[cat]?.color} radius={2} stackId="1" />
+                                ))}
+                                <ChartLegend content={<ChartLegendContent />} className="max-sm:hidden text-neutral-950 dark:text-neutral-50" />
+                            </BarChart>
+                        </ChartContainer>
+                    </div>
+                );
+            } else {
+                const labelKey = keys.find((k) => /label|name|category|payee/i.test(k)) || keys[0];
+                const valueKey = keys.find((k) => /value|amount|total|sum|count/i.test(k)) || keys[1] || keys[0];
+                const total = rows.reduce((acc, r) => acc + Number(r?.[valueKey] || 0), 0);
+                return (
+                    <div className="sm:px-4">
+                        <ChartContainer config={{}} className="aspect-auto h-[300px] w-full">
+                            <BarChart data={rows}>
+                                <ChartTooltip
+                                    content={
+                                        <ChartTooltipContent
+                                            indicator="dot"
+                                            formatter={(value: any, name: any) => {
+                                                const numericValue = Number(value);
+                                                const pct = total > 0 ? numericValue / total : 0;
+                                                return (
+                                                    <div className="flex w-full items-center justify-between">
+                                                        <span className="text-neutral-500 dark:text-neutral-400">{name}</span>
+                                                        <span className="text-neutral-950 font-mono font-medium tabular-nums dark:text-neutral-50">
+                                                            {Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(numericValue)} ({Intl.NumberFormat("en-US", { style: "percent", maximumFractionDigits: 0 }).format(pct)})
+                                                        </span>
+                                                    </div>
+                                                );
+                                            }}
+                                        />
+                                    }
+                                />
+                                <Bar dataKey={valueKey} name={labelKey} fill={COLORS[0]} radius={2} />
+                            </BarChart>
+                        </ChartContainer>
+                    </div>
+                );
+            }
         }
         if (data.chart === "pie") {
             // Expect rows with label and value columns; try to infer keys

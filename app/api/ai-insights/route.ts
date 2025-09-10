@@ -4,7 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-type ChartType = 'cumulative' | 'pie';
+type ChartType = 'cumulative' | 'pie' | 'area' | 'bar';
 
 type ModelResponse = {
     sql: string;
@@ -71,8 +71,14 @@ Rules:
 - Limit to reasonable rows when returning time series (e.g., don't group by too granularly without a date).
 
 Chart types allowed:
-- cumulative: for cumulative spending over time (line/area series). Provide date and series columns.
-- pie: for composition breakdown (category share) at a chosen scope.
+- cumulative: cumulative spending over time (stacked area). Provide date and series columns.
+- area: non-cumulative time series (area lines). Provide date and series columns.
+- bar: stacked bar chart. For time series, return one row per day with a column named 'date' (DATE(transacted_at,'unixepoch')) and one or more series columns (e.g., categories). For categorical (no date), return two columns: 'label' and 'value'.
+- pie: composition breakdown (category share) at a chosen scope.
+
+Output column naming rules:
+- Time series charts (cumulative, area, bar): name the date column exactly 'date' (lowercase) using DATE(transacted_at,'unixepoch').
+- Categorical bar and pie charts: return 'label' and 'value' columns (lowercase).
 `;
 }
 
@@ -105,7 +111,7 @@ export async function POST(req: NextRequest) {
         const genAI = getGeminiClient();
         const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
-        const systemPrompt = `${buildSchemaDescription(categories)}\nUser request: ${prompt}\nReturn a strict JSON with keys sql and chart where chart is one of [cumulative, pie].`;
+        const systemPrompt = `${buildSchemaDescription(categories)}\nUser request: ${prompt}\nReturn a strict JSON with keys sql and chart where chart is one of [cumulative, area, bar, pie].`;
 
         const result = await model.generateContent({ contents: [{ role: 'user', parts: [{ text: systemPrompt }] }] });
         const text = result.response.text();
@@ -121,7 +127,7 @@ export async function POST(req: NextRequest) {
             parsed = null;
         }
 
-        if (!parsed || typeof parsed.sql !== 'string' || (parsed.chart !== 'cumulative' && parsed.chart !== 'pie')) {
+        if (!parsed || typeof parsed.sql !== 'string' || (parsed.chart !== 'cumulative' && parsed.chart !== 'pie' && parsed.chart !== 'area' && parsed.chart !== 'bar')) {
             return new Response(JSON.stringify({ error: 'Invalid model response', raw: text }), { status: 502 });
         }
 
