@@ -1,3 +1,4 @@
+"use client";
 
 import * as React from "react"
 import { SidebarTrigger } from "@/components/ui/sidebar"
@@ -67,7 +68,7 @@ function AccountCrumb() {
     );
 }
 
-export function AppHeader({ title, className }: AppHeaderProps) {
+export function AppHeader({ title, className, initialUncatCount }: AppHeaderProps & { initialUncatCount?: number }) {
     const pathname = usePathname()
     const pathSegments = pathname.split("/").filter(Boolean)
     const isSettings = pathname.startsWith("/settings")
@@ -76,23 +77,6 @@ export function AppHeader({ title, className }: AppHeaderProps) {
     const isSpending = pathname.startsWith("/spending")
     const isBacklog = pathname.startsWith("/backlog")
     const loading = false
-
-    const [uncatCount, setUncatCount] = React.useState<number | null>(null)
-    React.useEffect(() => {
-        let active = true
-        const load = async () => {
-            try {
-                const { getUncategorizedCount } = await import("@/app/settings/actions")
-                const count = await getUncategorizedCount()
-                if (active) setUncatCount(count)
-            } catch (e) {
-                // ignore
-            }
-        }
-        load()
-        const id = setInterval(load, 60_000)
-        return () => { active = false; clearInterval(id) }
-    }, [])
 
     return (
         <div className="px-2 h-14 sm:border-b w-full bg-white dark:bg-neutral-950 relative">
@@ -143,7 +127,7 @@ export function AppHeader({ title, className }: AppHeaderProps) {
                 <Button asChild variant={isBacklog ? "secondary" : "ghost"} size="sm-icon" aria-label="Backlog">
                     <Link href="/backlog" className="relative">
                         <Bell />
-                        {typeof uncatCount === 'number' && uncatCount > 0 && (
+                        {typeof initialUncatCount === 'number' && initialUncatCount > 0 && (
                             <span className="absolute -top-0.5 -right-0.5 block h-2 w-2 rounded-full bg-red-500" />
                         )}
                     </Link>
