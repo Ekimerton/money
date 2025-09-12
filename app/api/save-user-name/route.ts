@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Database from 'better-sqlite3';
 import path from 'path';
+import { revalidateTag } from 'next/cache';
 
 const dbPath = path.join(process.cwd(), './data/user_data.db');
 
@@ -23,6 +24,7 @@ export async function POST(req: NextRequest) {
 
         db.close();
 
+        revalidateTag('settings');
         return NextResponse.json({ message: 'User name saved successfully!' }, { status: 200 });
     } catch (error: any) {
         console.error('Error saving user name:', error);

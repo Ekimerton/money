@@ -79,6 +79,7 @@ export async function setAutoCategorize(autoCategorize: boolean): Promise<void> 
                 auto_categorize = excluded.auto_categorize
         `);
         stmt.run(autoCategorize ? 1 : 0);
+        revalidateTag('settings');
     } finally {
         db.close();
     }
@@ -94,6 +95,7 @@ export async function setAutoMarkInternalTransfers(enabled: boolean): Promise<vo
                 auto_mark_duplicates = excluded.auto_mark_duplicates
         `);
         stmt.run(enabled ? 1 : 0);
+        revalidateTag('settings');
     } finally {
         db.close();
     }

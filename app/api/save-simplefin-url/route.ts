@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Database from 'better-sqlite3';
 import path from 'path';
+import { revalidateTag } from 'next/cache';
 
 const dbPath = path.join(process.cwd(), './data/user_data.db');
 
@@ -37,6 +38,7 @@ export async function POST(req: NextRequest) {
         stmt.run(ACCESS_URL);
         db.close();
 
+        revalidateTag('settings');
         return NextResponse.json({ message: 'SimpleFIN URL saved successfully!', simplefinUrl: ACCESS_URL }, { status: 200 });
     } catch (error: any) {
         console.error('Error saving SimpleFIN URL:', error);

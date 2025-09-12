@@ -29,6 +29,7 @@ export default function SettingsClient({
     const [selectedRefreshTime, setSelectedRefreshTime] = useState<string>("none");
     const [markDuplicates, setMarkDuplicates] = useState<boolean>(initialMarkDuplicates);
     const [detectRecurring, setDetectRecurring] = useState<boolean>(false);
+    const [classifierTrainingDate, setClassifierTrainingDate] = useState<string | null>(initialClassifierTrainingDate);
 
     const saveUserName = async () => {
         setLoading(true);
@@ -88,7 +89,7 @@ export default function SettingsClient({
     };
 
     const handleAutoCategorizeToggle = async (newValue: boolean) => {
-        if (!initialClassifierTrainingDate) return;
+        if (!classifierTrainingDate) return;
         const prev = autoCategorize;
         setAutoCategorize(newValue);
         try {
@@ -236,10 +237,10 @@ export default function SettingsClient({
                     </div>
                     <div className="flex items-center max-sm:justify-end gap-16 max-sm:gap-2 flex-1">
                         <p className="text-sm">
-                            {initialClassifierTrainingDate
+                            {classifierTrainingDate
                                 ? (() => {
                                     const now = new Date();
-                                    const trained = new Date(initialClassifierTrainingDate);
+                                    const trained = new Date(classifierTrainingDate);
                                     const diffMs = now.getTime() - trained.getTime();
                                     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
                                     return diffDays === 0
@@ -268,11 +269,14 @@ export default function SettingsClient({
                                 setError(null);
                                 try {
                                     const response = await fetch('/api/train-model', { method: 'POST' });
+                                    const data = await response.json();
                                     if (!response.ok) {
-                                        const errorData = await response.json();
-                                        throw new Error(errorData.error || 'Failed to train model.');
+                                        throw new Error(data?.error || 'Failed to train model.');
                                     }
-                                    toast.success('Model training started');
+                                    if (data?.classifierTrainingDate) {
+                                        setClassifierTrainingDate(data.classifierTrainingDate);
+                                    }
+                                    toast.success('Model training completed');
                                 } catch (err: any) {
                                     setError(err.message);
                                     toast.error(err.message || 'Failed to train model.');

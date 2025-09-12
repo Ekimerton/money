@@ -65,8 +65,20 @@ if __name__ == "__main__":
     if not data.empty:
         features, labels, tfidf_combined, le_account, scaler_amount = preprocess_data(data) # Get all returned objects
 
-        # Split data into training and testing sets (80/20 split as requested earlier)
+        # Split data into training and testing sets (80/20 split)
         X_train, X_test, y_train, y_test = train_test_split(features, labels, test_size=0.2, random_state=42)
+
+        # Ensure we keep pandas DataFrame with original feature names after split
+        if not isinstance(X_train, pd.DataFrame):
+            X_train = pd.DataFrame(X_train, columns=features.columns)
+        else:
+            # Reorder/align columns defensively in case of any drift
+            X_train = X_train[features.columns]
+
+        if not isinstance(X_test, pd.DataFrame):
+            X_test = pd.DataFrame(X_test, columns=features.columns)
+        else:
+            X_test = X_test[features.columns]
         
         print(f"\nTraining set shape: {X_train.shape}")
         print(f"Testing set shape: {X_test.shape}")

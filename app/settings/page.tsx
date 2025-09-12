@@ -28,7 +28,7 @@ const getSettingsData = unstable_cache(async () => {
     } finally {
         db.close();
     }
-}, ["settings-v1"], { tags: ["settings", "model"] });
+}, ["settings-v1"], { tags: ["settings"] });
 
 export default async function SettingsPage() {
     const userConfig = await getSettingsData();

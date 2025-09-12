@@ -12,23 +12,22 @@ const modelSavePath = path.join(process.cwd(), './data/model');
 
 export async function POST(req: NextRequest) {
     try {
-        const db = new Database(dbPath);
+        const cmd = `${pythonExecutablePath} ${trainModelScriptPath} ${dbPath} ${modelSavePath}`;
 
-        // Execute the Python script
-        exec(`${pythonExecutablePath} ${trainModelScriptPath} ${dbPath} ${modelSavePath}`, (error, stdout, stderr) => {
-            if (error) {
-                console.error(`exec error: ${error}`);
-                return;
-            }
-            console.log(`stdout: ${stdout}`);
-            console.error(`stderr: ${stderr}`);
-            // Invalidate any caches depending on model or settings
-            revalidateTag('model');
-            revalidateTag('settings');
+        const { stdout, stderr } = await new Promise<{ stdout: string; stderr: string }>((resolve, reject) => {
+            exec(cmd, { maxBuffer: 1024 * 1024 * 10 }, (error, stdout, stderr) => {
+                if (error) {
+                    const err: any = new Error(`Training failed: ${error.message}`);
+                    err.stderr = stderr;
+                    err.stdout = stdout;
+                    return reject(err);
+                }
+                return resolve({ stdout, stderr });
+            });
         });
 
-        // Update classifier_training_date in single-row user_config (id = 1)
         const now = new Date().toISOString();
+        const db = new Database(dbPath);
         db.prepare(`
             INSERT INTO user_config (id, classifier_training_date)
             VALUES (1, ?)
@@ -37,9 +36,11 @@ export async function POST(req: NextRequest) {
         `).run(now);
         db.close();
 
-        return NextResponse.json({ message: 'Model training initiated and date updated!' }, { status: 200 });
+        revalidateTag('settings');
+
+        return NextResponse.json({ message: 'Model training completed', classifierTrainingDate: now, stdout, stderr }, { status: 200 });
     } catch (error: any) {
         console.error('Error training model:', error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json({ error: error.message, stderr: error?.stderr }, { status: 500 });
     }
 }
