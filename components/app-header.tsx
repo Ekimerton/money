@@ -77,6 +77,7 @@ export function AppHeader({ title, className, initialUncatCount }: AppHeaderProp
     const isSpending = pathname.startsWith("/spending")
     const isBacklog = pathname.startsWith("/backlog")
     const loading = false
+    const uncatCount = initialUncatCount
 
     return (
         <div className="px-2 h-14 sm:border-b w-full bg-white dark:bg-neutral-950 relative">
@@ -127,7 +128,7 @@ export function AppHeader({ title, className, initialUncatCount }: AppHeaderProp
                 <Button asChild variant={isBacklog ? "secondary" : "ghost"} size="sm-icon" aria-label="Backlog">
                     <Link href="/backlog" className="relative">
                         <Bell />
-                        {typeof initialUncatCount === 'number' && initialUncatCount > 0 && (
+                        {typeof uncatCount === 'number' && uncatCount > 0 && (
                             <span className="absolute -top-0.5 -right-0.5 block h-2 w-2 rounded-full bg-red-500" />
                         )}
                     </Link>
