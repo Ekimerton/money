@@ -82,26 +82,6 @@ if __name__ == "__main__":
         print("\nClassification Report:")
         print(classification_report(y_test, y_pred))
 
-        # Classify a random data point
-        if not X_test.empty:
-            random_index = X_test.sample(1).index[0]
-            random_data_point = X_test.loc[random_index]
-            actual_category = y_test.loc[random_index]
-
-            # Predict for the single data point
-            predicted_category = model.predict(random_data_point.values.reshape(1, -1))[0]
-            prediction_proba = model.predict_proba(random_data_point.values.reshape(1, -1))[0]
-            predicted_category_index = model.classes_.tolist().index(predicted_category)
-            confidence = prediction_proba[predicted_category_index]
-
-            print(f"\n--- Random Data Point Classification ---")
-            print(f"Original Transaction Index: {random_index}")
-            print(f"Actual Category: {actual_category}")
-            print(f"Predicted Category: {predicted_category}")
-            print(f"Prediction Confidence: {confidence:.2f}") # Print confidence with 2 decimal places
-        else:
-            print("\nNo test data available for random classification.")
-
         # Save the trained model and preprocessing objects
         model_dir = model_save_dir
         os.makedirs(model_dir, exist_ok=True) # Ensure the directory exists

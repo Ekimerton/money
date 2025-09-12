@@ -110,7 +110,7 @@ export function AppHeader({ title, className, initialUncatCount }: AppHeaderProp
             </div>
 
             {/* Mobile buttons */}
-            <div className="sm:hidden h-full flex items-center justify-center">
+            <div className="sm:hidden flex items-center justify-center h-14">
                 <Button asChild variant={isInsights ? "secondary" : "ghost"} size="sm">
                     <Link href="/insights">Insights</Link>
                 </Button>
