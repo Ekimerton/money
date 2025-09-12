@@ -68,7 +68,7 @@ function AccountCrumb() {
     );
 }
 
-export function AppHeader({ title, className, initialUncatCount }: AppHeaderProps & { initialUncatCount?: number }) {
+export function AppHeader({ title, className }: AppHeaderProps) {
     const pathname = usePathname()
     const pathSegments = pathname.split("/").filter(Boolean)
     const isSettings = pathname.startsWith("/settings")
@@ -77,6 +77,37 @@ export function AppHeader({ title, className, initialUncatCount }: AppHeaderProp
     const isSpending = pathname.startsWith("/spending")
     const isBacklog = pathname.startsWith("/backlog")
     const loading = false
+
+    const [uncatCount, setUncatCount] = React.useState<number | null>(null)
+
+    React.useEffect(() => {
+        let active = true
+        const fetchCount = async () => {
+            try {
+                const res = await fetch('/api/get-uncategorized-count', {
+                    // Tag so server-side invalidations of 'transactions' refresh this cached response
+                    next: { tags: ['transactions'] },
+                } as any)
+                if (!res.ok) throw new Error('Failed to load count')
+                const data = await res.json()
+                if (active) setUncatCount(Number(data?.count ?? 0))
+            } catch {
+                if (active) setUncatCount(0)
+            }
+        }
+        fetchCount()
+
+        // Re-check when tab regains focus or visibility changes
+        const onFocus = () => fetchCount()
+        const onVis = () => { if (document.visibilityState === 'visible') fetchCount() }
+        window.addEventListener('focus', onFocus)
+        document.addEventListener('visibilitychange', onVis)
+        return () => {
+            active = false
+            window.removeEventListener('focus', onFocus)
+            document.removeEventListener('visibilitychange', onVis)
+        }
+    }, [])
 
     return (
         <div className="px-2 h-14 sm:border-b w-full bg-white dark:bg-neutral-950 relative">
@@ -127,7 +158,7 @@ export function AppHeader({ title, className, initialUncatCount }: AppHeaderProp
                 <Button asChild variant={isBacklog ? "secondary" : "ghost"} size="sm-icon" aria-label="Backlog">
                     <Link href="/backlog" className="relative">
                         <Bell />
-                        {typeof initialUncatCount === 'number' && initialUncatCount > 0 && (
+                        {typeof uncatCount === 'number' && uncatCount > 0 && (
                             <span className="absolute -top-0.5 -right-0.5 block h-2 w-2 rounded-full bg-red-500" />
                         )}
                     </Link>

@@ -5,7 +5,6 @@ import "./globals.css";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppHeader } from "@/components/app-header";
-import { getUncategorizedCount } from "@/app/settings/actions";
 import { Toaster } from "@/components/ui/sonner";
 
 const geistSans = Geist({
@@ -28,7 +27,6 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const count = await getUncategorizedCount();
   return (
     <html lang="en">
       <body
@@ -38,7 +36,7 @@ export default async function RootLayout({
           <div className="flex h-dvh w-screen">
             <AppSidebar className="h-full" />
             <main className="flex flex-col flex-1">
-              <AppHeader initialUncatCount={count} />
+              <AppHeader />
               <div className="overflow-y-auto bg-white dark:bg-neutral-950">
                 {children}
               </div>
