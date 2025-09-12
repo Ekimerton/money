@@ -14,6 +14,10 @@ export async function POST(req: NextRequest) {
         const dbPath = path.join(process.cwd(), './data/user_data.db');
         const db = new Database(dbPath);
 
+        // Read previous category to decide if backlog cache should be invalidated
+        const prevRow = db.prepare('SELECT category FROM transactions WHERE id = ?').get(transactionId) as { category?: string } | undefined;
+        const prevCategory = (prevRow?.category ?? '').toString();
+
         // Normalize category: treat empty or case-insensitive 'uncategorized' as 'Uncategorized'
         const normalized = (() => {
             const value = String(newCategory ?? '').trim();
@@ -25,8 +29,11 @@ export async function POST(req: NextRequest) {
         stmt.run(normalized, transactionId);
         db.close();
 
-        // Invalidate cached transaction-backed pages and fetches
-        revalidateTag('transactions');
+        // Invalidate only when backlog is affected
+        const affectsBacklog = prevCategory === 'Uncategorized' || normalized === 'Uncategorized';
+        if (affectsBacklog) {
+            revalidateTag('transactions');
+        }
 
         return NextResponse.json({ id: transactionId, category: normalized });
     } catch (error) {
