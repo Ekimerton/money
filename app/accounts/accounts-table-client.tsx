@@ -66,7 +66,6 @@ export function AccountsTableClient({ accounts, timeRange }: AccountsTableClient
         } finally {
             setIsSaving(false);
             setIsSettingsOpen(false);
-            router.refresh();
         }
     };
 

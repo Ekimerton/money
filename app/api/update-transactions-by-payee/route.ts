@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Database from 'better-sqlite3';
 import path from 'path';
+import { revalidateTag } from 'next/cache';
 
 const dbPath = path.join(process.cwd(), './data/user_data.db');
 
@@ -18,6 +19,7 @@ export async function POST(req: NextRequest) {
         stmt.run(newCategory, payee);
         db.close();
 
+        revalidateTag('transactions');
         return NextResponse.json({ message: `All transactions for payee ${payee} updated to category ${newCategory}` });
     } catch (error) {
         console.error('Error updating transactions by payee:', error);
