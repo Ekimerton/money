@@ -51,6 +51,12 @@ export async function POST(req: Request) {
 
     const data = await response.json();
     const accounts = data.accounts;
+    const fetchedAccountIds: string[] = Array.isArray(accounts) ? accounts.map((a: any) => String(a.id)) : [];
+    const fetchedTransactionIds: string[] = Array.isArray((data as any).transactions)
+      ? (data as any).transactions.map((t: any) => String(t.id))
+      : (Array.isArray(accounts)
+        ? accounts.flatMap((a: any) => Array.isArray(a.transactions) ? a.transactions.map((t: any) => String(t.id)) : [])
+        : []);
 
     const insertAccount = db.prepare(
       'INSERT INTO accounts (id, name, currency, balance, balance_date) VALUES (?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET currency=excluded.currency, balance=excluded.balance, balance_date=excluded.balance_date'
@@ -83,6 +89,24 @@ export async function POST(req: Request) {
             'Uncategorized' // Default for new, existing untouched by ON CONFLICT
           );
         }
+      }
+
+      // Prune accounts not present in fetched data
+      if (fetchedAccountIds.length > 0) {
+        const placeholders = fetchedAccountIds.map(() => '?').join(', ');
+        db.prepare(`DELETE FROM accounts WHERE id NOT IN (${placeholders})`).run(...fetchedAccountIds);
+      } else {
+        // No accounts returned; remove all to reflect source of truth
+        db.prepare('DELETE FROM accounts').run();
+      }
+
+      // Prune transactions not present in fetched data
+      if (fetchedTransactionIds.length > 0) {
+        const placeholdersTx = fetchedTransactionIds.map(() => '?').join(', ');
+        db.prepare(`DELETE FROM transactions WHERE id NOT IN (${placeholdersTx})`).run(...fetchedTransactionIds);
+      } else {
+        // No transactions returned; remove all
+        db.prepare('DELETE FROM transactions').run();
       }
     })();
 
