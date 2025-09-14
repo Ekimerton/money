@@ -151,6 +151,10 @@ export async function refreshRecent(processAll?: boolean): Promise<{ message: st
 
         const data = await response.json();
         const accounts = data.accounts as Array<any>;
+        const fetchedAccountIds: string[] = Array.isArray(accounts) ? accounts.map((a: any) => String(a.id)) : [];
+        const fetchedTransactionIds: string[] = Array.isArray(accounts)
+            ? accounts.flatMap((a: any) => Array.isArray(a.transactions) ? a.transactions.map((t: any) => String(t.id)) : [])
+            : [];
 
         const insertAccount = db.prepare(
             'INSERT INTO accounts (id, name, currency, balance, balance_date) VALUES (?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET currency=excluded.currency, balance=excluded.balance, balance_date=excluded.balance_date'
@@ -187,6 +191,27 @@ export async function refreshRecent(processAll?: boolean): Promise<{ message: st
                         newTransactionIds.push(String(transaction.id));
                     }
                 }
+            }
+
+            // When processing all history, prune rows not present in fetched data
+            if (processAll) {
+                // Use temp tables to avoid parameter count limits
+                db.prepare('CREATE TEMP TABLE IF NOT EXISTS temp_fetched_accounts (id TEXT PRIMARY KEY)').run();
+                db.prepare('CREATE TEMP TABLE IF NOT EXISTS temp_fetched_transactions (id TEXT PRIMARY KEY)').run();
+                db.prepare('DELETE FROM temp_fetched_accounts').run();
+                db.prepare('DELETE FROM temp_fetched_transactions').run();
+
+                const insertTempAccount = db.prepare('INSERT OR IGNORE INTO temp_fetched_accounts (id) VALUES (?)');
+                const insertTempTransaction = db.prepare('INSERT OR IGNORE INTO temp_fetched_transactions (id) VALUES (?)');
+
+                for (const id of fetchedAccountIds) insertTempAccount.run(id);
+                for (const id of fetchedTransactionIds) insertTempTransaction.run(id);
+
+                db.prepare('DELETE FROM transactions WHERE id NOT IN (SELECT id FROM temp_fetched_transactions)').run();
+                db.prepare('DELETE FROM accounts WHERE id NOT IN (SELECT id FROM temp_fetched_accounts)').run();
+
+                db.prepare('DROP TABLE IF EXISTS temp_fetched_accounts').run();
+                db.prepare('DROP TABLE IF EXISTS temp_fetched_transactions').run();
             }
         })();
 
