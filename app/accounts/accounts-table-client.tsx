@@ -62,6 +62,10 @@ export function AccountsTableClient({ accounts, timeRange }: AccountsTableClient
                 if (anyFailed) {
                     console.error('Failed to save one or more updates');
                 }
+                // On successful updates, refresh to re-fetch data tagged with "accounts"
+                if (!anyFailed) {
+                    router.refresh();
+                }
             }
         } finally {
             setIsSaving(false);

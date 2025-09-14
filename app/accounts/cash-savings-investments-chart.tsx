@@ -35,32 +35,38 @@ function matchesType(type: string | undefined, keyword: string): boolean {
 
 export function CashSavingsInvestmentsChart({ accounts, timeRange }: { accounts: Account[]; timeRange: string }) {
     const fullData = React.useMemo(() => {
-        const dailyTotals: Record<string, { checking: number; credit: number; savings: number; investments: number, total: number }> = {}
+        const dailyTotals: Record<string, { checking: number; credit: number; savings: number; investments: number; shortTerm: number; total: number }> = {}
 
         for (const account of accounts) {
             const isChecking = matchesType(account.type, "checking")
             const isCredit = matchesType(account.type, "credit")
             const isSavings = matchesType(account.type, "savings")
-            const isInvestment = matchesType(account.type, "investment") || matchesType(account.type, "brokerage")
+            const isInvestment = matchesType(account.type, "investments")
+            const isShortTermInvestment = matchesType(account.type, "short-term investments") || matchesType(account.type, "short term investments")
 
             if (!account.balanceHistory) continue
             for (const entry of account.balanceHistory) {
                 const date = new Date(entry.date).toISOString().split("T")[0]
                 if (!dailyTotals[date]) {
-                    dailyTotals[date] = { checking: 0, credit: 0, savings: 0, investments: 0, total: 0 }
+                    dailyTotals[date] = { checking: 0, credit: 0, savings: 0, investments: 0, shortTerm: 0, total: 0 }
                 }
                 if (isChecking) dailyTotals[date].checking += entry.balance
                 if (isCredit) dailyTotals[date].credit += entry.balance
                 if (isSavings) dailyTotals[date].savings += entry.balance
-                if (isInvestment) dailyTotals[date].investments += entry.balance
+                // Treat short-term investments as cash, not long-term investments
+                if (isShortTermInvestment) {
+                    dailyTotals[date].shortTerm += entry.balance
+                } else if (isInvestment) {
+                    dailyTotals[date].investments += entry.balance
+                }
                 dailyTotals[date].total += entry.balance
             }
         }
 
         const dates = Object.keys(dailyTotals).sort((a, b) => new Date(a).getTime() - new Date(b).getTime())
         return dates.map((date) => {
-            const { checking, credit, savings, investments, total } = dailyTotals[date]
-            const cash = checking + credit
+            const { checking, credit, savings, investments, shortTerm, total } = dailyTotals[date]
+            const cash = checking + credit + shortTerm
             return { date, cash, savings, investments, total }
         })
     }, [accounts])
