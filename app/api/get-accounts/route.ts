@@ -43,6 +43,10 @@ export async function GET(request: Request) {
         date.setUTCDate(todayUtcMidnight.getUTCDate() - i);
         const dateString = date.toISOString().split('T')[0];
 
+        // Record end-of-day balance for this date first (today's is the current balance)
+        balanceHistory.unshift({ date: dateString, balance: parseFloat(currentBalance.toFixed(2)) });
+
+        // Then step back one day by subtracting that day's transactions
         const transactionsForDay = transactions.filter((t: Transaction) => {
           const transactedDate = new Date(Number(t.transacted_at) * 1000);
           const transactedDateString = transactedDate.toISOString().split('T')[0];
@@ -54,10 +58,7 @@ export async function GET(request: Request) {
           dailyTransactionsSum += Number(transaction.amount);
         }
 
-        const balanceAtStartOfDay = currentBalance - dailyTransactionsSum;
-        balanceHistory.unshift({ date: dateString, balance: parseFloat(balanceAtStartOfDay.toFixed(2)) });
-
-        currentBalance = balanceAtStartOfDay;
+        currentBalance = currentBalance - dailyTransactionsSum;
       }
       (account as any).balanceHistory = balanceHistory;
     }
