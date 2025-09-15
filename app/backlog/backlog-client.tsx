@@ -83,19 +83,21 @@ export function BacklogClient({ initialTransactions, initialCategories }: Backlo
 
     if (!queue.length) {
         return (
-            <Card>
-                <CardHeader>
-                    <CardTitle>All caught up</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <p>There are no uncategorized transactions.</p>
-                </CardContent>
-            </Card>
+            <div className="max-w-xl w-full">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>All caught up</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p>There are no uncategorized transactions.</p>
+                    </CardContent>
+                </Card>
+            </div>
         );
     }
 
     return (
-        <div className="max-w-xl pt-12">
+        <div className="max-w-xl pt-12 sm:pt-0 w-full">
             {/* Mobile header count */}
             <div className="sm:hidden text-center text-xs text-muted-foreground pb-4">
                 — {queue.length} uncategorized transactions —

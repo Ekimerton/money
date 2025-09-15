@@ -90,24 +90,6 @@ export async function POST(req: Request) {
           );
         }
       }
-
-      // Use temporary tables to avoid large parameter limits during pruning
-      db.prepare('CREATE TEMP TABLE IF NOT EXISTS temp_fetched_accounts (id TEXT PRIMARY KEY)').run();
-      db.prepare('CREATE TEMP TABLE IF NOT EXISTS temp_fetched_transactions (id TEXT PRIMARY KEY)').run();
-      db.prepare('DELETE FROM temp_fetched_accounts').run();
-      db.prepare('DELETE FROM temp_fetched_transactions').run();
-
-      const insertTempAccount = db.prepare('INSERT OR IGNORE INTO temp_fetched_accounts (id) VALUES (?)');
-      const insertTempTransaction = db.prepare('INSERT OR IGNORE INTO temp_fetched_transactions (id) VALUES (?)');
-
-      for (const id of fetchedAccountIds) insertTempAccount.run(id);
-      for (const id of fetchedTransactionIds) insertTempTransaction.run(id);
-
-      db.prepare('DELETE FROM accounts WHERE id NOT IN (SELECT id FROM temp_fetched_accounts)').run();
-      db.prepare('DELETE FROM transactions WHERE id NOT IN (SELECT id FROM temp_fetched_transactions)').run();
-
-      db.prepare('DROP TABLE IF EXISTS temp_fetched_accounts').run();
-      db.prepare('DROP TABLE IF EXISTS temp_fetched_transactions').run();
     })();
 
 

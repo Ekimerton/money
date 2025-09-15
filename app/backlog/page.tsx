@@ -32,7 +32,7 @@ const getBacklogData = unstable_cache(async () => {
 export default async function BacklogPage() {
     const { transactions, categories } = await getBacklogData();
     return (
-        <div className="p-4">
+        <div className="p-4 sm:min-h-[calc(100dvh-56px)] sm:flex sm:items-center sm:justify-center">
             <BacklogClient initialTransactions={transactions} initialCategories={categories} />
         </div>
     );
