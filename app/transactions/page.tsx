@@ -45,7 +45,7 @@ export default async function TransactionsTablePage({ searchParams }: { searchPa
             initialTransactions={transactions}
             initialAccounts={accounts}
             initialCategories={existingCategories}
-            timeRange={"90d"}
+            timeRange={"365d"}
         />
     );
 }
