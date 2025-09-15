@@ -101,7 +101,7 @@ export async function setAutoMarkInternalTransfers(enabled: boolean): Promise<vo
     }
 }
 
-export async function refreshRecent(processAll?: boolean): Promise<{ message: string; classifierOutput?: string; updatedDuplicates?: number; newTransactions?: number; categorizedCount?: number; }> {
+export async function refreshRecent(): Promise<{ message: string; classifierOutput?: string; updatedDuplicates?: number; newTransactions?: number; categorizedCount?: number; }> {
     const db = new Database(dbPath);
     try {
         const userConfig = db.prepare(
@@ -121,15 +121,13 @@ export async function refreshRecent(processAll?: boolean): Promise<{ message: st
         const baseUrl = urlParts[1];
         const [username, password] = authString.split(':');
 
-        let startDate = processAll
-            ? Math.floor(new Date('2000-01-01').getTime() / 1000)
-            : (() => {
-                const latestTransactionRow = db.prepare('SELECT MAX(posted) as latest_posted FROM transactions').get() as { latest_posted?: number };
-                if (latestTransactionRow && latestTransactionRow.latest_posted) {
-                    return latestTransactionRow.latest_posted - (24 * 60 * 60);
-                }
-                return Math.floor(new Date('2000-01-01').getTime() / 1000);
-            })();
+        const startDate = (() => {
+            const latestTransactionRow = db.prepare('SELECT MAX(posted) as latest_posted FROM transactions').get() as { latest_posted?: number };
+            if (latestTransactionRow && latestTransactionRow.latest_posted) {
+                return latestTransactionRow.latest_posted - (24 * 60 * 60);
+            }
+            return Math.floor(new Date('2025-01-01').getTime() / 1000);
+        })();
         const endDate = Math.floor(Date.now() / 1000);
 
         const newTransactionIds: string[] = [];
@@ -151,10 +149,6 @@ export async function refreshRecent(processAll?: boolean): Promise<{ message: st
 
         const data = await response.json();
         const accounts = data.accounts as Array<any>;
-        const fetchedAccountIds: string[] = Array.isArray(accounts) ? accounts.map((a: any) => String(a.id)) : [];
-        const fetchedTransactionIds: string[] = Array.isArray(accounts)
-            ? accounts.flatMap((a: any) => Array.isArray(a.transactions) ? a.transactions.map((t: any) => String(t.id)) : [])
-            : [];
 
         const insertAccount = db.prepare(
             'INSERT INTO accounts (id, name, currency, balance, balance_date) VALUES (?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET currency=excluded.currency, balance=excluded.balance, balance_date=excluded.balance_date'
@@ -192,36 +186,152 @@ export async function refreshRecent(processAll?: boolean): Promise<{ message: st
                     }
                 }
             }
-
-            // When processing all history, prune rows not present in fetched data
-            if (processAll) {
-                // Use temp tables to avoid parameter count limits
-                db.prepare('CREATE TEMP TABLE IF NOT EXISTS temp_fetched_accounts (id TEXT PRIMARY KEY)').run();
-                db.prepare('CREATE TEMP TABLE IF NOT EXISTS temp_fetched_transactions (id TEXT PRIMARY KEY)').run();
-                db.prepare('DELETE FROM temp_fetched_accounts').run();
-                db.prepare('DELETE FROM temp_fetched_transactions').run();
-
-                const insertTempAccount = db.prepare('INSERT OR IGNORE INTO temp_fetched_accounts (id) VALUES (?)');
-                const insertTempTransaction = db.prepare('INSERT OR IGNORE INTO temp_fetched_transactions (id) VALUES (?)');
-
-                for (const id of fetchedAccountIds) insertTempAccount.run(id);
-                for (const id of fetchedTransactionIds) insertTempTransaction.run(id);
-
-                db.prepare('DELETE FROM transactions WHERE id NOT IN (SELECT id FROM temp_fetched_transactions)').run();
-                db.prepare('DELETE FROM accounts WHERE id NOT IN (SELECT id FROM temp_fetched_accounts)').run();
-
-                db.prepare('DROP TABLE IF EXISTS temp_fetched_accounts').run();
-                db.prepare('DROP TABLE IF EXISTS temp_fetched_transactions').run();
-            }
+            // No pruning for recent refresh
         })();
 
         const newTransactions = newTransactionIds.length;
 
         let updatedDuplicates: number | undefined;
+        if (autoMarkDuplicates && newTransactionIds.length > 0) {
+            updatedDuplicates = markInternalTransfersForTransactions(db, newTransactionIds);
+        }
+
+        let classifierOutput: string | undefined;
+        let categorizedCount: number | undefined;
+        if (autoCategorize && newTransactionIds.length > 0) {
+            const result = await classifyTransactionsByIds(newTransactionIds);
+            classifierOutput = result.output;
+            categorizedCount = result.categorizedCount;
+        }
+
+        revalidateTag('accounts');
+        revalidateTag('transactions');
+
+        return { message: 'Accounts and transactions fetched and saved successfully', classifierOutput, updatedDuplicates, newTransactions, categorizedCount };
+    } catch (error: any) {
+        console.error('Error in refreshRecent action:', error);
+        throw error;
+    } finally {
+        db.close();
+    }
+}
+
+export async function refreshAll(): Promise<{ message: string; classifierOutput?: string; updatedDuplicates?: number; newTransactions?: number; categorizedCount?: number; }> {
+    const db = new Database(dbPath);
+    try {
+        const userConfig = db.prepare(
+            'SELECT simplefin_url, auto_categorize, auto_mark_duplicates FROM user_config WHERE id = 1'
+        ).get() as { simplefin_url?: string; auto_categorize?: number; auto_mark_duplicates?: number } | undefined;
+
+        if (!userConfig || !userConfig.simplefin_url) {
+            throw new Error('SimpleFIN URL not found in database. Please initialize it first.');
+        }
+
+        const ACCESS_URL = userConfig.simplefin_url;
+        const autoCategorize = Boolean(userConfig.auto_categorize);
+        const autoMarkDuplicates = Boolean(userConfig.auto_mark_duplicates);
+
+        const urlParts = ACCESS_URL.split('@');
+        const authString = urlParts[0].replace('https://', '');
+        const baseUrl = urlParts[1];
+        const [username, password] = authString.split(':');
+        const authHeader = Buffer.from(`${username}:${password}`).toString('base64');
+
+        const earliestStartDate = Math.floor(new Date('2000-01-01').getTime() / 1000);
+        const now = Math.floor(Date.now() / 1000);
+
+        const windowDays = 60; // two months
+        const windowSeconds = windowDays * 24 * 60 * 60;
+
+        const fetchedAccountIds = new Set<string>();
+        const newTransactionIds = new Set<string>();
+
+        const insertAccount = db.prepare(
+            'INSERT INTO accounts (id, name, currency, balance, balance_date) VALUES (?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET currency=excluded.currency, balance=excluded.balance, balance_date=excluded.balance_date'
+        );
+        const existsTransaction = db.prepare('SELECT 1 FROM transactions WHERE id = ? LIMIT 1');
+        const insertTransaction = db.prepare(
+            'INSERT INTO transactions (id, account_id, posted, amount, description, payee, transacted_at, pending, category) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET account_id=excluded.account_id, posted=excluded.posted, amount=excluded.amount, description=excluded.description, payee=excluded.payee, transacted_at=excluded.transacted_at, pending=excluded.pending, hidden=excluded.hidden'
+        );
+
+        let windowEnd = now;
+        while (windowEnd > earliestStartDate) {
+            const windowStart = Math.max(earliestStartDate, windowEnd - windowSeconds);
+
+            const response = await fetch(`https://${baseUrl}/accounts?pending=1&start-date=${windowStart}&end-date=${windowEnd}`, {
+                headers: { Authorization: `Basic ${authHeader}` },
+            });
+            if (!response.ok) {
+                let errorMessage = 'Failed to fetch data from SimpleFIN.';
+                try {
+                    const errorData = await response.json();
+                    if (errorData?.errors) errorMessage = errorData.errors.join(', ');
+                } catch { }
+                throw new Error(errorMessage);
+            }
+
+            const data = await response.json();
+            const accounts = (data.accounts as Array<any>) || [];
+            const transactionsCountInWindow = accounts.reduce((sum: number, a: any) => {
+                const txs = Array.isArray(a.transactions) ? a.transactions : [];
+                return sum + txs.length;
+            }, 0);
+
+            db.transaction(() => {
+                for (const account of accounts) {
+                    fetchedAccountIds.add(String(account.id));
+                    insertAccount.run(
+                        account.id,
+                        account.name,
+                        account.currency,
+                        account.balance,
+                        account['balance-date']
+                    );
+
+                    const transactions = Array.isArray(account.transactions) ? account.transactions : [];
+                    for (const transaction of transactions) {
+                        const exists = existsTransaction.get(transaction.id);
+                        insertTransaction.run(
+                            transaction.id,
+                            account.id,
+                            transaction.posted,
+                            transaction.amount,
+                            transaction.description,
+                            transaction.payee || null,
+                            transaction.transacted_at || null,
+                            transaction.pending ? 1 : 0,
+                            'Uncategorized'
+                        );
+                        if (!exists) newTransactionIds.add(String(transaction.id));
+                    }
+                }
+            })();
+
+            if (transactionsCountInWindow === 0) {
+                break;
+            }
+
+            windowEnd = windowStart - 1; // avoid overlap
+        }
+
+        // Prune only missing accounts and their transactions
+        db.transaction(() => {
+            db.prepare('CREATE TEMP TABLE IF NOT EXISTS temp_fetched_accounts (id TEXT PRIMARY KEY)').run();
+            db.prepare('DELETE FROM temp_fetched_accounts').run();
+            const insertTempAccount = db.prepare('INSERT OR IGNORE INTO temp_fetched_accounts (id) VALUES (?)');
+            for (const id of fetchedAccountIds) insertTempAccount.run(id);
+
+            db.prepare('DELETE FROM transactions WHERE account_id NOT IN (SELECT id FROM temp_fetched_accounts)').run();
+            db.prepare('DELETE FROM accounts WHERE id NOT IN (SELECT id FROM temp_fetched_accounts)').run();
+
+            db.prepare('DROP TABLE IF EXISTS temp_fetched_accounts').run();
+        })();
+
+        // Mark internal transfers across entire dataset if enabled
+        let updatedDuplicates: number | undefined;
         if (autoMarkDuplicates) {
-            if (processAll) {
-                const threeDaysInSeconds = 3 * 24 * 60 * 60;
-                const updateSql = `
+            const threeDaysInSeconds = 3 * 24 * 60 * 60;
+            const updateSql = `
       WITH pairs AS (
         SELECT t1.id AS id1, t2.id AS id2
         FROM transactions t1
@@ -237,54 +347,46 @@ export async function refreshRecent(processAll?: boolean): Promise<{ message: st
          SELECT id1 FROM pairs
          UNION
          SELECT id2 FROM pairs
-       );
+      );
     `;
-                const result = db.prepare(updateSql).run();
-                updatedDuplicates = result.changes || 0;
-            } else if (newTransactionIds.length > 0) {
-                updatedDuplicates = markInternalTransfersForTransactions(db, newTransactionIds);
-            }
+            const result = db.prepare(updateSql).run();
+            updatedDuplicates = result.changes || 0;
         }
 
+        // Auto-categorize whole dataset if enabled
         let classifierOutput: string | undefined;
         let categorizedCount: number | undefined;
         if (autoCategorize) {
-            if (processAll) {
-                const dataDir = path.join(process.cwd(), 'data');
-                const scriptPath = path.join(dataDir, 'classify_transaction.py');
-                classifierOutput = await new Promise<string>((resolve) => {
-                    const proc = spawn(pythonExecutablePath, [scriptPath, String(startDate)], { cwd: dataDir });
-                    let stdout = '';
-                    let stderr = '';
-                    proc.stdout.on('data', (d) => (stdout += d.toString()));
-                    proc.stderr.on('data', (d) => (stderr += d.toString()));
-                    proc.on('close', (code) => {
-                        const summary = `Classifier exited with code ${code}.\n${stdout}${stderr ? `\nErrors:\n${stderr}` : ''}`;
-                        resolve(summary);
-                    });
-                    proc.on('error', (err) => {
-                        resolve(`Classifier failed to start: ${err.message}`);
-                    });
+            const dataDir = path.join(process.cwd(), 'data');
+            const scriptPath = path.join(dataDir, 'classify_transaction.py');
+            classifierOutput = await new Promise<string>((resolve) => {
+                const proc = spawn(pythonExecutablePath, [scriptPath, String(earliestStartDate)], { cwd: dataDir });
+                let stdout = '';
+                let stderr = '';
+                proc.stdout.on('data', (d) => (stdout += d.toString()));
+                proc.stderr.on('data', (d) => (stderr += d.toString()));
+                proc.on('close', (code) => {
+                    const summary = `Classifier exited with code ${code}.\n${stdout}${stderr ? `\nErrors:\n${stderr}` : ''}`;
+                    resolve(summary);
                 });
-                try {
-                    const match = classifierOutput.match(/(\d+)\s+transactions were auto-categorized/i);
-                    if (match && match[1]) {
-                        categorizedCount = parseInt(match[1], 10);
-                    }
-                } catch { }
-            } else if (newTransactionIds.length > 0) {
-                const result = await classifyTransactionsByIds(newTransactionIds);
-                classifierOutput = result.output;
-                categorizedCount = result.categorizedCount;
-            }
+                proc.on('error', (err) => {
+                    resolve(`Classifier failed to start: ${err.message}`);
+                });
+            });
+            try {
+                const match = classifierOutput.match(/(\d+)\s+transactions were auto-categorized/i);
+                if (match && match[1]) {
+                    categorizedCount = parseInt(match[1], 10);
+                }
+            } catch { }
         }
 
         revalidateTag('accounts');
         revalidateTag('transactions');
 
-        return { message: 'Accounts and transactions fetched and saved successfully', classifierOutput, updatedDuplicates, newTransactions, categorizedCount };
+        return { message: 'Full refresh completed successfully', updatedDuplicates, newTransactions: newTransactionIds.size, classifierOutput, categorizedCount };
     } catch (error: any) {
-        console.error('Error in refreshRecent action:', error);
+        console.error('Error in refreshAll action:', error);
         throw error;
     } finally {
         db.close();

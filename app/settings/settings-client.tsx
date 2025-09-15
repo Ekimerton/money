@@ -74,7 +74,8 @@ export default function SettingsClient({
         setLoading(true);
         setError(null);
         try {
-            const result = await refreshRecentAction(true);
+            const { refreshAll } = await import("@/app/settings/actions");
+            const result = await refreshAll();
             const newTx = result.newTransactions ?? 0;
             const cat = result.categorizedCount ?? 0;
             const dup = result.updatedDuplicates ?? 0;
