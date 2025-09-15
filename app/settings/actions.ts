@@ -255,6 +255,8 @@ export async function refreshAll(): Promise<{ message: string; classifierOutput?
         );
 
         let windowEnd = now;
+        let consecutiveEmptyWindows = 0;
+        let sawAnyTransactions = false;
         while (windowEnd > earliestStartDate) {
             const windowStart = Math.max(earliestStartDate, windowEnd - windowSeconds);
 
@@ -308,7 +310,13 @@ export async function refreshAll(): Promise<{ message: string; classifierOutput?
             })();
 
             if (transactionsCountInWindow === 0) {
-                break;
+                consecutiveEmptyWindows += 1;
+                if (sawAnyTransactions && consecutiveEmptyWindows >= 2) {
+                    break;
+                }
+            } else {
+                sawAnyTransactions = true;
+                consecutiveEmptyWindows = 0;
             }
 
             windowEnd = windowStart - 1; // avoid overlap
