@@ -81,7 +81,7 @@ export function BacklogClient({ initialTransactions, initialCategories }: Backlo
         }
     };
 
-    if (queue.length) {
+    if (!queue.length) {
         return (
             <div className="max-w-xl w-full h-full">
                 <div className="flex flex-col items-center justify-center py-16 pt-32">
