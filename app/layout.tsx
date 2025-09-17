@@ -37,7 +37,7 @@ export default async function RootLayout({
             <AppSidebar className="h-full" />
             <main className="flex flex-col flex-1">
               <AppHeader />
-              <div className="overflow-y-auto bg-white dark:bg-neutral-950">
+              <div className="overflow-y-auto bg-white dark:bg-neutral-950 h-full">
                 {children}
               </div>
             </main>

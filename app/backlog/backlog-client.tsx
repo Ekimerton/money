@@ -81,17 +81,24 @@ export function BacklogClient({ initialTransactions, initialCategories }: Backlo
         }
     };
 
-    if (!queue.length) {
+    if (queue.length) {
         return (
-            <div className="max-w-xl w-full">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>All caught up</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p>There are no uncategorized transactions.</p>
-                    </CardContent>
-                </Card>
+            <div className="max-w-xl w-full h-full">
+                <div className="flex flex-col items-center justify-center py-16 pt-32">
+                    <div className="text-center">
+                        <p className="text-lg font-medium -mb-4">All caught up!</p>
+                    </div>
+                    <img
+                        src="/empty-backlog-black.PNG"
+                        alt="No uncategorized transactions"
+                        className="size-72 object-contain dark:hidden"
+                    />
+                    <img
+                        src="/empty-backlog-white.PNG"
+                        alt="No uncategorized transactions"
+                        className="size-72 object-contain hidden dark:block"
+                    />
+                </div>
             </div>
         );
     }

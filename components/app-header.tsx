@@ -158,7 +158,7 @@ export function AppHeader({ title, className }: AppHeaderProps) {
                 <Button asChild variant={isBacklog ? "secondary" : "ghost"} size="sm-icon" aria-label="Backlog">
                     <Link href="/backlog" className="relative">
                         <Bell />
-                        {typeof uncatCount === 'number' && uncatCount > 0 && (
+                        {typeof uncatCount === 'number' && uncatCount > 0 && false && (
                             <span className="absolute -top-0.5 -right-0.5 block h-2 w-2 rounded-full bg-red-500" />
                         )}
                     </Link>
