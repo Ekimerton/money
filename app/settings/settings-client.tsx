@@ -8,6 +8,7 @@ import { SquareArrowOutUpRightIcon } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { setAutoCategorize as setAutoCategorizeAction, setAutoMarkInternalTransfers, refreshRecent as refreshRecentAction } from "@/app/settings/actions";
 import { toast } from "sonner";
+import { useTheme } from "next-themes";
 
 interface SettingsClientProps {
     initialDisplayName: string;
@@ -22,6 +23,7 @@ export default function SettingsClient({
     initialAutoCategorize,
     initialMarkDuplicates = false,
 }: SettingsClientProps) {
+    const { theme, setTheme, resolvedTheme } = useTheme();
     const [displayName, setDisplayName] = useState<string>(initialDisplayName);
     const [autoCategorize, setAutoCategorize] = useState<boolean>(initialAutoCategorize);
     const [loading, setLoading] = useState<boolean>(false);
@@ -225,6 +227,25 @@ export default function SettingsClient({
                 */}
 
             </section >
+
+            {/* Appearance */}
+            <section className="flex flex-col gap-4">
+                <h2 className="text-lg font-semibold border-b border-border pb-2">Appearance</h2>
+
+                {/* Theme Toggle Row */}
+                <div className="flex flex-row sm:items-center gap-16 max-sm:gap-2">
+                    <div className="flex flex-col sm:pr-8 w-60 sm:w-96 sm:flex-shrink-0">
+                        <Label>Dark Mode</Label>
+                        <p className="text-xs text-muted-foreground">Toggle between light and dark theme.</p>
+                    </div>
+                    <div className="flex items-center max-sm:justify-end gap-3 flex-1">
+                        <Switch
+                            checked={(resolvedTheme ?? theme) === 'dark'}
+                            onCheckedChange={(checked) => setTheme(checked ? 'dark' : 'light')}
+                        />
+                    </div>
+                </div>
+            </section>
 
             {/* Classification Model */}
             < section className="flex flex-col gap-4" >
