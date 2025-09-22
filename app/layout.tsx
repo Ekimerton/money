@@ -17,14 +17,17 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  themeColor: [
-    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-  ],
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
   },
+};
+
+export const viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+  ],
 };
 
 export default async function RootLayout({
