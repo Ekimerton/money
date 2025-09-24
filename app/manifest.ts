@@ -1,6 +1,15 @@
 import type { MetadataRoute } from "next";
+import { headers } from "next/headers";
 
-export default function manifest(): MetadataRoute.Manifest {
+export const dynamic = "force-dynamic";
+
+export default async function manifest(): Promise<MetadataRoute.Manifest> {
+    const h = await headers();
+    const preferHeader = (h.get('Sec-CH-Prefers-Color-Scheme') || h.get('sec-ch-prefers-color-scheme') || '').toLowerCase();
+    const isDark = preferHeader === 'dark';
+    const themeColor = isDark ? '#0a0a0a' : '#ffffff';
+    const backgroundColor = isDark ? '#0a0a0a' : '#ffffff';
+
     return {
         name: "Money",
         short_name: "Money",
@@ -8,8 +17,8 @@ export default function manifest(): MetadataRoute.Manifest {
         start_url: "/",
         scope: "/",
         display: "standalone",
-        background_color: "#0a0a0a",
-        theme_color: "#0a0a0a",
+        background_color: backgroundColor,
+        theme_color: themeColor,
         orientation: "portrait-primary",
         id: "/",
         icons: [
