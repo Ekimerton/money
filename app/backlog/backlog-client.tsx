@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { CategoryPopover } from "@/components/ui/category-popover";
 import { getTop3PredictionsForTransaction } from "@/app/settings/actions";
 import { Skeleton } from "@/components/ui/skeleton";
+import Image from "next/image";
 
 interface BacklogClientProps {
     initialTransactions: Transaction[];
@@ -88,12 +89,12 @@ export function BacklogClient({ initialTransactions, initialCategories }: Backlo
                     <div className="text-center">
                         <p className="text-lg font-medium -mb-4">All caught up!</p>
                     </div>
-                    <img
+                    <Image
                         src="/empty-backlog-black.PNG"
                         alt="No uncategorized transactions"
                         className="size-72 object-contain dark:hidden"
                     />
-                    <img
+                    <Image
                         src="/empty-backlog-white.PNG"
                         alt="No uncategorized transactions"
                         className="size-72 object-contain hidden dark:block"
