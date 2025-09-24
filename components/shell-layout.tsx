@@ -18,11 +18,12 @@ export function ShellLayout({ children }: { children: React.ReactNode }) {
     }
 
     return (
-        <div className="flex h-dvh w-screen">
+        <div className="flex h-dvh w-screen bg-background text-foreground">
             <AppSidebar className="h-full" />
             <main className="flex flex-col flex-1">
+                <div className="sm:hidden bg-background h-[calc(1*env(safe-area-inset-top))] w-full" />
                 <AppHeader />
-                <div className="overflow-y-auto bg-white dark:bg-neutral-950 h-full w-full">
+                <div className="overflow-y-auto bg-background h-full w-full">
                     {children}
                 </div>
             </main>
