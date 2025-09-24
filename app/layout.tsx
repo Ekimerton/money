@@ -4,6 +4,7 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { Toaster } from "@/components/ui/sonner";
 import { ShellLayout } from "@/components/shell-layout";
 import { ThemeProvider } from "@/components/theme-provider";
+import { IOSStatusBarUpdater } from "@/components/ios-statusbar-updater";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -40,6 +41,7 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          <IOSStatusBarUpdater />
           <SidebarProvider>
             <ShellLayout>
               {children}
