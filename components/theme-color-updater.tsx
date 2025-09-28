@@ -3,14 +3,16 @@
 import * as React from 'react'
 import { useTheme } from 'next-themes'
 
-function upsertMeta(name: string, content: string) {
-    let el = document.querySelector(`meta[name="${name}"]`) as HTMLMetaElement | null
-    if (!el) {
-        el = document.createElement('meta')
-        el.name = name
-        document.head.appendChild(el)
-    }
-    el.setAttribute('content', content)
+function setThemeColorMeta(content: string) {
+    // Remove all existing theme-color tags (Next.js may inject multiple with media queries)
+    const existing = document.querySelectorAll('meta[name="theme-color"]')
+    existing.forEach((el) => el.parentElement?.removeChild(el))
+
+    // Insert a single theme-color tag that reflects current app theme
+    const meta = document.createElement('meta')
+    meta.name = 'theme-color'
+    meta.content = content
+    document.head.appendChild(meta)
 }
 
 export function ThemeColorUpdater() {
@@ -20,16 +22,24 @@ export function ThemeColorUpdater() {
 
     React.useEffect(() => {
         if (!mounted) return
-        const isDark = resolvedTheme === 'dark'
-        const themeColor = isDark ? '#0a0a0a' : '#ffffff'
+        const applyThemeColor = () => {
+            const computed = window.getComputedStyle(document.body)
+            const bg = computed.backgroundColor || ''
+            const fallback = resolvedTheme === 'dark' ? '#0a0a0a' : '#ffffff'
+            const themeColor = bg || fallback
+            setThemeColorMeta(themeColor)
+        }
 
-        // Update generic theme-color (used by Android and Safari)
-        upsertMeta('theme-color', themeColor)
+        applyThemeColor()
 
-        // Update iOS PWA status bar style
-        const inStandalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || (navigator as any).standalone === true
-        if (inStandalone) {
-            upsertMeta('apple-mobile-web-app-status-bar-style', isDark ? 'black' : 'default')
+        // Re-apply on common events that can refresh UI on iOS
+        document.addEventListener('visibilitychange', applyThemeColor)
+        window.addEventListener('orientationchange', applyThemeColor)
+        window.addEventListener('resize', applyThemeColor)
+        return () => {
+            document.removeEventListener('visibilitychange', applyThemeColor)
+            window.removeEventListener('orientationchange', applyThemeColor)
+            window.removeEventListener('resize', applyThemeColor)
         }
     }, [mounted, resolvedTheme])
 
