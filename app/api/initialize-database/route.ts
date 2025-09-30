@@ -42,13 +42,20 @@ export async function POST(req: NextRequest) {
         simplefin_url TEXT,
         classifier_training_date TEXT DEFAULT NULL,
         auto_categorize BOOLEAN DEFAULT FALSE,
-        auto_mark_duplicates BOOLEAN DEFAULT FALSE
+        auto_mark_duplicates BOOLEAN DEFAULT FALSE,
+        onboarding_completed BOOLEAN DEFAULT FALSE
       );
     `);
 
     // Ensure new column exists on already-initialized databases
     try {
       db.prepare(`ALTER TABLE user_config ADD COLUMN auto_mark_duplicates BOOLEAN DEFAULT FALSE`).run();
+    } catch (e) {
+      // ignore if column already exists
+    }
+
+    try {
+      db.prepare(`ALTER TABLE user_config ADD COLUMN onboarding_completed BOOLEAN DEFAULT FALSE`).run();
     } catch (e) {
       // ignore if column already exists
     }

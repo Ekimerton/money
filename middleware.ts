@@ -21,16 +21,30 @@ export async function middleware(request: NextRequest) {
         if (res.ok) {
             const data = await res.json()
             const simplefinUrl = data?.userConfig?.simplefin_url
+            //const onboardingCompleted = Boolean(data?.userConfig?.onboarding_completed)
             const isOnboarding = pathname.startsWith('/onboarding')
-            if (!simplefinUrl && !isOnboarding) {
+            const onboardingCompleted = true;
+
+            // Redirect to onboarding when not completed yet
+            if (!onboardingCompleted && !isOnboarding) {
                 const redirectUrl = request.nextUrl.clone()
                 redirectUrl.pathname = '/onboarding'
                 redirectUrl.search = ''
                 return NextResponse.redirect(redirectUrl)
             }
-            if (simplefinUrl && isOnboarding) {
+
+            // If onboarding completed, avoid staying on onboarding page
+            if (onboardingCompleted && isOnboarding) {
                 const redirectUrl = request.nextUrl.clone()
                 redirectUrl.pathname = '/'
+                redirectUrl.search = ''
+                return NextResponse.redirect(redirectUrl)
+            }
+
+            // Backwards compatibility: if token missing and on onboarding, allow; else if token missing and not onboarding, go to onboarding
+            if (!simplefinUrl && !isOnboarding) {
+                const redirectUrl = request.nextUrl.clone()
+                redirectUrl.pathname = '/onboarding'
                 redirectUrl.search = ''
                 return NextResponse.redirect(redirectUrl)
             }
