@@ -143,21 +143,21 @@ export function AppHeader({ title, className }: AppHeaderProps) {
             {/* Mobile buttons */}
             <div className="sm:hidden flex items-center justify-center h-14">
                 <Button asChild variant={isInsights ? "secondary" : "ghost"} size="sm">
-                    <Link href="/insights">Insights</Link>
+                    <Link href="/insights"><p className="text-base">Insights</p></Link>
                 </Button>
                 <Button asChild variant={isAccounts ? "secondary" : "ghost"} size="sm">
-                    <Link href="/accounts">Accounts</Link>
+                    <Link href="/accounts"><p className="text-base">Accounts</p></Link>
                 </Button>
                 <Button asChild variant={isSpending ? "secondary" : "ghost"} size="sm">
-                    <Link href="/spending">Spending</Link>
+                    <Link href="/spending"><p className="text-base">Spending</p></Link>
                 </Button>
             </div>
 
             {/* Mobile top-left notifications icon */}
-            <div className="sm:hidden absolute left-2 top-1/2 -translate-y-1/2">
+            <div className="sm:hidden absolute left-4 top-1/2 -translate-y-1/2">
                 <Button asChild variant={isBacklog ? "secondary" : "ghost"} size="sm-icon" aria-label="Backlog">
                     <Link href="/backlog" className="relative">
-                        <Bell />
+                        <Bell className="!size-5" />
                         {typeof uncatCount === 'number' && uncatCount > 0 && false && (
                             <span className="absolute -top-0.5 -right-0.5 block h-2 w-2 rounded-full bg-red-500" />
                         )}
@@ -166,10 +166,10 @@ export function AppHeader({ title, className }: AppHeaderProps) {
             </div>
 
             {/* Mobile top-right person icon linking to settings */}
-            <div className="sm:hidden absolute right-2 top-1/2 -translate-y-1/2">
+            <div className="sm:hidden absolute right-4 top-1/2 -translate-y-1/2">
                 <Button asChild variant={isSettings ? "secondary" : "ghost"} size="sm-icon">
                     <Link href="/settings" aria-label="Settings">
-                        <User />
+                        <User className="!size-5" />
                     </Link>
                 </Button>
             </div>
