@@ -143,13 +143,13 @@ export function AppHeader({ title, className }: AppHeaderProps) {
             {/* Mobile buttons */}
             <div className="sm:hidden flex items-center justify-center h-14">
                 <Button asChild variant={isInsights ? "secondary" : "ghost"} size="sm">
-                    <Link href="/insights"><p className="text-base">Insights</p></Link>
+                    <Link href="/insights">Insights</Link>
                 </Button>
                 <Button asChild variant={isAccounts ? "secondary" : "ghost"} size="sm">
-                    <Link href="/accounts"><p className="text-base">Accounts</p></Link>
+                    <Link href="/accounts">Accounts</Link>
                 </Button>
                 <Button asChild variant={isSpending ? "secondary" : "ghost"} size="sm">
-                    <Link href="/spending"><p className="text-base">Spending</p></Link>
+                    <Link href="/spending">Spending</Link>
                 </Button>
             </div>
 
