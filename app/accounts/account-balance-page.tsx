@@ -9,7 +9,7 @@ import { CashSavingsInvestmentsChart } from "./cash-savings-investments-chart";
 import { AccountsTableClient } from "./accounts-table-client";
 
 export function AccountBalancePage({ accounts }: { accounts: Account[] }) {
-    const [timeRange, setTimeRange] = React.useState("30d");
+    const [timeRange, setTimeRange] = React.useState("90d");
     const chartView = "account";
 
     const fullChartData = React.useMemo(() => {
