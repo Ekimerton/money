@@ -115,6 +115,9 @@ export function AccountBalancePage({ accounts }: { accounts: Account[] }) {
             <CashSavingsInvestmentsChart accounts={accounts} timeRange={timeRange} />
             <MobileTimeRangeTabs value={timeRange as any} onValueChange={setTimeRange as any} />
             <AccountsTableClient accounts={accounts} timeRange={timeRange} />
+            <div className="p-4 mx-4 my-8 border rounded-lg">
+                <p>Something fun here soon!</p>
+            </div>
         </div >
     )
 }
