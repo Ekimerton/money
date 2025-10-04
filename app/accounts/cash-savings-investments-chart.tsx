@@ -119,7 +119,7 @@ export function CashSavingsInvestmentsChart({ accounts, timeRange }: { accounts:
         <div className="sm:px-4">
             <ChartContainer
                 config={chartConfig}
-                className="aspect-auto h-[300px] max-sm:h-[400px] w-full -mt-[180px]"
+                className="aspect-auto h-[300px] max-sm:h-[200px] w-full"
             >
                 <AreaChart data={filteredData}>
                     <ChartTooltip
