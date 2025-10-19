@@ -36,7 +36,7 @@ export default function SettingsClient({
         setError(null);
         const promise = refreshRecentAction();
         toast.promise(promise, {
-            loading: 'Fetching new transactions from simplefin...',
+            loading: 'Fetching new transactions from Simplefin...',
             success: (result) => {
                 const newTx = result?.newTransactions ?? 0;
                 const items = (result?.newTransactionSamples || []).map((t: any) => `${t.title} [${t.category || 'Uncategorized'}]`);
@@ -246,7 +246,7 @@ export default function SettingsClient({
                                     const trained = new Date(classifierTrainingDate);
                                     const diffMs = now.getTime() - trained.getTime();
                                     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-                                    return diffDays === 0
+                                    return diffDays <= 0
                                         ? 'Today'
                                         : diffDays === 1
                                             ? '1 day ago'
