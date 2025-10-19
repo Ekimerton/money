@@ -86,7 +86,7 @@ export function AccountBalancePage({ accounts }: { accounts: Account[] }) {
     const formattedPercentChange = isInfinitePercent ? "---" : `${changeSign}${Math.abs(percentChangeRounded)}%`;
 
     return (
-        <div className="">
+        <div className="max-w-7xl mx-auto">
             <div className="p-4 flex max-sm:pt-12">
                 <div className="grid flex-1 gap-1 max-sm:text-center ">
                     <h2 className="font-bold text-muted-foreground uppercase text-sm font-mono max-sm:hidden">

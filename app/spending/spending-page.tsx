@@ -89,7 +89,7 @@ export default function SpendingPageClient({ transactions, accounts }: SpendingP
     }, [totalSpending]);
 
     return (
-        <div className="w-full">
+        <div className="w-full max-w-7xl mx-auto">
             <div className="p-4 flex max-sm:pt-12 sm:hidden">
                 <div className="grid flex-1 gap-1 max-sm:text-center ">
                     <h2 className="font-bold text-muted-foreground uppercase text-sm font-mono max-sm:hidden">
