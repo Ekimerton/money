@@ -270,21 +270,41 @@ export default function SettingsClient({
                             onClick={async () => {
                                 setLoading(true);
                                 setError(null);
-                                try {
+                                const promise = (async () => {
                                     const response = await fetch('/api/train-model', { method: 'POST' });
                                     const data = await response.json();
                                     if (!response.ok) {
                                         throw new Error(data?.error || 'Failed to train model.');
                                     }
-                                    if (data?.classifierTrainingDate) {
-                                        setClassifierTrainingDate(data.classifierTrainingDate);
-                                    }
-                                    toast.success('Model training completed');
+                                    return data;
+                                })();
+                                toast.promise(promise, {
+                                    loading: 'Training model...',
+                                    success: (data: any) => {
+                                        if (data?.classifierTrainingDate) {
+                                            setClassifierTrainingDate(data.classifierTrainingDate);
+                                        }
+                                        const perClass = Array.isArray(data?.perClassAccuracy) ? data.perClassAccuracy : [];
+                                        const overall = typeof data?.overallAccuracy === 'number' ? data.overallAccuracy : undefined;
+                                        const descriptionNode = (overall !== undefined || perClass.length > 0) ? (
+                                            <div className="flex flex-col">
+                                                {overall !== undefined && (
+                                                    <div><span className="font-semibold">Overall</span>: {(overall * 100).toFixed(1)}%</div>
+                                                )}
+                                                {perClass.slice(0, 6).map((c: any) => (
+                                                    <div key={c.label}><span className="font-semibold">{c.label}</span>: {(c.accuracy * 100).toFixed(1)}% ({c.support})</div>
+                                                ))}
+                                            </div>
+                                        ) : undefined;
+                                        return { message: 'Model training completed', ...(descriptionNode ? { description: descriptionNode } : {}) } as any;
+                                    },
+                                    error: (err: any) => err?.message || 'Failed to train model.',
+                                    finally: () => setLoading(false),
+                                });
+                                try {
+                                    await promise;
                                 } catch (err: any) {
-                                    setError(err.message);
-                                    toast.error(err.message || 'Failed to train model.');
-                                } finally {
-                                    setLoading(false);
+                                    setError(err?.message || 'Failed to train model.');
                                 }
                             }}
                             disabled={loading}
