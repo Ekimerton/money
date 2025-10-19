@@ -101,7 +101,7 @@ export async function setAutoMarkInternalTransfers(enabled: boolean): Promise<vo
     }
 }
 
-export async function refreshRecent(): Promise<{ message: string; classifierOutput?: string; updatedDuplicates?: number; newTransactions?: number; categorizedCount?: number; }> {
+export async function refreshRecent(): Promise<{ message: string; classifierOutput?: string; updatedDuplicates?: number; newTransactions?: number; categorizedCount?: number; newTransactionSamples?: Array<{ id: string; title: string; category: string }>; }> {
     const db = new Database(dbPath);
     try {
         const userConfig = db.prepare(
@@ -204,10 +204,31 @@ export async function refreshRecent(): Promise<{ message: string; classifierOutp
             categorizedCount = result.categorizedCount;
         }
 
+        // Prepare up to three sample transactions to surface in the UI with their final categories
+        let newTransactionSamples: Array<{ id: string; title: string; category: string }> | undefined;
+        if (newTransactionIds.length > 0) {
+            const sampleIds = newTransactionIds.slice(0, 3);
+            const placeholders = sampleIds.map(() => '?').join(',');
+            try {
+                const rows = db.prepare(
+                    `SELECT id, COALESCE(NULLIF(payee, ''), description) AS title, COALESCE(category, 'Uncategorized') AS category
+                     FROM transactions
+                     WHERE id IN (${placeholders})`
+                ).all(...sampleIds) as Array<{ id: string; title: string | null; category: string | null }>;
+                newTransactionSamples = rows.map((r) => ({
+                    id: String(r.id),
+                    title: r.title || 'Transaction',
+                    category: r.category || 'Uncategorized',
+                }));
+            } catch {
+                // ignore sample collection failures
+            }
+        }
+
         revalidateTag('accounts');
         revalidateTag('transactions');
 
-        return { message: 'Accounts and transactions fetched and saved successfully', classifierOutput, updatedDuplicates, newTransactions, categorizedCount };
+        return { message: 'Accounts and transactions fetched and saved successfully', classifierOutput, updatedDuplicates, newTransactions, categorizedCount, newTransactionSamples };
     } catch (error: any) {
         console.error('Error in refreshRecent action:', error);
         throw error;

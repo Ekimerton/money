@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SquareArrowOutUpRightIcon } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { setAutoCategorize as setAutoCategorizeAction, setAutoMarkInternalTransfers, refreshRecent as refreshRecentAction } from "@/app/settings/actions";
@@ -28,47 +27,29 @@ export default function SettingsClient({
     const [autoCategorize, setAutoCategorize] = useState<boolean>(initialAutoCategorize);
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
-    const [selectedRefreshTime, setSelectedRefreshTime] = useState<string>("none");
     const [markDuplicates, setMarkDuplicates] = useState<boolean>(initialMarkDuplicates);
     const [detectRecurring, setDetectRecurring] = useState<boolean>(false);
     const [classifierTrainingDate, setClassifierTrainingDate] = useState<string | null>(initialClassifierTrainingDate);
 
-    const saveUserName = async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            const response = await fetch('/api/save-user-name', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userName: displayName }),
-            });
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Failed to save user name.');
-            }
-        } catch (err: any) {
-            setError(err.message);
-            toast.error(err.message || 'Failed to save user name.');
-        } finally {
-            setLoading(false);
-        }
-    };
-
     const refreshRecent = async () => {
         setLoading(true);
         setError(null);
+        const promise = refreshRecentAction();
+        toast.promise(promise, {
+            loading: 'Fetching new transactions from simplefin...',
+            success: (result) => {
+                const newTx = result?.newTransactions ?? 0;
+                const items = (result?.newTransactionSamples || []).map((t: any) => `${t.title} [${t.category || 'Uncategorized'}]`);
+                const description = items.length > 0 ? items.join('\n') : undefined;
+                return { message: `Fetched ${newTx} ${newTx === 1 ? 'transaction' : 'transactions'}`, ...(description ? { description } : {}) } as any;
+            },
+            error: (err) => err?.message || 'Failed to fetch new transactions from simplefin.',
+            finally: () => setLoading(false),
+        });
         try {
-            const result = await refreshRecentAction();
-            const newTx = result.newTransactions ?? 0;
-            const cat = result.categorizedCount ?? 0;
-            const dup = result.updatedDuplicates ?? 0;
-            toast.success(`Fetched ${newTx} new transactions, ${cat} categorized, ${dup} marked duplicate`);
+            await promise;
         } catch (err: any) {
-            const msg = err?.message || 'Failed to refresh recent data.';
-            setError(msg);
-            toast.error(msg);
-        } finally {
-            setLoading(false);
+            setError(err?.message || 'Failed to refresh recent data.');
         }
     };
 
@@ -122,7 +103,7 @@ export default function SettingsClient({
                 <h2 className="text-lg font-semibold border-b border-border pb-2">Basic Info</h2>
 
                 <div className="flex flex-col gap-2">
-                    <div className="flex flex-col sm:pr-8 w-60 sm:w-96 sm:flex-shrink-0">
+                    <div className="flex flex-col sm:pr-8 w-60 sm:w-lg sm:flex-shrink-0">
                         <Label htmlFor="displayName">Name</Label>
                     </div>
                     <div className="flex items-center gap-2 max-sm:gap-2 sm:flex-1">
@@ -147,7 +128,7 @@ export default function SettingsClient({
 
                 {/* Simplefin Login Row */}
                 <div className="flex flex-row sm:items-center gap-16 max-sm:gap-2">
-                    <div className="flex flex-col sm:pr-8 w-60 sm:w-96 sm:flex-shrink-0">
+                    <div className="flex flex-col sm:pr-8 w-60 sm:w-lg sm:flex-shrink-0">
                         <Label>Simplefin Login</Label>
                         <p className="text-xs text-muted-foreground">Open Simplefin Bridge to add new accounts or check connection health.</p>
                     </div>
@@ -160,7 +141,7 @@ export default function SettingsClient({
 
                 {/* Mark Duplicates Row */}
                 <div className="flex flex-row sm:items-center gap-16 max-sm:gap-2">
-                    <div className="flex flex-col sm:pr-8 w-60 sm:w-96 sm:flex-shrink-0">
+                    <div className="flex flex-col sm:pr-8 w-60 sm:w-lg sm:flex-shrink-0">
                         <Label>Mark Duplicate Transactions</Label>
                         <p className="text-xs text-muted-foreground">Automatically mark transfers between connected accounts as internal transfers.</p>
                     </div>
@@ -171,7 +152,7 @@ export default function SettingsClient({
 
                 {/* Auto-Classify Row */}
                 <div className="flex flex-row sm:items-center gap-16 max-sm:gap-2">
-                    <div className="flex flex-col sm:pr-8 w-60 sm:w-96 sm:flex-shrink-0">
+                    <div className="flex flex-col sm:pr-8 w-60 sm:w-lg sm:flex-shrink-0">
                         <Label>Auto-Classify Transactions</Label>
                         <p className="text-xs text-muted-foreground">Requires a trained classification model before enabling.</p>
                     </div>
@@ -182,7 +163,7 @@ export default function SettingsClient({
 
                 {/* Detect Recurring Transactions Row */}
                 <div className="flex flex-row sm:items-center gap-16 max-sm:gap-2">
-                    <div className="flex flex-col sm:pr-8 w-60 sm:w-96 sm:flex-shrink-0">
+                    <div className="flex flex-col sm:pr-8 w-60 sm:w-lg sm:flex-shrink-0">
                         <Label>Detect Recurring Transactions</Label>
                         <p className="text-xs text-muted-foreground">No effect yet; toggle is for future functionality.</p>
                     </div>
@@ -193,7 +174,7 @@ export default function SettingsClient({
 
                 {/* Refresh Row */}
                 <div className="flex flex-row sm:items-center gap-16 max-sm:gap-2">
-                    <div className="flex flex-col sm:pr-8 w-60 sm:w-96 sm:flex-shrink-0">
+                    <div className="flex flex-col sm:pr-8 w-60 sm:w-lg sm:flex-shrink-0">
                         <Label>Refresh Data Manually</Label>
                         <p className="text-xs text-muted-foreground">This will fetch all data since last refresh.</p>
                     </div>
@@ -206,7 +187,7 @@ export default function SettingsClient({
 
                 {/* Auto refresh time Row 
                 <div className="flex flex-row sm:items-center gap-16 max-sm:gap-2">
-                    <div className="flex flex-col sm:pr-8 w-60 sm:w-96 sm:flex-shrink-0">
+                    <div className="flex flex-col sm:pr-8 w-60 sm:w-lg sm:flex-shrink-0">
                         <Label>Auto refresh time</Label>
                         <p className="text-xs text-muted-foreground">doesn't do anything for now</p>
                     </div>
@@ -234,7 +215,7 @@ export default function SettingsClient({
 
                 {/* Theme Toggle Row */}
                 <div className="flex flex-row sm:items-center gap-16 max-sm:gap-2">
-                    <div className="flex flex-col sm:pr-8 w-60 sm:w-96 sm:flex-shrink-0">
+                    <div className="flex flex-col sm:pr-8 w-60 sm:w-lg sm:flex-shrink-0">
                         <Label>Dark Mode</Label>
                         <p className="text-xs text-muted-foreground">Toggle between light and dark theme.</p>
                     </div>
@@ -253,7 +234,7 @@ export default function SettingsClient({
 
                 {/* Training info Row */}
                 <div className="flex flex-row sm:items-center gap-16 max-sm:gap-2">
-                    <div className="flex flex-col sm:pr-8 w-60 sm:w-96 sm:flex-shrink-0">
+                    <div className="flex flex-col sm:pr-8 w-60 sm:w-lg sm:flex-shrink-0">
                         <Label>Training info</Label>
                         <p className="text-xs text-muted-foreground">Last time the model was trained</p>
                     </div>
@@ -278,7 +259,7 @@ export default function SettingsClient({
 
                 {/* Retrain model Row */}
                 <div className="flex flex-row sm:items-center gap-16 max-sm:gap-2">
-                    <div className="flex flex-col sm:pr-8 w-60 sm:w-96 sm:flex-shrink-0">
+                    <div className="flex flex-col sm:pr-8 w-60 sm:w-lg sm:flex-shrink-0">
                         <Label>Retrain model</Label>
                         <p className="text-xs text-muted-foreground">Recomputes the classifier</p>
                     </div>
@@ -320,7 +301,7 @@ export default function SettingsClient({
 
                 {/* Refresh All Row */}
                 <div className="flex flex-row sm:items-center gap-16 max-sm:gap-2">
-                    <div className="flex flex-col sm:pr-8 w-60 sm:w-96 sm:flex-shrink-0">
+                    <div className="flex flex-col sm:pr-8 w-60 sm:w-lg sm:flex-shrink-0">
                         <Label>Refresh All Data</Label>
                         <p className="text-xs text-muted-foreground">Fetches all historical data (since 2000-01-01).</p>
                     </div>
@@ -333,7 +314,7 @@ export default function SettingsClient({
 
                 {/* Delete simplefin settings Row */}
                 <div className="flex flex-row sm:items-center gap-16 max-sm:gap-2">
-                    <div className="flex flex-col sm:pr-8 w-60 sm:w-96 sm:flex-shrink-0">
+                    <div className="flex flex-col sm:pr-8 w-60 sm:w-lg sm:flex-shrink-0">
                         <Label>Delete Saved Simplefin Token</Label>
                         <p className="text-xs text-muted-foreground">does nothing for now</p>
                     </div>
