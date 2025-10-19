@@ -24,13 +24,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { Kbd, KbdGroup } from "@/components/ui/kbd"
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
 const SIDEBAR_WIDTH = "18rem"
 const SIDEBAR_WIDTH_MOBILE = "18rem"
 const SIDEBAR_WIDTH_ICON = "3rem"
-const SIDEBAR_KEYBOARD_SHORTCUT = "b"
+const SIDEBAR_KEYBOARD_SHORTCUT = "s"
 
 type SidebarContextProps = {
   state: "expanded" | "collapsed"
@@ -259,23 +260,37 @@ function SidebarTrigger({
   ...props
 }: React.ComponentProps<typeof Button>) {
   const { toggleSidebar } = useSidebar()
+  const isMac = typeof navigator !== "undefined" && /Mac|iPhone|iPad|iPod/.test(navigator.platform)
 
   return (
-    <Button
-      data-sidebar="trigger"
-      data-slot="sidebar-trigger"
-      variant="ghost"
-      size="icon"
-      className={cn("size-7", className)}
-      onClick={(event) => {
-        onClick?.(event)
-        toggleSidebar()
-      }}
-      {...props}
-    >
-      <PanelLeftIcon />
-      <span className="sr-only">Toggle Sidebar</span>
-    </Button>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          data-sidebar="trigger"
+          data-slot="sidebar-trigger"
+          variant="ghost"
+          size="icon"
+          className={cn("size-7", className)}
+          onClick={(event) => {
+            onClick?.(event)
+            toggleSidebar()
+          }}
+          {...props}
+        >
+          <PanelLeftIcon />
+          <span className="sr-only">Toggle Sidebar</span>
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="bottom" align="start" data-slot="tooltip-content">
+        <div className="flex items-center gap-2">
+          <span>Toggle sidebar</span>
+          <KbdGroup className="ml-1">
+            <Kbd>{isMac ? "⌘" : "Ctrl"}</Kbd>
+            <Kbd>S</Kbd>
+          </KbdGroup>
+        </div>
+      </TooltipContent>
+    </Tooltip>
   )
 }
 
