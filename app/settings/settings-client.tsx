@@ -36,6 +36,7 @@ export default function SettingsClient({
         setError(null);
         const promise = refreshRecentAction();
         toast.promise(promise, {
+            position: 'top-center',
             loading: 'Fetching new transactions from Simplefin...',
             success: (result) => {
                 const newTx = result?.newTransactions ?? 0;
@@ -74,11 +75,11 @@ export default function SettingsClient({
             const newTx = result.newTransactions ?? 0;
             const cat = result.categorizedCount ?? 0;
             const dup = result.updatedDuplicates ?? 0;
-            toast.success(`Full refresh: ${newTx} new transactions, ${cat} categorized, ${dup} marked duplicate`);
+            toast.success(`Full refresh: ${newTx} new transactions, ${cat} categorized, ${dup} marked duplicate`, { position: 'top-center' });
         } catch (err: any) {
             const msg = err?.message || 'Failed to perform full refresh.';
             setError(msg);
-            toast.error(msg);
+            toast.error(msg, { position: 'top-center' });
         } finally {
             setLoading(false);
         }
@@ -291,6 +292,7 @@ export default function SettingsClient({
                                     return data;
                                 })();
                                 toast.promise(promise, {
+                                    position: 'top-center',
                                     loading: 'Training model...',
                                     success: (data: any) => {
                                         if (data?.classifierTrainingDate) {
