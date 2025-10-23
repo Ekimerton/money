@@ -4,6 +4,7 @@ import * as React from "react"
 import type { Account, Transaction } from "@/lib/types"
 import { CategoryPopover } from "@/components/ui/category-popover"
 import { toast } from "sonner"
+import { ChevronDownIcon } from "lucide-react"
 
 interface TransactionsListProps {
     transactions: Transaction[]
@@ -13,6 +14,7 @@ interface TransactionsListProps {
 export function TransactionsList({ transactions, accounts }: TransactionsListProps) {
     const [localTransactions, setLocalTransactions] = React.useState<Transaction[]>(transactions)
     const [existingCategories, setExistingCategories] = React.useState<string[]>([])
+    const [expandedIds, setExpandedIds] = React.useState<Set<string>>(new Set())
 
     React.useEffect(() => {
         setLocalTransactions(transactions)
@@ -30,6 +32,15 @@ export function TransactionsList({ transactions, accounts }: TransactionsListPro
             }
         }
         fetchCategories()
+    }, [])
+
+    const toggleExpanded = React.useCallback((transactionId: string) => {
+        setExpandedIds(prev => {
+            const next = new Set(prev)
+            if (next.has(transactionId)) next.delete(transactionId)
+            else next.add(transactionId)
+            return next
+        })
     }, [])
 
     const updateTransactionCategory = React.useCallback(async (transactionId: string, newCategory: string) => {
@@ -132,34 +143,56 @@ export function TransactionsList({ transactions, accounts }: TransactionsListPro
                         const currency = account?.currency || 'USD';
                         const amountNumber = parseFloat(t.amount);
                         const categoryClass = t.category === "Uncategorized" ? "text-red-700" : "text-neutral-700";
+                        const isExpanded = expandedIds.has(t.id)
 
                         return (
-                            <CategoryPopover
-                                key={t.id}
-                                defaultValue={t.category}
-                                suggestions={[...new Set([...existingCategories, 'Groceries', 'Rent', 'Salary', 'Transport', 'Utilities', 'Dining'])]}
-                                onSubmit={(newCategory) => updateTransactionCategory(t.id, newCategory)}
-                                trigger={
-                                    <div className="block border-b last:border-b-0 pt-1 pb-2 hover:bg-muted/60">
-                                        <div className="flex w-full items-center justify-between text-left font-medium">
-                                            <div className="flex items-center space-x-1">
-                                                <span className="truncate max-w-[60vw] text-neutral-800 dark:text-neutral-300">{t.payee} [{t.description}]</span>
-                                            </div>
-                                            <div className="flex items-center space-x-1 text-neutral-800 dark:text-neutral-300">
-                                                <span>
-                                                    {new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amountNumber)}
-                                                </span>
-                                            </div>
+                            <div key={t.id} className="border-b last:border-b-0 pt-1 pb-2 hover:bg-muted/60">
+                                <button
+                                    type="button"
+                                    className=" w-full text-left font-medium focus:outline-none"
+                                    aria-label="Toggle transaction details"
+                                    aria-expanded={isExpanded}
+                                    onClick={() => toggleExpanded(t.id)}
+                                >
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex flex-col">
+                                            <p className="truncate max-w-[60vw] text-neutral-800 dark:text-neutral-300">{t.payee} [{t.description}]</p>
+                                            <p className={`truncate max-w-[60vw] text-sm text-neutral-600 dark:text-neutral-400 ${categoryClass}`}>{t.category}</p>
                                         </div>
-                                        <div className="text-sm">
-                                            <div className="flex justify-between">
-                                                <span className={`truncate max-w-[60vw] text-neutral-600 dark:text-neutral-400 ${categoryClass}`}>{t.category}</span>
-                                                <span className="truncate max-w-[40vw]">{ }</span>
-                                            </div>
+                                        <div className="flex items-center gap-1 text-neutral-800 dark:text-neutral-300">
+                                            <p>
+                                                {new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amountNumber)}
+                                            </p>
+                                            <ChevronDownIcon className={`size-4 ml-1 ${isExpanded ? 'rotate-180' : ''}`} />
                                         </div>
                                     </div>
-                                }
-                            />
+                                    {isExpanded && (
+                                        <div className="mt-2 w-full overflow-hidden font-mono text-xs text-neutral-800 dark:text-neutral-200 space-y-1.5">
+                                            <div className="flex w-full items-center justify-between">
+                                                <span className="w-20 shrink-0 text-neutral-600 dark:text-neutral-400">Payee</span>
+                                                <span className="truncate max-w-[60%]">{t.payee ?? '-'}</span>
+                                            </div>
+                                            <div className="flex w-full items-center justify-between">
+                                                <span className="w-20 shrink-0 text-neutral-600 dark:text-neutral-400">Desc</span>
+                                                <span className="truncate max-w-[60%]">{t.description || '-'}</span>
+                                            </div>
+                                            <div className="flex w-full items-center justify-between">
+                                                <span className="w-20 shrink-0 text-neutral-600 dark:text-neutral-400">Category</span>
+                                                <span className="truncate max-w-[60%]">{t.category || '-'}</span>
+                                            </div>
+                                            <div className="flex w-full items-center justify-between">
+                                                <span className="w-20 shrink-0 text-neutral-600 dark:text-neutral-400">Account</span>
+                                                <span className="truncate max-w-[60%]">{account?.name || '-'}</span>
+                                            </div>
+                                            <div className="flex w-full items-center justify-between">
+                                                <span className="w-20 shrink-0 text-neutral-600 dark:text-neutral-400">Amount</span>
+                                                <span className="truncate max-w-[60%]">{new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amountNumber)}</span>
+                                            </div>
+                                        </div>
+                                    )}
+                                </button>
+
+                            </div>
                         );
                     })}
                 </div>
