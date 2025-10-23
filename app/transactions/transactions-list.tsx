@@ -178,7 +178,20 @@ export function TransactionsList({ transactions, accounts }: TransactionsListPro
                                             </div>
                                             <div className="flex w-full items-center justify-between">
                                                 <span className="w-20 shrink-0 text-neutral-600 dark:text-neutral-400">Category</span>
-                                                <span className="truncate max-w-[60%]">{t.category || '-'}</span>
+                                                <CategoryPopover
+                                                    defaultValue={t.category || 'Uncategorized'}
+                                                    suggestions={existingCategories}
+                                                    onSubmit={(newCategory) => updateTransactionCategory(t.id, newCategory)}
+                                                    trigger={
+                                                        <span
+                                                            className="truncate max-w-[60%] underline cursor-pointer"
+                                                            onClick={(e) => e.stopPropagation()}
+                                                            onKeyDown={(e) => e.stopPropagation()}
+                                                        >
+                                                            {t.category || 'Uncategorized'}
+                                                        </span>
+                                                    }
+                                                />
                                             </div>
                                             <div className="flex w-full items-center justify-between">
                                                 <span className="w-20 shrink-0 text-neutral-600 dark:text-neutral-400">Account</span>

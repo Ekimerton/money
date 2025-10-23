@@ -204,10 +204,10 @@ export async function refreshRecent(): Promise<{ message: string; classifierOutp
             categorizedCount = result.categorizedCount;
         }
 
-        // Prepare up to three sample transactions to surface in the UI with their final categories
+        // Prepare up to five sample transactions to surface in the UI with their final categories
         let newTransactionSamples: Array<{ id: string; title: string; category: string }> | undefined;
         if (newTransactionIds.length > 0) {
-            const sampleIds = newTransactionIds.slice(0, 3);
+            const sampleIds = newTransactionIds.slice(0, 5);
             const placeholders = sampleIds.map(() => '?').join(',');
             try {
                 const rows = db.prepare(

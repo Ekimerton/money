@@ -39,9 +39,21 @@ export default function SettingsClient({
             loading: 'Fetching new transactions from Simplefin...',
             success: (result) => {
                 const newTx = result?.newTransactions ?? 0;
-                const items = (result?.newTransactionSamples || []).map((t: any) => `${t.title} [${t.category || 'Uncategorized'}]`);
-                const description = items.length > 0 ? items.join('\n') : undefined;
-                return { message: `Fetched ${newTx} ${newTx === 1 ? 'transaction' : 'transactions'}`, ...(description ? { description } : {}) } as any;
+                const samples: Array<any> = Array.isArray(result?.newTransactionSamples) ? result.newTransactionSamples : [];
+                const items = samples.map((t: any) => `${t.title} [${t.category || 'Uncategorized'}]`);
+                const shown = items.slice(0, 5);
+                const moreCount = Math.max(0, newTx - shown.length);
+                const descriptionNode = shown.length > 0 ? (
+                    <div className="flex flex-col">
+                        {shown.map((line: string, idx: number) => (
+                            <div key={idx}>{line}</div>
+                        ))}
+                        {moreCount > 0 && (
+                            <div className="text-muted-foreground">+{moreCount} more…</div>
+                        )}
+                    </div>
+                ) : undefined;
+                return { message: `Fetched ${newTx} ${newTx === 1 ? 'transaction' : 'transactions'}`, ...(descriptionNode ? { description: descriptionNode } : {}) } as any;
             },
             error: (err) => err?.message || 'Failed to fetch new transactions from simplefin.',
             finally: () => setLoading(false),
