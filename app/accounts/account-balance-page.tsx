@@ -87,10 +87,10 @@ export function AccountBalancePage({ accounts }: { accounts: Account[] }) {
 
     return (
         <div className="max-w-7xl mx-auto">
-            <div className="p-4 flex max-sm:pt-12">
+            <div className="p-4 pb-0 flex max-sm:pt-8">
                 <div className="grid flex-1 gap-1 max-sm:text-center ">
-                    <h2 className="font-bold text-muted-foreground uppercase text-sm font-mono max-sm:hidden">
-                        Net Worth
+                    <h2 className="font-bold text-muted-foreground uppercase text-sm font-mono">
+                        Lifetime Net Worth
                     </h2>
                     <h1 className="text-2xl font-bold max-sm:text-4xl text-neutral-900 dark:text-neutral-100">
                         {Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(finalNetWorth)}
@@ -101,6 +101,7 @@ export function AccountBalancePage({ accounts }: { accounts: Account[] }) {
                             <span className={isInfinitePercent ? "text-neutral-500" : ""}>({formattedPercentChange})</span>
                         </span>
                     </h1>
+
                     <h2 className={`text-base ml-2 font-medium font-mono sm:hidden ${changeNetWorth > 0 ? "text-green-700" : changeNetWorth < 0 ? "text-red-700" : ""}`}>
                         {changeSign}
                         {formattedAbsChange}

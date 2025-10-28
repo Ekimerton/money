@@ -90,10 +90,10 @@ export default function SpendingPageClient({ transactions, accounts }: SpendingP
 
     return (
         <div className="w-full max-w-7xl mx-auto">
-            <div className="p-4 flex max-sm:pt-12 sm:hidden">
+            <div className="px-4 flex max-sm:pt-8 sm:hidden">
                 <div className="grid flex-1 gap-1 max-sm:text-center ">
-                    <h2 className="font-bold text-muted-foreground uppercase text-sm font-mono max-sm:hidden">
-                        Net Spend
+                    <h2 className="font-bold text-muted-foreground uppercase text-sm font-mono">
+                        Monthly Spend
                     </h2>
                     <h1 className="text-2xl font-bold max-sm:text-4xl text-neutral-950 dark:text-neutral-50">
                         {formattedTotal}
@@ -109,7 +109,7 @@ export default function SpendingPageClient({ transactions, accounts }: SpendingP
             <div className="flex gap-2 space-y-0 p-4 sm:flex-row max-sm:p-2 max-sm:hidden">
                 <div className="grid flex-1 gap-1">
                     <h2 className="font-bold text-muted-foreground uppercase text-sm font-mono">
-                        Net Spend
+                        Monthly Spend
                     </h2>
                     <h1 className="text-2xl font-bold text-neutral-950 dark:text-neutral-50">
                         {formattedTotal}

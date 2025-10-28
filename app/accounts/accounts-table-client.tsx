@@ -7,7 +7,7 @@ import { EllipsisIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ResponsiveDrawer } from "@/components/ui/responsive-drawer";
 import { Account } from "@/lib/types";
 
 interface AccountsTableClientProps {
@@ -187,43 +187,45 @@ export function AccountsTableClient({ accounts, timeRange }: AccountsTableClient
                 );
             })}
 
-            <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Edit account</DialogTitle>
-                        <DialogDescription>
-                            Update the account name or category. Changes are saved immediately on Save.
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    <div className="flex flex-col gap-4">
-                        <div className="grid gap-2">
-                            <Label htmlFor="account-name">Name</Label>
-                            <Input
-                                id="account-name"
-                                value={editedName}
-                                onChange={(e) => setEditedName(e.target.value)}
-                                placeholder="Account name"
-                            />
-                        </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="account-type">Category</Label>
-                            <Input
-                                id="account-type"
-                                value={editedType}
-                                onChange={(e) => setEditedType(e.target.value)}
-                                placeholder="Account category/type"
-                            />
-                        </div>
+            <ResponsiveDrawer
+                open={isSettingsOpen}
+                onOpenChange={setIsSettingsOpen}
+                trigger={<span className="hidden" />}
+                title="Edit account"
+                description="Update the account name or category. Changes are saved immediately on Save."
+                showDrawerCancel={false}
+                drawerFooter={
+                    <Button className="w-full" onClick={handleSave} disabled={isSaving}>
+                        {isSaving ? 'Saving…' : 'Save'}
+                    </Button>
+                }
+            >
+                <div className="flex flex-col gap-4">
+                    <div className="grid gap-2">
+                        <Label htmlFor="account-name">Name</Label>
+                        <Input
+                            id="account-name"
+                            value={editedName}
+                            onChange={(e) => setEditedName(e.target.value)}
+                            placeholder="Account name"
+                        />
                     </div>
-
-                    <DialogFooter>
+                    <div className="grid gap-2">
+                        <Label htmlFor="account-type">Category</Label>
+                        <Input
+                            id="account-type"
+                            value={editedType}
+                            onChange={(e) => setEditedType(e.target.value)}
+                            placeholder="Account category/type"
+                        />
+                    </div>
+                    <div className="hidden md:flex justify-end">
                         <Button onClick={handleSave} disabled={isSaving}>
                             {isSaving ? 'Saving…' : 'Save'}
                         </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                    </div>
+                </div>
+            </ResponsiveDrawer>
         </div>
     );
 }
