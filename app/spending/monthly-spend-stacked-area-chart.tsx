@@ -24,64 +24,64 @@ const COLORS = [
     "oklch(62% 0.14 120)", // yellow-green
 ]
 
-function formatISODateUTC(d: Date): string {
-    return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()))
-        .toISOString()
-        .split("T")[0]
+function monthKeyUTC(d: Date): string {
+    return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`
 }
 
-function enumerateDatesInclusive(startISO: string, endISO: string): string[] {
-    const dates: string[] = []
-    const start = new Date(startISO + "T00:00:00Z")
-    const end = new Date(endISO + "T00:00:00Z")
-    const cur = new Date(start)
-    while (cur <= end) {
-        dates.push(formatISODateUTC(cur))
-        cur.setUTCDate(cur.getUTCDate() + 1)
+function firstOfMonthISOUTCFromKey(key: string): string {
+    // key is YYYY-MM
+    return `${key}-01`
+}
+
+function last12MonthKeys(): string[] {
+    const now = new Date()
+    const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1))
+    const keys: string[] = []
+    for (let i = 11; i >= 0; i--) {
+        const d = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() - i, 1))
+        keys.push(monthKeyUTC(d))
     }
-    return dates
+    return keys
 }
 
-export function CumulativeSpendLineChart({ transactions }: { transactions: Transaction[] }) {
+export function MonthlySpendStackedAreaChart({ transactions }: { transactions: Transaction[] }) {
     const { chartData, categories, chartConfig } = React.useMemo(() => {
-        const dailyByCategory: Record<string, Record<string, number>> = {}
+        // Aggregate spend per category per month (non-cumulative)
+        const byMonthByCategory: Record<string, Record<string, number>> = {}
         const categoryTotals: Record<string, number> = {}
 
-        let minISO: string | null = null
-        let maxISO: string | null = null
+        const monthKeys = new Set<string>(last12MonthKeys())
 
         for (const tx of transactions) {
+            if (tx.hidden) continue
+            if (tx.category === "Internal Transfer") continue
             const amount = Number(tx.amount)
             if (!(amount < 0)) continue
             const d = new Date(tx.transacted_at * 1000)
-            const dateISO = formatISODateUTC(d)
+            const key = monthKeyUTC(new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1)))
+            if (!monthKeys.has(key)) continue
+
             const category = tx.category || "Uncategorized"
             const abs = Math.abs(amount)
-
-            if (!dailyByCategory[dateISO]) dailyByCategory[dateISO] = {}
-            dailyByCategory[dateISO][category] = (dailyByCategory[dateISO][category] || 0) + abs
+            if (!byMonthByCategory[key]) byMonthByCategory[key] = {}
+            byMonthByCategory[key][category] = (byMonthByCategory[key][category] || 0) + abs
             categoryTotals[category] = (categoryTotals[category] || 0) + abs
-
-            if (!minISO || dateISO < minISO) minISO = dateISO
-            if (!maxISO || dateISO > maxISO) maxISO = dateISO
         }
 
-        if (!minISO || !maxISO) {
-            return { chartData: [], categories: [], chartConfig: {} as ChartConfig }
-        }
-
+        const keysOrdered = last12MonthKeys()
         const allCategories = Object.keys(categoryTotals).sort((a, b) => a.localeCompare(b))
-        const allDates = enumerateDatesInclusive(minISO, maxISO)
 
-        const running: Record<string, number> = {}
-        const rows = allDates.map((date) => {
-            const row: Record<string, any> = { date }
-            const dayMap = dailyByCategory[date] || {}
+        const rowsAll = keysOrdered.map((k) => {
+            const row: Record<string, any> = { date: firstOfMonthISOUTCFromKey(k) }
+            const catMap = byMonthByCategory[k] || {}
             for (const cat of allCategories) {
-                running[cat] = (running[cat] || 0) + (dayMap[cat] || 0)
-                row[cat] = running[cat]
+                row[cat] = catMap[cat] || 0
             }
             return row
+        })
+        const rows = rowsAll.filter((row) => {
+            const total = allCategories.reduce((acc, cat) => acc + (Number(row[cat]) || 0), 0)
+            return total > 0
         })
 
         const cfg: ChartConfig = {} as ChartConfig
@@ -130,17 +130,17 @@ export function CumulativeSpendLineChart({ transactions }: { transactions: Trans
                         <ChartTooltipContent
                             labelFormatter={(_, payload) => {
                                 if (!payload || payload.length === 0) return ""
-                                const row = payload[0].payload
-                                const dateValue = row.date
+                                const row = payload[0].payload as any
+                                const dateValue = row.date as string // YYYY-MM-01
                                 const total = Array.isArray(categories)
                                     ? categories.reduce((acc, cat) => acc + (Number(row?.[cat]) || 0), 0)
                                     : 0
                                 return (
                                     <div className="flex justify-between w-full pb-2 text-neutral-950 dark:text-neutral-50">
                                         <p>
-                                            {new Date(dateValue + "T00:00:00").toLocaleDateString("en-US", {
+                                            {new Date(dateValue + "T00:00:00Z").toLocaleDateString("en-US", {
                                                 month: "short",
-                                                day: "numeric",
+                                                year: "numeric",
                                             })}
                                         </p>
                                         <p className="font-mono">

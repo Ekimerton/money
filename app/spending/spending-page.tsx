@@ -1,7 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { CumulativeSpendLineChart } from "@/app/spending/cumulative-spend-line-chart"
+// import { CumulativeSpendLineChart } from "@/app/spending/cumulative-spend-line-chart"
+import { MonthlySpendStackedAreaChart } from "@/app/spending/monthly-spend-stacked-area-chart"
 import { TimeRangeSelect, type TimeRangeValue } from "@/components/time-range-select"
 import { DesktopMonthSelect } from "@/components/desktop-month-select"
 import { MobileMonthNavigator } from "@/components/mobile-month-navigator"
@@ -123,8 +124,9 @@ export default function SpendingPageClient({ transactions, accounts }: SpendingP
                 </div>
                 <DesktopMonthSelect value={currentMonth} onValueChange={setCurrentMonth} monthsBack={6} />
             </div>
-            <CumulativeSpendLineChart
-                transactions={filteredTransactions}
+            {/* <CumulativeSpendLineChart transactions={filteredTransactions} /> */}
+            <MonthlySpendStackedAreaChart
+                transactions={transactions}
             />
             <MobileMonthNavigator
                 currentMonth={currentMonth}
