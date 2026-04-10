@@ -2,8 +2,10 @@
 
 import Database from "better-sqlite3";
 import path from "path";
+import fs from "fs";
 import { spawn } from "child_process";
 import { revalidateTag } from "next/cache";
+import { getSettings, updateSettings } from "@/lib/settings";
 
 const dbPath = path.join(process.cwd(), "./data/user_data.db");
 const pythonExecutablePath = path.join(process.cwd(), "./data/.venv/bin/python");
@@ -70,67 +72,36 @@ function markInternalTransfersForTransactions(db: any, transactionIds: string[])
 }
 
 export async function setAutoCategorize(autoCategorize: boolean): Promise<void> {
-    const db = new Database(dbPath);
-    try {
-        const stmt = db.prepare(`
-            INSERT INTO user_config (id, auto_categorize)
-            VALUES (1, ?)
-            ON CONFLICT(id) DO UPDATE SET
-                auto_categorize = excluded.auto_categorize
-        `);
-        stmt.run(autoCategorize ? 1 : 0);
-        revalidateTag('settings');
-    } finally {
-        db.close();
-    }
+    await updateSettings({ autoCategorize });
+    revalidateTag('settings');
 }
 
 export async function setAutoMarkInternalTransfers(enabled: boolean): Promise<void> {
-    const db = new Database(dbPath);
-    try {
-        const stmt = db.prepare(`
-            INSERT INTO user_config (id, auto_mark_duplicates)
-            VALUES (1, ?)
-            ON CONFLICT(id) DO UPDATE SET
-                auto_mark_duplicates = excluded.auto_mark_duplicates
-        `);
-        stmt.run(enabled ? 1 : 0);
-        revalidateTag('settings');
-    } finally {
-        db.close();
-    }
+    await updateSettings({ autoMarkDuplicates: enabled });
+    revalidateTag('settings');
 }
 
 export async function setAutoRefreshDaily(enabled: boolean): Promise<void> {
-    const db = new Database(dbPath);
-    try {
-        const stmt = db.prepare(`
-            INSERT INTO user_config (id, auto_refresh_daily)
-            VALUES (1, ?)
-            ON CONFLICT(id) DO UPDATE SET
-                auto_refresh_daily = excluded.auto_refresh_daily
-        `);
-        stmt.run(enabled ? 1 : 0);
-        revalidateTag('settings');
-    } finally {
-        db.close();
-    }
+    await updateSettings({ autoRefreshDaily: enabled });
+    revalidateTag('settings');
 }
 
 export async function refreshRecent(): Promise<{ message: string; classifierOutput?: string; updatedDuplicates?: number; newTransactions?: number; categorizedCount?: number; newTransactionSamples?: Array<{ id: string; title: string; category: string }>; }> {
     const db = new Database(dbPath);
     try {
         const userConfig = db.prepare(
-            'SELECT simplefin_url, auto_categorize, auto_mark_duplicates FROM user_config WHERE id = 1'
-        ).get() as { simplefin_url?: string; auto_categorize?: number; auto_mark_duplicates?: number } | undefined;
+            'SELECT simplefin_url FROM user_config WHERE id = 1'
+        ).get() as { simplefin_url?: string } | undefined;
+
+        const settings = await getSettings();
 
         if (!userConfig || !userConfig.simplefin_url) {
             throw new Error('SimpleFIN URL not found in database. Please initialize it first.');
         }
 
         const ACCESS_URL = userConfig.simplefin_url;
-        const autoCategorize = Boolean(userConfig.auto_categorize);
-        const autoMarkDuplicates = Boolean(userConfig.auto_mark_duplicates);
+        const autoCategorize = !!settings.autoCategorize;
+        const autoMarkDuplicates = !!settings.autoMarkDuplicates;
 
         const urlParts = ACCESS_URL.split('@');
         const authString = urlParts[0].replace('https://', '');
@@ -257,16 +228,18 @@ export async function refreshAll(): Promise<{ message: string; classifierOutput?
     const db = new Database(dbPath);
     try {
         const userConfig = db.prepare(
-            'SELECT simplefin_url, auto_categorize, auto_mark_duplicates FROM user_config WHERE id = 1'
-        ).get() as { simplefin_url?: string; auto_categorize?: number; auto_mark_duplicates?: number } | undefined;
+            'SELECT simplefin_url FROM user_config WHERE id = 1'
+        ).get() as { simplefin_url?: string } | undefined;
+
+        const settings = await getSettings();
 
         if (!userConfig || !userConfig.simplefin_url) {
             throw new Error('SimpleFIN URL not found in database. Please initialize it first.');
         }
 
         const ACCESS_URL = userConfig.simplefin_url;
-        const autoCategorize = Boolean(userConfig.auto_categorize);
-        const autoMarkDuplicates = Boolean(userConfig.auto_mark_duplicates);
+        const autoCategorize = !!settings.autoCategorize;
+        const autoMarkDuplicates = !!settings.autoMarkDuplicates;
 
         const urlParts = ACCESS_URL.split('@');
         const authString = urlParts[0].replace('https://', '');
@@ -477,4 +450,47 @@ export async function getTop3PredictionsForTransaction(tx: { payee: string | nul
     }
     return [];
 }
+export async function migrateSettingsToJson(): Promise<{ message: string }> {
+    const db = new Database(dbPath);
+    const jsonPath = path.join(process.cwd(), './data/user-settings.json');
+    
+    try {
+        const userConfig = db.prepare(
+            'SELECT display_name, simplefin_url, classifier_training_date, auto_categorize, auto_mark_duplicates, onboarding_completed, auto_refresh_daily FROM user_config WHERE id = 1'
+        ).get() as any;
 
+        if (!userConfig) {
+            throw new Error('No settings found in database to migrate.');
+        }
+
+        let currentSettings: any = {};
+        if (fs.existsSync(jsonPath)) {
+            const fileContent = fs.readFileSync(jsonPath, 'utf-8');
+            try {
+                currentSettings = JSON.parse(fileContent);
+            } catch (e) {
+                console.error('Error parsing existing settings JSON:', e);
+            }
+        }
+
+        const updatedSettings = {
+            ...currentSettings,
+            displayName: userConfig.display_name,
+            simplefinUrl: userConfig.simplefin_url,
+            classifierTrainingDate: userConfig.classifier_training_date,
+            autoCategorize: Boolean(userConfig.auto_categorize),
+            autoMarkDuplicates: Boolean(userConfig.auto_mark_duplicates),
+            onboardingCompleted: Boolean(userConfig.onboarding_completed),
+            autoRefreshDaily: Boolean(userConfig.auto_refresh_daily),
+        };
+
+        fs.writeFileSync(jsonPath, JSON.stringify(updatedSettings, null, 4), 'utf-8');
+
+        return { message: 'Settings successfully copied to user-settings.json' };
+    } catch (error: any) {
+        console.error('Error migrating settings:', error);
+        throw error;
+    } finally {
+        db.close();
+    }
+}

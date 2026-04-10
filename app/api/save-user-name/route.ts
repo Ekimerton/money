@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Database from 'better-sqlite3';
 import path from 'path';
 import { revalidateTag } from 'next/cache';
-
-const dbPath = path.join(process.cwd(), './data/user_data.db');
+import { updateSettings } from '@/lib/settings';
 
 export async function POST(req: NextRequest) {
     try {
@@ -11,18 +9,8 @@ export async function POST(req: NextRequest) {
         if (!userName || typeof userName !== 'string' || userName.trim().length === 0) {
             return NextResponse.json({ error: 'userName is required.' }, { status: 400 });
         }
-        const db = new Database(dbPath);
-
-        // Upsert display_name on the single-row user_config (id = 1)
-        const stmt = db.prepare(`
-            INSERT INTO user_config (id, display_name)
-            VALUES (1, ?)
-            ON CONFLICT(id) DO UPDATE SET
-                display_name = excluded.display_name
-        `);
-        stmt.run(userName.trim());
-
-        db.close();
+        
+        await updateSettings({ displayName: userName.trim() });
 
         revalidateTag('settings');
         return NextResponse.json({ message: 'User name saved successfully!' }, { status: 200 });

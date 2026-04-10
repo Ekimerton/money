@@ -1,9 +1,8 @@
-
 import { NextRequest, NextResponse } from 'next/server';
-import Database from 'better-sqlite3';
 import path from 'path';
 import { exec } from 'child_process';
 import { revalidateTag } from 'next/cache';
+import { updateSettings } from '@/lib/settings';
 
 const dbPath = path.join(process.cwd(), './data/user_data.db');
 const trainModelScriptPath = path.join(process.cwd(), './data/train_model.py');
@@ -57,14 +56,8 @@ export async function POST(req: NextRequest) {
                 if (perClassAccuracy.length === 0) perClassAccuracy = undefined;
             }
         } catch { }
-        const db = new Database(dbPath);
-        db.prepare(`
-            INSERT INTO user_config (id, classifier_training_date)
-            VALUES (1, ?)
-            ON CONFLICT(id) DO UPDATE SET
-                classifier_training_date = excluded.classifier_training_date
-        `).run(now);
-        db.close();
+
+        await updateSettings({ classifierTrainingDate: now });
 
         revalidateTag('settings');
 

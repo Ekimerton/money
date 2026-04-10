@@ -2,21 +2,19 @@ import cron from 'node-cron';
 import Database from 'better-sqlite3';
 import path from 'path';
 
+import { getSettings } from './settings';
+
 export function startCronJobs() {
     // Run every day at midnight
     cron.schedule('0 0 * * *', async () => {
-        const dbPath = path.join(process.cwd(), './data/user_data.db');
-        const db = new Database(dbPath);
         let runRefresh = false;
         try {
-            const userConfig = db.prepare('SELECT auto_refresh_daily FROM user_config WHERE id = 1').get() as any;
-            if (userConfig?.auto_refresh_daily) {
+            const settings = await getSettings();
+            if (settings.autoRefreshDaily) {
                 runRefresh = true;
             }
         } catch (e) {
             console.error('Error checking cron config:', e);
-        } finally {
-            db.close();
         }
 
         if (runRefresh) {
