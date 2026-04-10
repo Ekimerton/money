@@ -39,35 +39,36 @@ export default function SettingsClient({
     const refreshRecent = async () => {
         setIsRefreshingRecent(true);
         setError(null);
-        const promise = refreshRecentAction();
-        toast.promise(promise, {
-            position: 'top-center',
-            loading: 'Fetching new transactions from Simplefin...',
-            success: (result) => {
-                const newTx = result?.newTransactions ?? 0;
-                const samples: Array<any> = Array.isArray(result?.newTransactionSamples) ? result.newTransactionSamples : [];
-                const items = samples.map((t: any) => `${t.title} [${t.category || 'Uncategorized'}]`);
-                const shown = items.slice(0, 5);
-                const moreCount = Math.max(0, newTx - shown.length);
-                const descriptionNode = shown.length > 0 ? (
-                    <div className="flex flex-col">
-                        {shown.map((line: string, idx: number) => (
-                            <div key={idx}>{line}</div>
-                        ))}
-                        {moreCount > 0 && (
-                            <div className="text-muted-foreground">+{moreCount} more…</div>
-                        )}
-                    </div>
-                ) : undefined;
-                return { message: `Fetched ${newTx} ${newTx === 1 ? 'transaction' : 'transactions'}`, ...(descriptionNode ? { description: descriptionNode } : {}) } as any;
-            },
-            error: (err) => err?.message || 'Failed to fetch new transactions from simplefin.',
-            finally: () => setIsRefreshingRecent(false),
-        });
         try {
+            const promise = refreshRecentAction();
+            toast.promise(promise, {
+                position: 'top-center',
+                loading: 'Fetching new transactions from Simplefin...',
+                success: (result) => {
+                    const newTx = result?.newTransactions ?? 0;
+                    const samples: Array<any> = Array.isArray(result?.newTransactionSamples) ? result.newTransactionSamples : [];
+                    const items = samples.map((t: any) => `${t.title} [${t.category || 'Uncategorized'}]`);
+                    const shown = items.slice(0, 5);
+                    const moreCount = Math.max(0, newTx - shown.length);
+                    const descriptionNode = shown.length > 0 ? (
+                        <div className="flex flex-col">
+                            {shown.map((line: string, idx: number) => (
+                                <div key={idx}>{line}</div>
+                            ))}
+                            {moreCount > 0 && (
+                                <div className="text-muted-foreground">+{moreCount} more…</div>
+                            )}
+                        </div>
+                    ) : undefined;
+                    return { message: `Fetched ${newTx} ${newTx === 1 ? 'transaction' : 'transactions'}`, ...(descriptionNode ? { description: descriptionNode } : {}) } as any;
+                },
+                error: (err) => err?.message || 'Failed to fetch new transactions from simplefin.',
+            });
             await promise;
         } catch (err: any) {
             setError(err?.message || 'Failed to refresh recent data.');
+        } finally {
+            setIsRefreshingRecent(false);
         }
     };
 
@@ -287,42 +288,43 @@ export default function SettingsClient({
                             onClick={async () => {
                                 setIsTrainingModel(true);
                                 setError(null);
-                                const promise = (async () => {
-                                    const response = await fetch('/api/train-model', { method: 'POST' });
-                                    const data = await response.json();
-                                    if (!response.ok) {
-                                        throw new Error(data?.error || 'Failed to train model.');
-                                    }
-                                    return data;
-                                })();
-                                toast.promise(promise, {
-                                    position: 'top-center',
-                                    loading: 'Training model...',
-                                    success: (data: any) => {
-                                        if (data?.classifierTrainingDate) {
-                                            setClassifierTrainingDate(data.classifierTrainingDate);
-                                        }
-                                        const perClass = Array.isArray(data?.perClassAccuracy) ? data.perClassAccuracy : [];
-                                        const overall = typeof data?.overallAccuracy === 'number' ? data.overallAccuracy : undefined;
-                                        const descriptionNode = (overall !== undefined || perClass.length > 0) ? (
-                                            <div className="flex flex-col">
-                                                {overall !== undefined && (
-                                                    <div><span className="font-semibold">Overall</span>: {(overall * 100).toFixed(1)}%</div>
-                                                )}
-                                                {perClass.slice(0, 6).map((c: any) => (
-                                                    <div key={c.label}><span className="font-semibold">{c.label}</span>: {(c.accuracy * 100).toFixed(1)}% ({c.support})</div>
-                                                ))}
-                                            </div>
-                                        ) : undefined;
-                                        return { message: 'Model training completed', ...(descriptionNode ? { description: descriptionNode } : {}) } as any;
-                                    },
-                                    error: (err: any) => err?.message || 'Failed to train model.',
-                                    finally: () => setIsTrainingModel(false),
-                                });
                                 try {
+                                    const promise = (async () => {
+                                        const response = await fetch('/api/train-model', { method: 'POST' });
+                                        const data = await response.json();
+                                        if (!response.ok) {
+                                            throw new Error(data?.error || 'Failed to train model.');
+                                        }
+                                        return data;
+                                    })();
+                                    toast.promise(promise, {
+                                        position: 'top-center',
+                                        loading: 'Training model...',
+                                        success: (data: any) => {
+                                            if (data?.classifierTrainingDate) {
+                                                setClassifierTrainingDate(data.classifierTrainingDate);
+                                            }
+                                            const perClass = Array.isArray(data?.perClassAccuracy) ? data.perClassAccuracy : [];
+                                            const overall = typeof data?.overallAccuracy === 'number' ? data.overallAccuracy : undefined;
+                                            const descriptionNode = (overall !== undefined || perClass.length > 0) ? (
+                                                <div className="flex flex-col">
+                                                    {overall !== undefined && (
+                                                        <div><span className="font-semibold">Overall</span>: {(overall * 100).toFixed(1)}%</div>
+                                                    )}
+                                                    {perClass.slice(0, 6).map((c: any) => (
+                                                        <div key={c.label}><span className="font-semibold">{c.label}</span>: {(c.accuracy * 100).toFixed(1)}% ({c.support})</div>
+                                                    ))}
+                                                </div>
+                                            ) : undefined;
+                                            return { message: 'Model training completed', ...(descriptionNode ? { description: descriptionNode } : {}) } as any;
+                                        },
+                                        error: (err: any) => err?.message || 'Failed to train model.',
+                                    });
                                     await promise;
                                 } catch (err: any) {
                                     setError(err?.message || 'Failed to train model.');
+                                } finally {
+                                    setIsTrainingModel(false);
                                 }
                             }}
                             disabled={isTrainingModel}

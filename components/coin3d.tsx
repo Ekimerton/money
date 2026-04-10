@@ -15,7 +15,7 @@ export function Coin3D() {
         if (!isDragging.current) {
             if (Math.abs(velocity.current) > 0.05) {
                 setRotationY((prev) => prev + velocity.current)
-                velocity.current *= 0.95 // Friction
+                velocity.current *= 0.45 // Friction
             } else {
                 // Return to flat if slow enough, or just let it stop
                 // velocity.current = 0
