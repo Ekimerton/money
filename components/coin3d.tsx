@@ -8,7 +8,7 @@ export function Coin3D() {
     const lastX = useRef(0)
     const velocity = useRef(0)
     const frameRef = useRef<number>(0)
-    const THICKNESS = 15;
+    const THICKNESS = 8;
 
     // Smooth deceleration animation loop
     const updatePhysics = () => {

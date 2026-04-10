@@ -25,14 +25,16 @@ export default function SettingsClient({
     const { theme, setTheme, resolvedTheme } = useTheme();
     const [displayName, setDisplayName] = useState<string>(initialDisplayName);
     const [autoCategorize, setAutoCategorize] = useState<boolean>(initialAutoCategorize);
-    const [loading, setLoading] = useState<boolean>(false);
+    const [isRefreshingRecent, setIsRefreshingRecent] = useState<boolean>(false);
+    const [isRefreshingAll, setIsRefreshingAll] = useState<boolean>(false);
+    const [isTrainingModel, setIsTrainingModel] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const [markDuplicates, setMarkDuplicates] = useState<boolean>(initialMarkDuplicates);
     const [detectRecurring, setDetectRecurring] = useState<boolean>(false);
     const [classifierTrainingDate, setClassifierTrainingDate] = useState<string | null>(initialClassifierTrainingDate);
 
     const refreshRecent = async () => {
-        setLoading(true);
+        setIsRefreshingRecent(true);
         setError(null);
         const promise = refreshRecentAction();
         toast.promise(promise, {
@@ -57,7 +59,7 @@ export default function SettingsClient({
                 return { message: `Fetched ${newTx} ${newTx === 1 ? 'transaction' : 'transactions'}`, ...(descriptionNode ? { description: descriptionNode } : {}) } as any;
             },
             error: (err) => err?.message || 'Failed to fetch new transactions from simplefin.',
-            finally: () => setLoading(false),
+            finally: () => setIsRefreshingRecent(false),
         });
         try {
             await promise;
@@ -67,7 +69,7 @@ export default function SettingsClient({
     };
 
     const refreshAll = async () => {
-        setLoading(true);
+        setIsRefreshingAll(true);
         setError(null);
         try {
             const { refreshAll } = await import("@/app/settings/actions");
@@ -81,7 +83,7 @@ export default function SettingsClient({
             setError(msg);
             toast.error(msg, { position: 'top-center' });
         } finally {
-            setLoading(false);
+            setIsRefreshingAll(false);
         }
     };
 
@@ -192,8 +194,8 @@ export default function SettingsClient({
                         <p className="text-xs text-muted-foreground">This will fetch all data since last refresh.</p>
                     </div>
                     <div className="flex items-center max-sm:justify-end gap-16 max-sm:gap-2 flex-1">
-                        <Button size="sm" variant="secondary" onClick={refreshRecent} disabled={loading} >
-                            {loading ? 'Refreshing...' : 'Refresh'}
+                        <Button size="sm" variant="secondary" onClick={refreshRecent} disabled={isRefreshingRecent} >
+                            {isRefreshingRecent ? 'Refreshing...' : 'Refresh'}
                         </Button>
                     </div>
                 </div>
@@ -281,7 +283,7 @@ export default function SettingsClient({
                             variant="secondary"
                             size="sm"
                             onClick={async () => {
-                                setLoading(true);
+                                setIsTrainingModel(true);
                                 setError(null);
                                 const promise = (async () => {
                                     const response = await fetch('/api/train-model', { method: 'POST' });
@@ -313,7 +315,7 @@ export default function SettingsClient({
                                         return { message: 'Model training completed', ...(descriptionNode ? { description: descriptionNode } : {}) } as any;
                                     },
                                     error: (err: any) => err?.message || 'Failed to train model.',
-                                    finally: () => setLoading(false),
+                                    finally: () => setIsTrainingModel(false),
                                 });
                                 try {
                                     await promise;
@@ -321,9 +323,9 @@ export default function SettingsClient({
                                     setError(err?.message || 'Failed to train model.');
                                 }
                             }}
-                            disabled={loading}
+                            disabled={isTrainingModel}
                         >
-                            {loading ? 'Training...' : 'Retrain model'}
+                            {isTrainingModel ? 'Training...' : 'Retrain model'}
                         </Button>
                     </div>
                 </div>
@@ -340,8 +342,8 @@ export default function SettingsClient({
                         <p className="text-xs text-muted-foreground">Fetches all historical data (since 2000-01-01).</p>
                     </div>
                     <div className="flex items-center max-sm:justify-end gap-16 max-sm:gap-2 flex-1">
-                        <Button size="sm" variant="secondary" onClick={refreshAll} disabled={loading}>
-                            {loading ? 'Refreshing...' : 'Refresh'}
+                        <Button size="sm" variant="secondary" onClick={refreshAll} disabled={isRefreshingAll}>
+                            {isRefreshingAll ? 'Refreshing...' : 'Refresh'}
                         </Button>
                     </div>
                 </div>
