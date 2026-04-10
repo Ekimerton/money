@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Area, AreaChart, Pie, PieChart, Cell, BarChart, Bar } from "recharts";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Sparkles, ArrowRight, Loader2 } from "lucide-react";
 
 type ChartType = "cumulative" | "pie" | "area" | "bar";
 
@@ -25,6 +26,11 @@ const COLORS = [
     "oklch(62% 0.14 340)",
     "oklch(62% 0.14 120)",
 ];
+
+const formatLabel = (str: string) => {
+    if (!str) return "";
+    return str.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+};
 
 export default function InsightsClient() {
     const [prompt, setPrompt] = React.useState("");
@@ -70,7 +76,7 @@ export default function InsightsClient() {
             const categories = Object.keys(rows[0]).filter((k) => k !== "date");
             const chartConfig: any = {};
             categories.forEach((cat, idx) => {
-                chartConfig[cat] = { label: cat, color: COLORS[idx % COLORS.length] };
+                chartConfig[cat] = { label: formatLabel(cat), color: COLORS[idx % COLORS.length] };
             });
             const tooltipFormatter = ((value: any, name: any, item: any, _index: number, p: any) => {
                 const indicatorColor = item?.payload?.stroke || item?.color;
@@ -160,7 +166,7 @@ export default function InsightsClient() {
             const categories = Object.keys(rows[0]).filter((k) => k !== "date");
             const chartConfig: any = {};
             categories.forEach((cat, idx) => {
-                chartConfig[cat] = { label: cat, color: COLORS[idx % COLORS.length] };
+                chartConfig[cat] = { label: formatLabel(cat), color: COLORS[idx % COLORS.length] };
             });
             const tooltipFormatter = ((value: any, name: any, item: any, _index: number, p: any) => {
                 const indicatorColor = item?.payload?.stroke || item?.color;
@@ -247,7 +253,7 @@ export default function InsightsClient() {
                 const categories = keys.filter((k) => k !== dateKey);
                 const chartConfig: any = {};
                 categories.forEach((cat, idx) => {
-                    chartConfig[cat] = { label: cat, color: COLORS[idx % COLORS.length] };
+                    chartConfig[cat] = { label: formatLabel(cat), color: COLORS[idx % COLORS.length] };
                 });
                 const tooltipFormatter = ((value: any, name: any, item: any, _index: number, p: any) => {
                     const indicatorColor = item?.payload?.fill || item?.color;
@@ -324,12 +330,13 @@ export default function InsightsClient() {
                                     content={
                                         <ChartTooltipContent
                                             indicator="dot"
-                                            formatter={(value: any, name: any) => {
+                                            formatter={(value: any, name: any, item: any) => {
                                                 const numericValue = Number(value);
                                                 const pct = total > 0 ? numericValue / total : 0;
+                                                const realName = item?.payload?.[labelKey] ?? name;
                                                 return (
                                                     <div className="flex w-full items-center justify-between">
-                                                        <span className="text-neutral-500 dark:text-neutral-400">{name}</span>
+                                                        <span className="text-neutral-500 dark:text-neutral-400">{formatLabel(String(realName))}</span>
                                                         <span className="text-neutral-950 font-mono font-medium tabular-nums dark:text-neutral-50">
                                                             {Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(numericValue)} ({Intl.NumberFormat("en-US", { style: "percent", maximumFractionDigits: 0 }).format(pct)})
                                                         </span>
@@ -417,20 +424,47 @@ export default function InsightsClient() {
                 </div>
             ) : null}
 
-            <form onSubmit={onSubmit} className="p-4 grid gap-2">
-                <textarea
-                    placeholder="Show me my spending on Amazon over time"
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    rows={4}
-                    className="placeholder:text-neutral-500 selection:bg-neutral-900 selection:text-neutral-50 dark:bg-neutral-200/30 border-neutral-200 w-full min-w-0 rounded-md border bg-transparent px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:placeholder:text-neutral-400 dark:selection:bg-neutral-50 dark:selection:text-neutral-900 dark:border-neutral-800 focus-visible:border-neutral-950 focus-visible:ring-neutral-950/50 focus-visible:ring-[3px] dark:focus-visible:border-neutral-300 dark:focus-visible:ring-neutral-300/50 aria-invalid:ring-red-500/20 aria-invalid:border-red-500 dark:aria-invalid:ring-red-900/20 dark:aria-invalid:border-red-900 h-32 resize-vertical"
-                />
-                <div className="flex justify-end">
-                    <Button type="submit" disabled={loading || !prompt.trim()}>
-                        {loading ? "Thinking..." : "Generate"}
-                    </Button>
+            <div className="px-4 pt-4 pb-2">
+                <div className="flex flex-wrap gap-2 mb-3">
+                    {[
+                        "Spending on Amazon over time",
+                        "My top 5 spending categories",
+                        "Where did I spend the most last month?",
+                    ].map((suggestion) => (
+                        <button
+                            key={suggestion}
+                            type="button"
+                            onClick={() => setPrompt(suggestion)}
+                            className="text-xs bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300 px-3 py-1.5 rounded-full transition-colors border border-neutral-200 dark:border-neutral-700"
+                        >
+                            {suggestion}
+                        </button>
+                    ))}
                 </div>
-            </form>
+                <form onSubmit={onSubmit} className="relative group/form focus-within:z-10">
+                    <div className="relative flex items-center bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 shadow-[0_2px_14px_-4px_rgba(0,0,0,0.05)] dark:border-neutral-800 focus-within:ring-[3px] focus-within:ring-neutral-950/20 focus-within:border-neutral-950 dark:focus-within:border-neutral-700 dark:focus-within:ring-neutral-700/30 transition-all overflow-hidden pl-4 pr-2 py-2">
+                        <Sparkles 
+                            className={`w-5 h-5 shrink-0 transition-colors ${loading ? 'text-indigo-500 animate-pulse' : 'text-neutral-400 dark:text-neutral-500'}`} 
+                        />
+                        <input
+                            placeholder="Ask anything about your spending..."
+                            value={prompt}
+                            onChange={(e) => setPrompt(e.target.value)}
+                            disabled={loading}
+                            className="flex-1 bg-transparent border-none px-3 py-2 h-10 outline-none text-base md:text-sm placeholder:text-neutral-400 dark:placeholder:text-neutral-500 disabled:opacity-50"
+                        />
+                        <Button 
+                            type="submit" 
+                            size="icon"
+                            variant="default"
+                            disabled={loading || !prompt.trim()}
+                            className="rounded-lg h-9 w-9 shrink-0 ml-2"
+                        >
+                            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
+                        </Button>
+                    </div>
+                </form>
+            </div>
         </div>
     );
 }
