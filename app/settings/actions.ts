@@ -455,9 +455,7 @@ export async function migrateSettingsToJson(): Promise<{ message: string }> {
     const jsonPath = path.join(process.cwd(), './data/user-settings.json');
     
     try {
-        const userConfig = db.prepare(
-            'SELECT display_name, simplefin_url, classifier_training_date, auto_categorize, auto_mark_duplicates, onboarding_completed, auto_refresh_daily FROM user_config WHERE id = 1'
-        ).get() as any;
+        const userConfig = db.prepare('SELECT * FROM user_config WHERE id = 1').get() as any;
 
         if (!userConfig) {
             throw new Error('No settings found in database to migrate.');
@@ -475,13 +473,13 @@ export async function migrateSettingsToJson(): Promise<{ message: string }> {
 
         const updatedSettings = {
             ...currentSettings,
-            displayName: userConfig.display_name,
-            simplefinUrl: userConfig.simplefin_url,
-            classifierTrainingDate: userConfig.classifier_training_date,
-            autoCategorize: Boolean(userConfig.auto_categorize),
-            autoMarkDuplicates: Boolean(userConfig.auto_mark_duplicates),
-            onboardingCompleted: Boolean(userConfig.onboarding_completed),
-            autoRefreshDaily: Boolean(userConfig.auto_refresh_daily),
+            displayName: userConfig.display_name ?? currentSettings.displayName,
+            simplefinUrl: userConfig.simplefin_url ?? currentSettings.simplefinUrl,
+            classifierTrainingDate: userConfig.classifier_training_date ?? currentSettings.classifierTrainingDate,
+            autoCategorize: userConfig.auto_categorize !== undefined ? Boolean(userConfig.auto_categorize) : currentSettings.autoCategorize,
+            autoMarkDuplicates: userConfig.auto_mark_duplicates !== undefined ? Boolean(userConfig.auto_mark_duplicates) : currentSettings.autoMarkDuplicates,
+            onboardingCompleted: userConfig.onboarding_completed !== undefined ? Boolean(userConfig.onboarding_completed) : currentSettings.onboardingCompleted,
+            autoRefreshDaily: userConfig.auto_refresh_daily !== undefined ? Boolean(userConfig.auto_refresh_daily) : currentSettings.autoRefreshDaily,
         };
 
         fs.writeFileSync(jsonPath, JSON.stringify(updatedSettings, null, 4), 'utf-8');
