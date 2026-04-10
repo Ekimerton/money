@@ -1,6 +1,8 @@
 import { Account, Transaction } from "@/lib/types";
 import { TransactionsTableClient } from "@/components/transactions-table-client";
 
+export const dynamic = "force-dynamic";
+
 export default async function TransactionsTablePage({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
     const resolvedSearchParams = await searchParams;
     // Support both `accountId` (preferred) and legacy `account`

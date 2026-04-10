@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
 import fs from 'fs';
 
 const apiKey = JSON.parse(fs.readFileSync('./data/user-settings.json', 'utf8')).geminiApiKey;
@@ -12,9 +12,9 @@ const model = genAI.getGenerativeModel({
                     name: 'explore_database',
                     description: 'Run a read-only SQLite query to explore the data.',
                     parameters: {
-                        type: 'OBJECT',
+                        type: SchemaType.OBJECT,
                         properties: {
-                            query: { type: 'STRING' }
+                            query: { type: SchemaType.STRING }
                         },
                         required: ['query']
                     }

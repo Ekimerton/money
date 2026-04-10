@@ -1,6 +1,8 @@
 import { Account } from "@/lib/types";
 import { AccountBalancePage } from "./account-balance-page";
 
+export const dynamic = "force-dynamic";
+
 export default async function AccountsPage() {
     const days = 365;
     const response = await fetch(`http://localhost:3000/api/get-accounts?days=${days}`, {
