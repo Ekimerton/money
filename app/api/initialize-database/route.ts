@@ -48,36 +48,9 @@ export async function POST(req: NextRequest) {
       CREATE INDEX IF NOT EXISTS idx_transactions_transacted_at ON transactions (transacted_at);
       CREATE INDEX IF NOT EXISTS idx_transactions_category ON transactions (category);
 
-      CREATE TABLE IF NOT EXISTS user_config (
-        id INTEGER PRIMARY KEY CHECK (id = 1),
-        display_name TEXT,
-        simplefin_url TEXT,
-        classifier_training_date TEXT DEFAULT NULL,
-        auto_categorize BOOLEAN DEFAULT FALSE,
-        auto_mark_duplicates BOOLEAN DEFAULT FALSE,
-        onboarding_completed BOOLEAN DEFAULT FALSE,
-        auto_refresh_daily BOOLEAN DEFAULT FALSE
-      );
+      /* Cleanup old user_config table now that settings are moved to JSON */
+      DROP TABLE IF EXISTS user_config;
     `);
-
-    // Ensure new column exists on already-initialized databases
-    try {
-      db.prepare(`ALTER TABLE user_config ADD COLUMN auto_mark_duplicates BOOLEAN DEFAULT FALSE`).run();
-    } catch (e) {
-      // ignore if column already exists
-    }
-
-    try {
-      db.prepare(`ALTER TABLE user_config ADD COLUMN onboarding_completed BOOLEAN DEFAULT FALSE`).run();
-    } catch (e) {
-      // ignore if column already exists
-    }
-
-    try {
-      db.prepare(`ALTER TABLE user_config ADD COLUMN auto_refresh_daily BOOLEAN DEFAULT FALSE`).run();
-    } catch (e) {
-      // ignore if column already exists
-    }
 
     db.close();
 
@@ -86,4 +59,4 @@ export async function POST(req: NextRequest) {
     console.error('Error initializing database:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-} 
+}

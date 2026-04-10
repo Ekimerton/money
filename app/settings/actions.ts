@@ -89,17 +89,13 @@ export async function setAutoRefreshDaily(enabled: boolean): Promise<void> {
 export async function refreshRecent(): Promise<{ message: string; classifierOutput?: string; updatedDuplicates?: number; newTransactions?: number; categorizedCount?: number; newTransactionSamples?: Array<{ id: string; title: string; category: string }>; }> {
     const db = new Database(dbPath);
     try {
-        const userConfig = db.prepare(
-            'SELECT simplefin_url FROM user_config WHERE id = 1'
-        ).get() as { simplefin_url?: string } | undefined;
-
         const settings = await getSettings();
 
-        if (!userConfig || !userConfig.simplefin_url) {
-            throw new Error('SimpleFIN URL not found in database. Please initialize it first.');
+        if (!settings.simplefinUrl) {
+            throw new Error('SimpleFIN URL not found in settings. Please initialize it first.');
         }
 
-        const ACCESS_URL = userConfig.simplefin_url;
+        const ACCESS_URL = settings.simplefinUrl;
         const autoCategorize = !!settings.autoCategorize;
         const autoMarkDuplicates = !!settings.autoMarkDuplicates;
 
@@ -227,17 +223,13 @@ export async function refreshRecent(): Promise<{ message: string; classifierOutp
 export async function refreshAll(): Promise<{ message: string; classifierOutput?: string; updatedDuplicates?: number; newTransactions?: number; categorizedCount?: number; }> {
     const db = new Database(dbPath);
     try {
-        const userConfig = db.prepare(
-            'SELECT simplefin_url FROM user_config WHERE id = 1'
-        ).get() as { simplefin_url?: string } | undefined;
-
         const settings = await getSettings();
 
-        if (!userConfig || !userConfig.simplefin_url) {
-            throw new Error('SimpleFIN URL not found in database. Please initialize it first.');
+        if (!settings.simplefinUrl) {
+            throw new Error('SimpleFIN URL not found in settings. Please initialize it first.');
         }
 
-        const ACCESS_URL = userConfig.simplefin_url;
+        const ACCESS_URL = settings.simplefinUrl;
         const autoCategorize = !!settings.autoCategorize;
         const autoMarkDuplicates = !!settings.autoMarkDuplicates;
 
@@ -450,45 +442,4 @@ export async function getTop3PredictionsForTransaction(tx: { payee: string | nul
     }
     return [];
 }
-export async function migrateSettingsToJson(): Promise<{ message: string }> {
-    const db = new Database(dbPath);
-    const jsonPath = path.join(process.cwd(), './data/user-settings.json');
-    
-    try {
-        const userConfig = db.prepare('SELECT * FROM user_config WHERE id = 1').get() as any;
 
-        if (!userConfig) {
-            throw new Error('No settings found in database to migrate.');
-        }
-
-        let currentSettings: any = {};
-        if (fs.existsSync(jsonPath)) {
-            const fileContent = fs.readFileSync(jsonPath, 'utf-8');
-            try {
-                currentSettings = JSON.parse(fileContent);
-            } catch (e) {
-                console.error('Error parsing existing settings JSON:', e);
-            }
-        }
-
-        const updatedSettings = {
-            ...currentSettings,
-            displayName: userConfig.display_name ?? currentSettings.displayName,
-            simplefinUrl: userConfig.simplefin_url ?? currentSettings.simplefinUrl,
-            classifierTrainingDate: userConfig.classifier_training_date ?? currentSettings.classifierTrainingDate,
-            autoCategorize: userConfig.auto_categorize !== undefined ? Boolean(userConfig.auto_categorize) : currentSettings.autoCategorize,
-            autoMarkDuplicates: userConfig.auto_mark_duplicates !== undefined ? Boolean(userConfig.auto_mark_duplicates) : currentSettings.autoMarkDuplicates,
-            onboardingCompleted: userConfig.onboarding_completed !== undefined ? Boolean(userConfig.onboarding_completed) : currentSettings.onboardingCompleted,
-            autoRefreshDaily: userConfig.auto_refresh_daily !== undefined ? Boolean(userConfig.auto_refresh_daily) : currentSettings.autoRefreshDaily,
-        };
-
-        fs.writeFileSync(jsonPath, JSON.stringify(updatedSettings, null, 4), 'utf-8');
-
-        return { message: 'Settings successfully copied to user-settings.json' };
-    } catch (error: any) {
-        console.error('Error migrating settings:', error);
-        throw error;
-    } finally {
-        db.close();
-    }
-}

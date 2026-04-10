@@ -1,31 +1,23 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 import { revalidateTag } from 'next/cache';
-interface UserConfigRow {
-  simplefin_url: string;
-}
+import { getSettings } from '@/lib/settings';
 
 const dbPath = path.join(process.cwd(), './data/user_data.db');
-
-// Move db instance creation into the POST function to ensure it's always fresh
-// and can be closed properly after each request.
 
 export async function POST(req: Request) {
   const db = new Database(dbPath);
   try {
-    // Retrieve simplefin_url from the single-row user_config table
-    const simplefinUrlRow = db
-      .prepare('SELECT simplefin_url FROM user_config WHERE id = 1')
-      .get() as UserConfigRow;
+    const settings = await getSettings();
 
-    if (!simplefinUrlRow || !simplefinUrlRow.simplefin_url) {
-      return new Response(JSON.stringify({ error: 'SimpleFIN URL not found in database. Please initialize it first.' }), {
+    if (!settings.simplefinUrl) {
+      return new Response(JSON.stringify({ error: 'SimpleFIN URL not found. Please initialize it first.' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
       });
     }
 
-    const ACCESS_URL = simplefinUrlRow.simplefin_url;
+    const ACCESS_URL = settings.simplefinUrl;
 
     const urlParts = ACCESS_URL.split('@');
     const authString = urlParts[0].replace('https://', '');

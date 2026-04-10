@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { SquareArrowOutUpRightIcon } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
-import { setAutoCategorize as setAutoCategorizeAction, setAutoMarkInternalTransfers, refreshRecent as refreshRecentAction, setAutoRefreshDaily as setAutoRefreshDailyAction, migrateSettingsToJson } from "@/app/settings/actions";
+import { setAutoCategorize as setAutoCategorizeAction, setAutoMarkInternalTransfers, refreshRecent as refreshRecentAction, setAutoRefreshDaily as setAutoRefreshDailyAction } from "@/app/settings/actions";
 import { toast } from "sonner";
 import { useTheme } from "next-themes";
 
@@ -364,35 +364,6 @@ export default function SettingsClient({
                 </div>
             </section>
 
-            {/* Migration */}
-            <section className="flex flex-col gap-4">
-                <h2 className="text-lg font-semibold border-b border-border pb-2">Migration</h2>
-
-                {/* Copy to JSON Row */}
-                <div className="flex flex-row sm:items-center gap-16 max-sm:gap-2">
-                    <div className="flex flex-col sm:pr-8 w-60 sm:w-lg sm:flex-shrink-0">
-                        <Label>Copy Settings to JSON</Label>
-                        <p className="text-xs text-muted-foreground">Backup database configuration to user-settings.json.</p>
-                    </div>
-                    <div className="flex items-center max-sm:justify-end gap-16 max-sm:gap-2 flex-1">
-                        <Button
-                            size="sm"
-                            variant="secondary"
-                            onClick={async () => {
-                                const promise = migrateSettingsToJson();
-                                toast.promise(promise, {
-                                    position: 'top-center',
-                                    loading: 'Copying settings...',
-                                    success: (data: any) => data.message,
-                                    error: (err: any) => err?.message || 'Failed to copy settings.'
-                                });
-                            }}
-                        >
-                            Copy to JSON
-                        </Button>
-                    </div>
-                </div>
-            </section>
         </div >
     );
 }

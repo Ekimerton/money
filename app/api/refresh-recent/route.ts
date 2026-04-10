@@ -3,9 +3,7 @@ import Database from 'better-sqlite3';
 import path from 'path';
 import { spawn } from 'child_process';
 import { revalidateTag } from 'next/cache';
-interface UserConfigRow {
-    simplefin_url: string;
-}
+import { getSettings } from '@/lib/settings';
 
 interface LatestTransactionRow {
     latest_posted: number;
@@ -24,19 +22,17 @@ export async function POST(req: Request) {
         } catch (_) {
             // No body provided; default remains false
         }
-        // Retrieve simplefin_url from the single-row user_config table
-        const simplefinUrlRow = db
-            .prepare('SELECT simplefin_url FROM user_config WHERE id = 1')
-            .get() as UserConfigRow;
+        
+        const settings = await getSettings();
 
-        if (!simplefinUrlRow || !simplefinUrlRow.simplefin_url) {
-            return new Response(JSON.stringify({ error: 'SimpleFIN URL not found in database. Please initialize it first.' }), {
+        if (!settings.simplefinUrl) {
+            return new Response(JSON.stringify({ error: 'SimpleFIN URL not found. Please initialize it first.' }), {
                 status: 400,
                 headers: { 'Content-Type': 'application/json' },
             });
         }
 
-        const ACCESS_URL = simplefinUrlRow.simplefin_url;
+        const ACCESS_URL = settings.simplefinUrl;
 
         const urlParts = ACCESS_URL.split('@');
         const authString = urlParts[0].replace('https://', '');

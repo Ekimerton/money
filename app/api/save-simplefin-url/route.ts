@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Database from 'better-sqlite3';
-import path from 'path';
 import { revalidateTag } from 'next/cache';
-
-const dbPath = path.join(process.cwd(), './data/user_data.db');
+import { updateSettings } from '@/lib/settings';
 
 export async function POST(req: NextRequest) {
     try {
@@ -28,15 +25,7 @@ export async function POST(req: NextRequest) {
 
         const ACCESS_URL = await claimResponse.text();
 
-        const db = new Database(dbPath);
-        const stmt = db.prepare(`
-            INSERT INTO user_config (id, simplefin_url)
-            VALUES (1, ?)
-            ON CONFLICT(id) DO UPDATE SET
-                simplefin_url = excluded.simplefin_url;
-        `);
-        stmt.run(ACCESS_URL);
-        db.close();
+        await updateSettings({ simplefinUrl: ACCESS_URL });
 
         revalidateTag('settings');
         return NextResponse.json({ message: 'SimpleFIN URL saved successfully!', simplefinUrl: ACCESS_URL }, { status: 200 });
@@ -44,4 +33,4 @@ export async function POST(req: NextRequest) {
         console.error('Error saving SimpleFIN URL:', error);
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
-} 
+}

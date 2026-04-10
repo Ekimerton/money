@@ -4,6 +4,7 @@ import path from 'path';
 export interface UserSettings {
     geminiApiKey?: string;
     displayName?: string;
+    simplefinUrl?: string;
     classifierTrainingDate?: string | null;
     autoCategorize?: boolean;
     autoMarkDuplicates?: boolean;
