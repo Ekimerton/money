@@ -55,7 +55,8 @@ export async function POST(req: NextRequest) {
         classifier_training_date TEXT DEFAULT NULL,
         auto_categorize BOOLEAN DEFAULT FALSE,
         auto_mark_duplicates BOOLEAN DEFAULT FALSE,
-        onboarding_completed BOOLEAN DEFAULT FALSE
+        onboarding_completed BOOLEAN DEFAULT FALSE,
+        auto_refresh_daily BOOLEAN DEFAULT FALSE
       );
     `);
 
@@ -68,6 +69,12 @@ export async function POST(req: NextRequest) {
 
     try {
       db.prepare(`ALTER TABLE user_config ADD COLUMN onboarding_completed BOOLEAN DEFAULT FALSE`).run();
+    } catch (e) {
+      // ignore if column already exists
+    }
+
+    try {
+      db.prepare(`ALTER TABLE user_config ADD COLUMN auto_refresh_daily BOOLEAN DEFAULT FALSE`).run();
     } catch (e) {
       // ignore if column already exists
     }

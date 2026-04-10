@@ -9,7 +9,7 @@ const getSettingsData = unstable_cache(async () => {
     try {
         const userConfig = db
             .prepare(
-                'SELECT display_name, simplefin_url, classifier_training_date, auto_categorize, auto_mark_duplicates FROM user_config WHERE id = 1'
+                'SELECT display_name, simplefin_url, classifier_training_date, auto_categorize, auto_mark_duplicates, auto_refresh_daily FROM user_config WHERE id = 1'
             )
             .get() as {
                 display_name: string | null;
@@ -17,12 +17,14 @@ const getSettingsData = unstable_cache(async () => {
                 classifier_training_date: string | null;
                 auto_categorize: boolean | number | null;
                 auto_mark_duplicates?: boolean | number | null;
+                auto_refresh_daily?: boolean | number | null;
             } || {
             display_name: null,
             simplefin_url: null,
             classifier_training_date: null,
             auto_categorize: 0,
             auto_mark_duplicates: 0,
+            auto_refresh_daily: 0,
         };
         return userConfig;
     } finally {
@@ -39,6 +41,7 @@ export default async function SettingsPage() {
                 initialClassifierTrainingDate={userConfig?.classifier_training_date}
                 initialAutoCategorize={Boolean(userConfig?.auto_categorize)}
                 initialMarkDuplicates={Boolean(userConfig?.auto_mark_duplicates)}
+                initialAutoRefreshDaily={Boolean(userConfig?.auto_refresh_daily)}
             />
         </div>
     );

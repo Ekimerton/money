@@ -101,6 +101,22 @@ export async function setAutoMarkInternalTransfers(enabled: boolean): Promise<vo
     }
 }
 
+export async function setAutoRefreshDaily(enabled: boolean): Promise<void> {
+    const db = new Database(dbPath);
+    try {
+        const stmt = db.prepare(`
+            INSERT INTO user_config (id, auto_refresh_daily)
+            VALUES (1, ?)
+            ON CONFLICT(id) DO UPDATE SET
+                auto_refresh_daily = excluded.auto_refresh_daily
+        `);
+        stmt.run(enabled ? 1 : 0);
+        revalidateTag('settings');
+    } finally {
+        db.close();
+    }
+}
+
 export async function refreshRecent(): Promise<{ message: string; classifierOutput?: string; updatedDuplicates?: number; newTransactions?: number; categorizedCount?: number; newTransactionSamples?: Array<{ id: string; title: string; category: string }>; }> {
     const db = new Database(dbPath);
     try {

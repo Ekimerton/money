@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { SquareArrowOutUpRightIcon } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
-import { setAutoCategorize as setAutoCategorizeAction, setAutoMarkInternalTransfers, refreshRecent as refreshRecentAction } from "@/app/settings/actions";
+import { setAutoCategorize as setAutoCategorizeAction, setAutoMarkInternalTransfers, refreshRecent as refreshRecentAction, setAutoRefreshDaily as setAutoRefreshDailyAction } from "@/app/settings/actions";
 import { toast } from "sonner";
 import { useTheme } from "next-themes";
 
@@ -14,6 +14,7 @@ interface SettingsClientProps {
     initialClassifierTrainingDate: string | null;
     initialAutoCategorize: boolean;
     initialMarkDuplicates?: boolean;
+    initialAutoRefreshDaily?: boolean;
 }
 
 export default function SettingsClient({
@@ -21,6 +22,7 @@ export default function SettingsClient({
     initialClassifierTrainingDate,
     initialAutoCategorize,
     initialMarkDuplicates = false,
+    initialAutoRefreshDaily = false,
 }: SettingsClientProps) {
     const { theme, setTheme, resolvedTheme } = useTheme();
     const [displayName, setDisplayName] = useState<string>(initialDisplayName);
@@ -32,6 +34,7 @@ export default function SettingsClient({
     const [markDuplicates, setMarkDuplicates] = useState<boolean>(initialMarkDuplicates);
     const [detectRecurring, setDetectRecurring] = useState<boolean>(false);
     const [classifierTrainingDate, setClassifierTrainingDate] = useState<string | null>(initialClassifierTrainingDate);
+    const [autoRefreshDaily, setAutoRefreshDaily] = useState<boolean>(initialAutoRefreshDaily);
 
     const refreshRecent = async () => {
         setIsRefreshingRecent(true);
@@ -105,6 +108,16 @@ export default function SettingsClient({
             await setAutoMarkInternalTransfers(newValue);
         } catch (err) {
             setMarkDuplicates(prev);
+        }
+    };
+
+    const handleAutoRefreshDailyToggle = async (newValue: boolean) => {
+        const prev = autoRefreshDaily;
+        setAutoRefreshDaily(newValue);
+        try {
+            await setAutoRefreshDailyAction(newValue);
+        } catch (err) {
+            setAutoRefreshDaily(prev);
         }
     };
 
@@ -200,27 +213,16 @@ export default function SettingsClient({
                     </div>
                 </div>
 
-                {/* Auto refresh time Row 
+                {/* Auto refresh daily Row */}
                 <div className="flex flex-row sm:items-center gap-16 max-sm:gap-2">
                     <div className="flex flex-col sm:pr-8 w-60 sm:w-lg sm:flex-shrink-0">
-                        <Label>Auto refresh time</Label>
-                        <p className="text-xs text-muted-foreground">doesn't do anything for now</p>
+                        <Label>Refresh Data Daily</Label>
+                        <p className="text-xs text-muted-foreground">Automatically fetch new data every day at midnight.</p>
                     </div>
-                    <div className="flex items-center max-sm:justify-end gap-16 max-sm:gap-2 flex-1">
-                        <Select value={selectedRefreshTime} onValueChange={setSelectedRefreshTime}>
-                            <SelectTrigger className="w-32">
-                                <SelectValue placeholder="Select time" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="none">None</SelectItem>
-                                <SelectItem value="1h">Every hour</SelectItem>
-                                <SelectItem value="6h">Every 6 hours</SelectItem>
-                                <SelectItem value="24h">Every day</SelectItem>
-                            </SelectContent>
-                        </Select>
+                    <div className="flex items-center max-sm:justify-end gap-3 flex-1">
+                        <Switch checked={autoRefreshDaily} onCheckedChange={handleAutoRefreshDailyToggle} />
                     </div>
                 </div>
-                */}
 
             </section >
 
