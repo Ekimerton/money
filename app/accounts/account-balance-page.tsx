@@ -7,7 +7,7 @@ import { Account } from "@/lib/types";
 // import { AccountBalanceChart } from "./account-balance-chart";
 import { CashSavingsInvestmentsChart } from "./cash-savings-investments-chart";
 import { AccountsTableClient } from "./accounts-table-client";
-
+import { Coin3D } from "@/components/coin3d";
 export function AccountBalancePage({ accounts }: { accounts: Account[] }) {
     const [timeRange, setTimeRange] = React.useState("90d");
     const chartView = "account";
@@ -116,9 +116,7 @@ export function AccountBalancePage({ accounts }: { accounts: Account[] }) {
             <CashSavingsInvestmentsChart accounts={accounts} timeRange={timeRange} />
             <MobileTimeRangeTabs value={timeRange as any} onValueChange={setTimeRange as any} />
             <AccountsTableClient accounts={accounts} timeRange={timeRange} />
-            <div className="p-4 mx-4 my-8 border rounded-lg">
-                <p>Something fun here soon!</p>
-            </div>
+            <Coin3D />
         </div >
     )
 }
