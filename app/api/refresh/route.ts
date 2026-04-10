@@ -58,9 +58,28 @@ export async function POST(req: Request) {
         ? accounts.flatMap((a: any) => Array.isArray(a.transactions) ? a.transactions.map((t: any) => String(t.id)) : [])
         : []);
 
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS account_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        account_id TEXT NOT NULL,
+        balance TEXT NOT NULL,
+        balance_date INTEGER NOT NULL,
+        fetched_at INTEGER NOT NULL,
+        FOREIGN KEY (account_id) REFERENCES accounts(id)
+      );
+      CREATE INDEX IF NOT EXISTS idx_account_history_account_id ON account_history (account_id);
+      CREATE INDEX IF NOT EXISTS idx_account_history_fetched_at ON account_history (fetched_at);
+    `);
+
     const insertAccount = db.prepare(
       'INSERT INTO accounts (id, name, currency, balance, balance_date) VALUES (?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET currency=excluded.currency, balance=excluded.balance, balance_date=excluded.balance_date'
     );
+
+    const insertAccountHistory = db.prepare(
+      'INSERT INTO account_history (account_id, balance, balance_date, fetched_at) VALUES (?, ?, ?, ?)'
+    );
+
+    const fetchedAt = Math.floor(Date.now() / 1000);
 
     db.transaction(() => {
       for (const account of accounts) {
@@ -70,6 +89,13 @@ export async function POST(req: Request) {
           account.currency,
           account.balance,
           account['balance-date']
+        );
+
+        insertAccountHistory.run(
+          account.id,
+          account.balance,
+          account['balance-date'],
+          fetchedAt
         );
 
         // Save transactions for each account

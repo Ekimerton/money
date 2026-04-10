@@ -18,6 +18,18 @@ export async function POST(req: NextRequest) {
         type TEXT DEFAULT 'uncategorized'
       );
 
+      CREATE TABLE IF NOT EXISTS account_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        account_id TEXT NOT NULL,
+        balance TEXT NOT NULL,
+        balance_date INTEGER NOT NULL,
+        fetched_at INTEGER NOT NULL,
+        FOREIGN KEY (account_id) REFERENCES accounts(id)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_account_history_account_id ON account_history (account_id);
+      CREATE INDEX IF NOT EXISTS idx_account_history_fetched_at ON account_history (fetched_at);
+
       CREATE TABLE IF NOT EXISTS transactions (
         id TEXT PRIMARY KEY,
         account_id TEXT NOT NULL,
