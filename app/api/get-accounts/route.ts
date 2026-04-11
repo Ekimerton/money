@@ -29,43 +29,60 @@ export async function GET(request: Request) {
 
     const allHistoriesByAccount: Record<string, Record<string, number>> = {};
     let globalEarliestMs = Infinity;
-    let globalLatestMs = -Infinity;
+    const uniqueDates = new Set<string>();
 
     for (const account of accounts) {
       let histories: { fetched_at: number; balance: string }[] = [];
       try {
+        // TODO: [CLEANUP] Consider moving this fetching logic to a shared repository pattern.
         histories = db.prepare(`
-          SELECT fetched_at, balance 
+          SELECT balance, fetched_at 
           FROM account_history 
           WHERE account_id = ? 
           ORDER BY fetched_at ASC
         `).all(account.id) as { fetched_at: number; balance: string }[];
       } catch (e: any) {
+        console.error(`Error fetching history for account ${account.id}:`, e);
         histories = [];
       }
 
       const historyByDate: Record<string, { balance: number; fetchedAt: number }> = {};
 
       // Seed with the current balance from the accounts table
-      if (account.balance_date) {
-        const accountDateObj = new Date(Number(account.balance_date) * 1000);
-        const accountDateStr = accountDateObj.toISOString().split('T')[0];
-        historyByDate[accountDateStr] = { 
-          balance: Number(account.balance), 
-          fetchedAt: Number(account.balance_date) 
-        };
+      const seedDate = Number(account.balance_date);
+      if (seedDate && !isNaN(seedDate)) {
+        try {
+          const accountDateObj = new Date(seedDate * 1000);
+          if (!isNaN(accountDateObj.getTime())) {
+            const accountDateStr = accountDateObj.toISOString().split('T')[0];
+            historyByDate[accountDateStr] = { 
+              balance: Number(account.balance), 
+              fetchedAt: seedDate 
+            };
+          }
+        } catch (e) {
+          console.warn(`Failed to parse seed date for account ${account.id}:`, account.balance_date);
+        }
       }
 
       // Merge snapshots from account_history
       for (const h of histories) {
-        const dateObj = new Date(Number(h.fetched_at) * 1000);
-        const dateString = dateObj.toISOString().split('T')[0];
-        const val = Number(h.balance);
         const fetchedAt = Number(h.fetched_at);
+        if (isNaN(fetchedAt)) continue;
+        
+        try {
+          const dateObj = new Date(fetchedAt * 1000);
+          if (isNaN(dateObj.getTime())) continue;
+          
+          const dateString = dateObj.toISOString().split('T')[0];
+          const val = Number(h.balance);
 
-        // If we don't have an entry for this date yet, or if this entry is newer (larger fetchedAt), use it
-        if (historyByDate[dateString] === undefined || fetchedAt >= historyByDate[dateString].fetchedAt) {
-          historyByDate[dateString] = { balance: val, fetchedAt: fetchedAt };
+          // If we don't have an entry for this date yet, or if this entry is newer (larger fetchedAt), use it
+          if (historyByDate[dateString] === undefined || fetchedAt >= historyByDate[dateString].fetchedAt) {
+            historyByDate[dateString] = { balance: val, fetchedAt: fetchedAt };
+          }
+        } catch (e) {
+          continue;
         }
       }
 
@@ -78,26 +95,31 @@ export async function GET(request: Request) {
       allHistoriesByAccount[account.id] = finalHistoryByDate;
 
       for (const dateStr of Object.keys(finalHistoryByDate)) {
-        const t = new Date(dateStr + 'T00:00:00Z').getTime();
-        if (t < globalEarliestMs) globalEarliestMs = t;
-        if (t > globalLatestMs) globalLatestMs = t;
+        uniqueDates.add(dateStr);
       }
     }
 
-    if (globalEarliestMs === Infinity) {
+    const sortedDates = Array.from(uniqueDates).sort();
+    if (sortedDates.length === 0) {
       return new Response(JSON.stringify({ accounts }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
       });
     }
 
+    const firstDateStr = sortedDates[0];
+    const lastDateStr = sortedDates[sortedDates.length - 1];
+    
+    const earliestMs = new Date(firstDateStr + 'T00:00:00Z').getTime();
+    const latestMs = new Date(lastDateStr + 'T00:00:00Z').getTime();
+
     const now = new Date();
     const earliestLimitObj = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - days + 1));
-    const startDateTime = Math.max(globalEarliestMs, earliestLimitObj.getTime());
+    const startDateTime = Math.max(earliestMs, earliestLimitObj.getTime());
     
     const datesToProcess: string[] = [];
     const currentObj = new Date(startDateTime);
-    while (currentObj.getTime() <= globalLatestMs) {
+    while (currentObj.getTime() <= latestMs) {
        datesToProcess.push(currentObj.toISOString().split('T')[0]);
        currentObj.setUTCDate(currentObj.getUTCDate() + 1);
     }

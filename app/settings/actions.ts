@@ -89,6 +89,19 @@ export async function setAutoRefreshDaily(enabled: boolean): Promise<void> {
 export async function refreshRecent(): Promise<{ message: string; classifierOutput?: string; updatedDuplicates?: number; newTransactions?: number; categorizedCount?: number; newTransactionSamples?: Array<{ id: string; title: string; category: string }>; }> {
     const db = new Database(dbPath);
     try {
+        // TODO: [CLEANUP] Move this schema initialization to a dedicated migration script or a centralized DB init process.
+        db.exec(`
+          CREATE TABLE IF NOT EXISTS account_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            account_id TEXT NOT NULL,
+            balance TEXT NOT NULL,
+            balance_date INTEGER NOT NULL,
+            fetched_at INTEGER NOT NULL,
+            FOREIGN KEY (account_id) REFERENCES accounts(id)
+          );
+          CREATE INDEX IF NOT EXISTS idx_account_history_account_id ON account_history (account_id);
+          CREATE INDEX IF NOT EXISTS idx_account_history_fetched_at ON account_history (fetched_at);
+        `);
         const settings = await getSettings();
 
         if (!settings.simplefinUrl) {
@@ -237,6 +250,19 @@ export async function refreshRecent(): Promise<{ message: string; classifierOutp
 export async function refreshAll(): Promise<{ message: string; classifierOutput?: string; updatedDuplicates?: number; newTransactions?: number; categorizedCount?: number; }> {
     const db = new Database(dbPath);
     try {
+        // TODO: [CLEANUP] Move this schema initialization to a dedicated migration script or a centralized DB init process.
+        db.exec(`
+          CREATE TABLE IF NOT EXISTS account_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            account_id TEXT NOT NULL,
+            balance TEXT NOT NULL,
+            balance_date INTEGER NOT NULL,
+            fetched_at INTEGER NOT NULL,
+            FOREIGN KEY (account_id) REFERENCES accounts(id)
+          );
+          CREATE INDEX IF NOT EXISTS idx_account_history_account_id ON account_history (account_id);
+          CREATE INDEX IF NOT EXISTS idx_account_history_fetched_at ON account_history (fetched_at);
+        `);
         const settings = await getSettings();
 
         if (!settings.simplefinUrl) {

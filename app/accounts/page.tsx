@@ -10,8 +10,10 @@ export default async function AccountsPage() {
     });
 
     if (!response.ok) {
-        // Surface a minimal error; in a real app you might render an error boundary
-        throw new Error("Failed to load accounts");
+        const errorText = await response.text();
+        // TODO: [DEBUG] Remove this extra logging once the production issues are fully stabilized.
+        console.error(`Failed to load accounts. Status: ${response.status}. Error: ${errorText}`);
+        throw new Error(`Failed to load accounts: ${response.status}`);
     }
 
     const data = await response.json();
