@@ -137,7 +137,14 @@ export async function refreshRecent(): Promise<{ message: string; classifierOutp
             'INSERT INTO accounts (id, name, currency, balance, balance_date) VALUES (?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET currency=excluded.currency, balance=excluded.balance, balance_date=excluded.balance_date'
         );
 
+        const insertAccountHistory = db.prepare(
+            'INSERT INTO account_history (account_id, balance, balance_date, fetched_at) VALUES (?, ?, ?, ?)'
+        );
+
+        const fetchedAt = Math.floor(Date.now() / 1000);
+
         const existsTransaction = db.prepare('SELECT 1 FROM transactions WHERE id = ? LIMIT 1');
+
         db.transaction(() => {
             for (const account of accounts) {
                 insertAccount.run(
@@ -145,7 +152,14 @@ export async function refreshRecent(): Promise<{ message: string; classifierOutp
                     account.name,
                     account.currency,
                     account.balance,
-                    account['balance-date']
+                    Math.floor(Number(account['balance-date']))
+                );
+
+                insertAccountHistory.run(
+                    account.id,
+                    account.balance,
+                    Math.floor(Number(account['balance-date'])),
+                    fetchedAt
                 );
 
                 const insertTransaction = db.prepare(
@@ -248,6 +262,11 @@ export async function refreshAll(): Promise<{ message: string; classifierOutput?
         const fetchedAccountIds = new Set<string>();
         const newTransactionIds = new Set<string>();
 
+        const insertAccountHistory = db.prepare(
+            'INSERT INTO account_history (account_id, balance, balance_date, fetched_at) VALUES (?, ?, ?, ?)'
+        );
+        const fetchedAt = Math.floor(Date.now() / 1000);
+
         const insertAccount = db.prepare(
             'INSERT INTO accounts (id, name, currency, balance, balance_date) VALUES (?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET currency=excluded.currency, balance=excluded.balance, balance_date=excluded.balance_date'
         );
@@ -284,28 +303,35 @@ export async function refreshAll(): Promise<{ message: string; classifierOutput?
             db.transaction(() => {
                 for (const account of accounts) {
                     fetchedAccountIds.add(String(account.id));
-                    insertAccount.run(
-                        account.id,
-                        account.name,
-                        account.currency,
-                        account.balance,
-                        account['balance-date']
-                    );
-
-                    const transactions = Array.isArray(account.transactions) ? account.transactions : [];
-                    for (const transaction of transactions) {
-                        const exists = existsTransaction.get(transaction.id);
-                        insertTransaction.run(
-                            transaction.id,
+                        insertAccount.run(
                             account.id,
-                            transaction.posted,
-                            transaction.amount,
-                            transaction.description,
-                            transaction.payee || null,
-                            transaction.transacted_at || null,
-                            transaction.pending ? 1 : 0,
-                            'Uncategorized'
+                            account.name,
+                            account.currency,
+                            account.balance,
+                            Math.floor(Number(account['balance-date']))
                         );
+
+                        insertAccountHistory.run(
+                            account.id,
+                            account.balance,
+                            Math.floor(Number(account['balance-date'])),
+                            fetchedAt
+                        );
+
+                        const transactions = Array.isArray(account.transactions) ? account.transactions : [];
+                        for (const transaction of transactions) {
+                            const exists = existsTransaction.get(transaction.id);
+                            insertTransaction.run(
+                                transaction.id,
+                                account.id,
+                                transaction.posted,
+                                transaction.amount,
+                                transaction.description,
+                                transaction.payee || null,
+                                transaction.transacted_at || null,
+                                transaction.pending ? 1 : 0,
+                                'Uncategorized'
+                            );
                         if (!exists) newTransactionIds.add(String(transaction.id));
                     }
                 }

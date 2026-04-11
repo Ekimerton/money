@@ -44,26 +44,40 @@ export async function GET(request: Request) {
         histories = [];
       }
 
-      const historyByDate: Record<string, number> = {};
+      const historyByDate: Record<string, { balance: number; fetchedAt: number }> = {};
 
+      // Seed with the current balance from the accounts table
       if (account.balance_date) {
         const accountDateObj = new Date(Number(account.balance_date) * 1000);
         const accountDateStr = accountDateObj.toISOString().split('T')[0];
-        historyByDate[accountDateStr] = Number(account.balance);
+        historyByDate[accountDateStr] = { 
+          balance: Number(account.balance), 
+          fetchedAt: Number(account.balance_date) 
+        };
       }
 
+      // Merge snapshots from account_history
       for (const h of histories) {
         const dateObj = new Date(Number(h.fetched_at) * 1000);
         const dateString = dateObj.toISOString().split('T')[0];
         const val = Number(h.balance);
-        if (historyByDate[dateString] === undefined || val > historyByDate[dateString]) {
-          historyByDate[dateString] = val;
+        const fetchedAt = Number(h.fetched_at);
+
+        // If we don't have an entry for this date yet, or if this entry is newer (larger fetchedAt), use it
+        if (historyByDate[dateString] === undefined || fetchedAt >= historyByDate[dateString].fetchedAt) {
+          historyByDate[dateString] = { balance: val, fetchedAt: fetchedAt };
         }
       }
 
-      allHistoriesByAccount[account.id] = historyByDate;
+      // Convert back to simple balance mapping for the rest of the logic
+      const finalHistoryByDate: Record<string, number> = {};
+      for (const [date, entry] of Object.entries(historyByDate)) {
+          finalHistoryByDate[date] = entry.balance;
+      }
 
-      for (const dateStr of Object.keys(historyByDate)) {
+      allHistoriesByAccount[account.id] = finalHistoryByDate;
+
+      for (const dateStr of Object.keys(finalHistoryByDate)) {
         const t = new Date(dateStr + 'T00:00:00Z').getTime();
         if (t < globalEarliestMs) globalEarliestMs = t;
         if (t > globalLatestMs) globalLatestMs = t;

@@ -100,13 +100,13 @@ export async function POST(req: Request) {
                     account.name,
                     account.currency,
                     account.balance,
-                    account['balance-date']
+                    Math.floor(Number(account['balance-date']))
                 );
 
                 insertAccountHistory.run(
                     account.id,
                     account.balance,
-                    account['balance-date'],
+                    Math.floor(Number(account['balance-date'])),
                     fetchedAt
                 );
 
