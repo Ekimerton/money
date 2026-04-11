@@ -7,6 +7,7 @@ export function Coin3D() {
     const isDragging = useRef(false)
     const lastX = useRef(0)
     const velocity = useRef(0)
+    const gestureVelocity = useRef(0) // Track the velocity of the current gesture
     const frameRef = useRef<number>(0)
     const THICKNESS = 8;
 
@@ -15,7 +16,7 @@ export function Coin3D() {
         if (!isDragging.current) {
             if (Math.abs(velocity.current) > 0.05) {
                 setRotationY((prev) => prev + velocity.current)
-                velocity.current *= 0.99 // Friction
+                velocity.current *= 0.97 // Friction
             } else {
                 // Return to flat if slow enough, or just let it stop
                 // velocity.current = 0
@@ -32,7 +33,7 @@ export function Coin3D() {
     const handlePointerDown = (e: React.PointerEvent) => {
         isDragging.current = true
         lastX.current = e.clientX
-        velocity.current = 0
+        gestureVelocity.current = 0
             ; (e.target as HTMLElement).setPointerCapture(e.pointerId)
     }
 
@@ -40,27 +41,30 @@ export function Coin3D() {
         if (!isDragging.current) return
         const deltaX = e.clientX - lastX.current
         setRotationY((prev) => prev + deltaX * 0.8) // Adjust sensitivity
-        velocity.current = deltaX * 0.8
+        gestureVelocity.current = deltaX * 0.8
         lastX.current = e.clientX
     }
 
     const handlePointerUp = (e: React.PointerEvent) => {
         isDragging.current = false
+        // Add the swipe speed to the already existing speed
+        velocity.current += gestureVelocity.current
+        gestureVelocity.current = 0
             ; (e.target as HTMLElement).releasePointerCapture(e.pointerId)
     }
 
     return (
-        <div className="flex flex-col items-center justify-center p-8 my-8">
+        <div className="flex flex-col items-center justify-center">
             <div
-                className="relative w-32 h-32 cursor-grab active:cursor-grabbing touch-none select-none"
+                className="relative max-w-128 w-full h-64 flex items-center justify-center cursor-grab active:cursor-grabbing touch-none select-none transition-colors shadow-[0_8px_30px_rgb(0,0,0,0.04)]"
                 onPointerDown={handlePointerDown}
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
                 onPointerCancel={handlePointerUp}
-                style={{ perspective: "800px" }}
+                style={{ perspective: "1000px" }}
             >
                 <div
-                    className="w-full h-full relative origin-center"
+                    className="w-32 h-32 relative origin-center"
                     style={{
                         transformStyle: "preserve-3d",
                         transform: `rotateX(0deg) rotateY(${rotationY}deg)`
