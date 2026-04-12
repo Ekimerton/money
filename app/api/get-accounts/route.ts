@@ -67,24 +67,21 @@ export async function GET(request: Request) {
 
       // Merge snapshots from account_history
       for (const h of histories) {
-        const fetchedAt = Number(h.fetched_at);
-        if (isNaN(fetchedAt)) continue;
+        const fetchedAtRaw = h.fetched_at;
+        const dateObj = isNaN(Number(fetchedAtRaw)) ? new Date(String(fetchedAtRaw)) : new Date(Number(fetchedAtRaw) * 1000);
         
-        try {
-          const dateObj = new Date(fetchedAt * 1000);
-          if (isNaN(dateObj.getTime())) continue;
-          
-          const dateString = dateObj.toISOString().split('T')[0];
-          const val = Number(h.balance);
+        if (isNaN(dateObj.getTime())) continue;
+        
+        const dateString = dateObj.toISOString().split('T')[0];
+        const val = Number(h.balance);
+        const fetchedAtTime = dateObj.getTime();
 
-          // If we don't have an entry for this date yet, or if this entry is newer (larger fetchedAt), use it
-          if (historyByDate[dateString] === undefined || fetchedAt >= historyByDate[dateString].fetchedAt) {
-            historyByDate[dateString] = { balance: val, fetchedAt: fetchedAt };
-          }
-        } catch (e) {
-          continue;
+        // If we don't have an entry for this date yet, or if this entry is newer (larger timestamp), use it
+        if (historyByDate[dateString] === undefined || fetchedAtTime >= historyByDate[dateString].fetchedAt) {
+          historyByDate[dateString] = { balance: val, fetchedAt: fetchedAtTime };
         }
       }
+
 
       // Convert back to simple balance mapping for the rest of the logic
       const finalHistoryByDate: Record<string, number> = {};

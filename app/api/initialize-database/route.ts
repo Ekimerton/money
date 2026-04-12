@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
         account_id TEXT NOT NULL,
         balance TEXT NOT NULL,
         balance_date INTEGER NOT NULL,
-        fetched_at INTEGER NOT NULL,
+        fetched_at TEXT NOT NULL,
         FOREIGN KEY (account_id) REFERENCES accounts(id)
       );
 
@@ -41,8 +41,10 @@ export async function POST(req: NextRequest) {
         pending BOOLEAN NOT NULL DEFAULT FALSE,
         hidden BOOLEAN NOT NULL DEFAULT FALSE,
         category TEXT DEFAULT 'uncategorized',
+        fetched_at TEXT,
         FOREIGN KEY (account_id) REFERENCES accounts(id)
       );
+
 
       CREATE INDEX IF NOT EXISTS idx_transactions_account_id ON transactions (account_id);
       CREATE INDEX IF NOT EXISTS idx_transactions_transacted_at ON transactions (transacted_at);
