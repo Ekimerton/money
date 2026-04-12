@@ -2,13 +2,15 @@
 
 import * as React from "react"
 // import { CumulativeSpendLineChart } from "@/app/spending/cumulative-spend-line-chart"
-import { MonthlySpendStackedAreaChart } from "@/app/spending/monthly-spend-stacked-area-chart"
+import { MonthlySpendStackedBarChart } from "@/app/spending/monthly-spend-stacked-bar-chart"
 import { TimeRangeSelect, type TimeRangeValue } from "@/components/time-range-select"
 import { DesktopMonthSelect } from "@/components/desktop-month-select"
 import { MobileMonthNavigator } from "@/components/mobile-month-navigator"
 import { TransactionsList } from "@/app/transactions/transactions-list"
 import type { Account, Transaction } from "@/lib/types"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+
+
 
 interface SpendingPageProps {
     transactions: Transaction[]
@@ -108,6 +110,7 @@ export default function SpendingPageClient({ transactions, accounts }: SpendingP
                 </div>
             </div>
             <div className="flex gap-2 space-y-0 p-4 sm:flex-row max-sm:p-2 max-sm:hidden">
+
                 <div className="grid flex-1 gap-1">
                     <h2 className="font-bold text-muted-foreground uppercase text-sm font-mono">
                         Monthly Spend
@@ -125,9 +128,10 @@ export default function SpendingPageClient({ transactions, accounts }: SpendingP
                 <DesktopMonthSelect value={currentMonth} onValueChange={setCurrentMonth} monthsBack={6} />
             </div>
             {/* <CumulativeSpendLineChart transactions={filteredTransactions} /> */}
-            <MonthlySpendStackedAreaChart
+            <MonthlySpendStackedBarChart
                 transactions={transactions}
             />
+
             <MobileMonthNavigator
                 currentMonth={currentMonth}
                 onMonthChange={setCurrentMonth}

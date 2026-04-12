@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Area, AreaChart } from "recharts"
+import { Area, AreaChart, CartesianGrid, XAxis } from "recharts"
 
 import {
     ChartConfig,
@@ -121,7 +121,22 @@ export function CashSavingsInvestmentsChart({ accounts, timeRange }: { accounts:
                 config={chartConfig}
                 className="aspect-auto h-[300px] max-sm:h-[200px] w-full"
             >
-                <AreaChart data={filteredData}>
+                <AreaChart data={filteredData} margin={{ left: 12, right: 12 }}>
+                    <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-neutral-200 dark:stroke-neutral-800" />
+                    <XAxis
+                        dataKey="date"
+                        tickLine={false}
+                        axisLine={false}
+                        tickMargin={8}
+                        minTickGap={10}
+                        tickFormatter={(value) => {
+                            const date = new Date(value + "T00:00:00Z")
+                            return date.toLocaleDateString("en-US", {
+                                month: "short",
+                            })
+                        }}
+                        className="text-xs font-mono text-neutral-500 fill-neutral-500"
+                    />
                     <ChartTooltip
                         cursor={false}
                         content={

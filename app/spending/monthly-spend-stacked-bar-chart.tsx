@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Area, AreaChart } from "recharts"
+import { Bar, BarChart, CartesianGrid, XAxis } from "recharts"
 
 import {
     ChartConfig,
@@ -29,7 +29,6 @@ function monthKeyUTC(d: Date): string {
 }
 
 function firstOfMonthISOUTCFromKey(key: string): string {
-    // key is YYYY-MM
     return `${key}-01`
 }
 
@@ -44,9 +43,8 @@ function last12MonthKeys(): string[] {
     return keys
 }
 
-export function MonthlySpendStackedAreaChart({ transactions }: { transactions: Transaction[] }) {
+export function MonthlySpendStackedBarChart({ transactions }: { transactions: Transaction[] }) {
     const { chartData, categories, chartConfig } = React.useMemo(() => {
-        // Aggregate spend per category per month (non-cumulative)
         const byMonthByCategory: Record<string, Record<string, number>> = {}
         const categoryTotals: Record<string, number> = {}
 
@@ -93,7 +91,7 @@ export function MonthlySpendStackedAreaChart({ transactions }: { transactions: T
     }, [transactions])
 
     const tooltipFormatter = React.useCallback(((value: any, name: any, item: any, _index: number, p: any) => {
-        const indicatorColor = item?.payload?.stroke || item?.color
+        const indicatorColor = item?.color
         const key = String(name)
         const labelText = (chartConfig as any)[key]?.label ?? key
         const numericValue = Number(value)
@@ -105,8 +103,8 @@ export function MonthlySpendStackedAreaChart({ transactions }: { transactions: T
             <div className="flex w-full items-center justify-between">
                 <div className="flex items-center gap-2">
                     <div
-                        className="h-2.5 w-2.5 shrink-0 rounded-[2px] border-(--color-border) bg-(--color-bg)"
-                        style={{ backgroundColor: indicatorColor, borderColor: indicatorColor }}
+                        className="h-2.5 w-2.5 shrink-0 rounded-[2px]"
+                        style={{ backgroundColor: indicatorColor }}
                     />
                     <span className="text-neutral-500 dark:text-neutral-400">
                         {labelText} ({Intl.NumberFormat("en-US", { style: "percent", maximumFractionDigits: 0 }).format(percent)})
@@ -122,55 +120,67 @@ export function MonthlySpendStackedAreaChart({ transactions }: { transactions: T
     }) as any, [chartConfig, categories])
 
     return (
-        <ChartContainer config={chartConfig} className="aspect-auto h-[300px] max-sm:h-[200px] w-full">
-            <AreaChart data={chartData}>
-                <ChartTooltip
-                    cursor={false}
-                    content={
-                        <ChartTooltipContent
-                            labelFormatter={(_, payload) => {
-                                if (!payload || payload.length === 0) return ""
-                                const row = payload[0].payload as any
-                                const dateValue = row.date as string // YYYY-MM-01
-                                const total = Array.isArray(categories)
-                                    ? categories.reduce((acc, cat) => acc + (Number(row?.[cat]) || 0), 0)
-                                    : 0
-                                return (
-                                    <div className="flex justify-between w-full pb-2 text-neutral-950 dark:text-neutral-50">
-                                        <p>
-                                            {new Date(dateValue + "T00:00:00Z").toLocaleDateString("en-US", {
-                                                month: "short",
-                                                year: "numeric",
-                                            })}
-                                        </p>
-                                        <p className="font-mono">
-                                            {Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(total)}
-                                        </p>
-                                    </div>
-                                )
-                            }}
-                            indicator="dot"
-                            formatter={tooltipFormatter}
-                        />
-                    }
-                />
-                {categories.map((cat) => (
-                    <Area
-                        key={cat}
-                        dataKey={cat}
-                        type="bump"
-                        stroke={(chartConfig as any)[cat]?.color}
-                        fill={(chartConfig as any)[cat]?.color}
-                        fillOpacity={0.15}
-                        strokeWidth={2}
-                        dot={false}
-                        stackId={1}
+        <div className="sm:px-4">
+            <ChartContainer config={chartConfig} className="aspect-auto h-[300px] max-sm:h-[200px] w-full">
+                <BarChart data={chartData} margin={{ left: 12, right: 12 }}>
+                    <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-neutral-200 dark:stroke-neutral-800" />
+                    <XAxis
+                        dataKey="date"
+                        tickLine={false}
+                        axisLine={false}
+                        tickMargin={8}
+                        minTickGap={10}
+                        tickFormatter={(value) => {
+                            const date = new Date(value + "T00:00:00Z")
+                            return date.toLocaleDateString("en-US", {
+                                month: "short",
+                            })
+                        }}
+                        className="text-xs font-mono text-neutral-500 fill-neutral-500"
                     />
-                ))}
-                <ChartLegend content={<ChartLegendContent />} className="max-sm:hidden text-neutral-950 dark:text-neutral-50" />
-            </AreaChart>
-        </ChartContainer>
+                    <ChartTooltip
+                        cursor={{ fill: "var(--color-neutral-100)", opacity: 0.1 }}
+                        content={
+                            <ChartTooltipContent
+                                labelFormatter={(_, payload) => {
+                                    if (!payload || payload.length === 0) return ""
+                                    const row = payload[0].payload as any
+                                    const dateValue = row.date as string
+                                    const total = Array.isArray(categories)
+                                        ? categories.reduce((acc, cat) => acc + (Number(row?.[cat]) || 0), 0)
+                                        : 0
+                                    return (
+                                        <div className="flex justify-between w-full pb-2 text-neutral-950 dark:text-neutral-50">
+                                            <p>
+                                                {new Date(dateValue + "T00:00:00Z").toLocaleDateString("en-US", {
+                                                    month: "short",
+                                                    year: "numeric",
+                                                })}
+                                            </p>
+                                            <p className="font-mono">
+                                                {Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(total)}
+                                            </p>
+                                        </div>
+                                    )
+                                }}
+                                indicator="dot"
+                                formatter={tooltipFormatter}
+                            />
+                        }
+                    />
+                    {categories.map((cat, idx) => (
+                        <Bar
+                            key={cat}
+                            dataKey={cat}
+                            stackId="a"
+                            fill={(chartConfig as any)[cat]?.color}
+                            radius={idx === categories.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
+                        />
+                    ))}
+                    <ChartLegend content={<ChartLegendContent />} className="max-sm:hidden text-neutral-950 dark:text-neutral-50" />
+                </BarChart>
+            </ChartContainer>
+        </div>
     )
+
 }
-
-
