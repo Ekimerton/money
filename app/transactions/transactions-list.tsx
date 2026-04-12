@@ -9,9 +9,11 @@ import { ChevronDownIcon } from "lucide-react"
 interface TransactionsListProps {
     transactions: Transaction[]
     accounts: Account[]
+    showIncome?: boolean
 }
 
-export function TransactionsList({ transactions, accounts }: TransactionsListProps) {
+export function TransactionsList({ transactions, accounts, showIncome = false }: TransactionsListProps) {
+
     const [localTransactions, setLocalTransactions] = React.useState<Transaction[]>(transactions)
     const [existingCategories, setExistingCategories] = React.useState<string[]>([])
     const [expandedIds, setExpandedIds] = React.useState<Set<string>>(new Set())
@@ -92,10 +94,11 @@ export function TransactionsList({ transactions, accounts }: TransactionsListPro
     const filteredTransactions = React.useMemo(() => {
         return localTransactions.filter(t => {
             if (t.hidden) return false;
-            if (Number(t.amount) > 0) return false;
+            if (!showIncome && Number(t.amount) > 0) return false;
             return true;
         });
-    }, [localTransactions]);
+    }, [localTransactions, showIncome]);
+
 
     type Group = { key: string; label: string; sortKey: number; items: Transaction[] };
 

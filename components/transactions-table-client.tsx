@@ -10,27 +10,9 @@ import { toast } from "sonner";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useRouter } from "next/navigation";
 import type { TimeRangeValue } from "@/components/time-range-select";
+import { TransactionsList } from "@/app/transactions/transactions-list";
+import type { Account, Transaction } from "@/lib/types";
 
-interface Account {
-    id: string;
-    name: string;
-    currency: string;
-    balance: string;
-    "balance-date": number;
-}
-
-interface Transaction {
-    id: string;
-    account_id: string;
-    posted: number;
-    amount: string;
-    description: string;
-    payee: string | null;
-    transacted_at: number | null;
-    pending: boolean;
-    hidden: boolean;
-    category: string;
-}
 
 interface TransactionsTableClientProps {
     initialTransactions: Transaction[];
@@ -235,9 +217,29 @@ export function TransactionsTableClient({
 
     return (
         <div className="w-full">
-            <div className="p-2">
+            <div className="sm:hidden p-4 flex max-sm:pt-8">
+                <div className="grid flex-1 gap-1 max-sm:text-center ">
+                    <h2 className="font-bold text-muted-foreground uppercase text-sm font-mono">
+                        Transactions
+                    </h2>
+                    <h1 className="text-2xl font-bold max-sm:text-4xl text-neutral-900 dark:text-neutral-100">
+                        {filteredTransactions.length} Items
+                    </h1>
+                </div>
+            </div>
+
+            <div className="hidden sm:block p-2">
                 <DataTable columns={columns} data={filteredTransactions} />
+            </div>
+
+            <div className="sm:hidden">
+                <TransactionsList
+                    transactions={filteredTransactions}
+                    accounts={accounts}
+                    showIncome={true}
+                />
             </div>
         </div>
     );
+
 }

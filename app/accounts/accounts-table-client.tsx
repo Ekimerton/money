@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { EllipsisIcon } from "lucide-react";
@@ -141,9 +141,78 @@ export function AccountsTableClient({ accounts, timeRange }: AccountsTableClient
         return { percentValue, className };
     };
 
+    const totals = useMemo(() => {
+        let totalBalance = 0;
+        let startBalanceTotal = 0;
+
+        const daysToSubtract = getDaysForTimeRange(timeRange);
+        const now = new Date();
+        const utcMidnight = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+        const startUTC = new Date(utcMidnight);
+        startUTC.setUTCDate(startUTC.getUTCDate() - daysToSubtract);
+        const startDateStr = startUTC.toISOString().split("T")[0];
+
+        accounts.forEach(account => {
+            const current = parseFloat(account.balance);
+            totalBalance += current;
+
+            const history = (account.balanceHistory || [])
+                .map((h) => ({ ...h, dateStr: h.date }))
+                .filter((h) => Boolean(h.dateStr))
+                .sort((a, b) => (a.dateStr < b.dateStr ? -1 : a.dateStr > b.dateStr ? 1 : 0));
+
+            const historyInRange = history.filter((h) => h.dateStr >= startDateStr);
+            if (historyInRange.length > 0) {
+                startBalanceTotal += historyInRange[0].balance;
+            } else {
+                startBalanceTotal += current;
+            }
+        });
+
+        const change = totalBalance - startBalanceTotal;
+        const className = change > 0 ? "text-green-700" : change < 0 ? "text-red-700" : "";
+        let percentValue = "0%";
+        if (startBalanceTotal !== 0) {
+            const percentageChange = Math.round((change / startBalanceTotal) * 100);
+            const percentSign = change > 0 ? "+" : change < 0 ? "-" : "";
+            percentValue = `${percentSign}${Math.abs(percentageChange)}%`;
+        }
+
+        return { balance: totalBalance, percentValue, className };
+    }, [accounts, timeRange]);
+
     return (
         <div className="p-4">
+            {/* Total Row for Mobile */}
+            <Link
+                prefetch={true}
+                href="/transactions"
+                className="sm:hidden block border-b py-2 hover:bg-muted/60"
+            >
+                <div className="flex w-full items-center justify-between text-left font-medium">
+                    <div className="flex items-center space-x-1 text-neutral-900 dark:text-neutral-100">
+                        <span>Total</span>
+                    </div>
+                    <div className="flex items-center space-x-2 text-neutral-900 dark:text-neutral-100">
+                        <span className="">
+                            {new Intl.NumberFormat('en-US', {
+                                style: 'currency',
+                                currency: 'USD',
+                            }).format(totals.balance)}
+                        </span>
+                    </div>
+                </div>
+                <div className="pt-1 text-sm text-neutral-600 dark:text-neutral-400">
+                    <div className="flex justify-between">
+                        All Accounts
+                        <span className={totals.className}>{totals.percentValue}</span>
+                    </div>
+                </div>
+            </Link>
+
+
             {accounts.map((account) => {
+
                 const change = getAccountBalanceChange(account);
                 return (
                     <Link

@@ -10,8 +10,6 @@ import { TransactionsList } from "@/app/transactions/transactions-list"
 import type { Account, Transaction } from "@/lib/types"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
-
-
 interface SpendingPageProps {
     transactions: Transaction[]
     accounts: Account[]
