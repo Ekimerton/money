@@ -31,7 +31,14 @@ export function FetchHistoryClient({ initialHistory }: { initialHistory: FetchSe
                 <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
                     {history.map((session) => {
                         const date = new Date(isNaN(Number(session.fetched_at)) ? session.fetched_at : Number(session.fetched_at) * 1000);
-                        const dateLabel = date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+                        const dateLabel = date.toLocaleString('en-US', { 
+                            year: 'numeric', 
+                            month: 'short', 
+                            day: 'numeric',
+                            hour: 'numeric',
+                            minute: '2-digit',
+                            hour12: true
+                        });
 
                         return (
                             <div key={session.fetched_at} className="first:pt-0 pt-4 last:border-b-0">
