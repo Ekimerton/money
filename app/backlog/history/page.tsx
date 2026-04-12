@@ -7,6 +7,10 @@ const getFetchHistory = unstable_cache(async () => {
     const dbPath = path.join(process.cwd(), './data/user_data.db');
     const db = new Database(dbPath);
     try {
+        // Ensure necessary columns exist for the query (safety during build/first-run)
+        try { db.exec("ALTER TABLE transactions ADD COLUMN fetched_at TEXT;"); } catch (e) {}
+        try { db.exec("ALTER TABLE account_history ADD COLUMN fetched_at TEXT;"); } catch (e) {}
+
         const fetchSessions = db.prepare(`
             SELECT 
                 fetched_at,
@@ -40,10 +44,14 @@ const getFetchHistory = unstable_cache(async () => {
                 }))
             };
         });
+    } catch (error) {
+        console.error("Fetch history failed (this is expected if DB is not initialized):", error);
+        return [];
     } finally {
         db.close();
     }
 }, ["fetch-history-v1"], { tags: ["transactions", "accounts"] });
+
 
 export default async function FetchHistoryPage() {
     const history = await getFetchHistory();
