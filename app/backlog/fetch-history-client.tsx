@@ -19,48 +19,11 @@ interface FetchSession {
     }[];
 }
 
-export function FetchHistoryClient() {
-    const [history, setHistory] = React.useState<FetchSession[]>([]);
-    const [loading, setLoading] = React.useState(true);
-    const [expandedIds, setExpandedIds] = React.useState<Set<number>>(new Set());
-
-    React.useEffect(() => {
-        const fetchHistory = async () => {
-            try {
-                const res = await fetch("/api/get-fetch-history");
-                if (!res.ok) throw new Error("Failed to fetch history");
-                const data = await res.json();
-                setHistory(data.history || []);
-            } catch (err) {
-                console.error(err);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchHistory();
-    }, []);
-
-    const toggleExpand = (id: number) => {
-        setExpandedIds((prev) => {
-            const next = new Set(prev);
-            if (next.has(id)) next.delete(id);
-            else next.add(id);
-            return next;
-        });
-    };
-
-    if (loading) {
-        return (
-            <div className="w-full max-w-xl mx-auto py-8">
-                <div className="flex items-center gap-2 text-muted-foreground animate-pulse">
-                    <History className="size-4" />
-                    <span className="text-sm font-medium">Loading fetch history...</span>
-                </div>
-            </div>
-        );
-    }
+export function FetchHistoryClient({ initialHistory }: { initialHistory: FetchSession[] }) {
+    const history = initialHistory;
 
     if (history.length === 0) return null;
+
 
     return (
         <div className="w-full max-w-7xl mx-auto pb-4">
