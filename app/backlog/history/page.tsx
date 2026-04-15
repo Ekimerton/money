@@ -50,7 +50,7 @@ const getFetchHistory = unstable_cache(async () => {
     } finally {
         db.close();
     }
-}, ["fetch-history-v1"], { tags: ["transactions", "accounts"] });
+}, ["fetch-history-v2"], { tags: ["transactions", "accounts"] });
 
 
 export default async function FetchHistoryPage() {

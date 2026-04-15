@@ -116,7 +116,7 @@ export async function POST(req: Request) {
                 );
 
                 const insertTransaction = db.prepare(
-                    'INSERT INTO transactions (id, account_id, posted, amount, description, payee, transacted_at, pending, category, fetched_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET account_id=excluded.account_id, posted=excluded.posted, amount=excluded.amount, description=excluded.description, payee=excluded.payee, transacted_at=excluded.transacted_at, pending=excluded.pending, hidden=excluded.hidden, fetched_at=excluded.fetched_at'
+                    'INSERT INTO transactions (id, account_id, posted, amount, description, payee, transacted_at, pending, category, fetched_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET account_id=excluded.account_id, posted=excluded.posted, amount=excluded.amount, description=excluded.description, payee=excluded.payee, transacted_at=excluded.transacted_at, pending=excluded.pending, hidden=excluded.hidden'
                 );
                 for (const transaction of account.transactions) {
                     insertTransaction.run(

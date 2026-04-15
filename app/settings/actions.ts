@@ -154,7 +154,7 @@ export async function refreshRecent(): Promise<{ message: string; classifierOutp
             'INSERT INTO account_history (account_id, balance, balance_date, fetched_at) VALUES (?, ?, ?, ?)'
         );
 
-        const fetchedAt = Math.floor(Date.now() / 1000);
+        const fetchedAt = new Date().toISOString();
 
         const existsTransaction = db.prepare('SELECT 1 FROM transactions WHERE id = ? LIMIT 1');
 
@@ -176,7 +176,7 @@ export async function refreshRecent(): Promise<{ message: string; classifierOutp
                 );
 
                 const insertTransaction = db.prepare(
-                    'INSERT INTO transactions (id, account_id, posted, amount, description, payee, transacted_at, pending, category) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET account_id=excluded.account_id, posted=excluded.posted, amount=excluded.amount, description=excluded.description, payee=excluded.payee, transacted_at=excluded.transacted_at, pending=excluded.pending, hidden=excluded.hidden'
+                    'INSERT INTO transactions (id, account_id, posted, amount, description, payee, transacted_at, pending, category, fetched_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET account_id=excluded.account_id, posted=excluded.posted, amount=excluded.amount, description=excluded.description, payee=excluded.payee, transacted_at=excluded.transacted_at, pending=excluded.pending, hidden=excluded.hidden'
                 );
                 for (const transaction of account.transactions) {
                     const exists = existsTransaction.get(transaction.id);
@@ -189,7 +189,8 @@ export async function refreshRecent(): Promise<{ message: string; classifierOutp
                         transaction.payee || null,
                         transaction.transacted_at || null,
                         transaction.pending ? 1 : 0,
-                        'Uncategorized'
+                        'Uncategorized',
+                        fetchedAt
                     );
                     if (!exists) {
                         newTransactionIds.push(String(transaction.id));
@@ -291,14 +292,14 @@ export async function refreshAll(): Promise<{ message: string; classifierOutput?
         const insertAccountHistory = db.prepare(
             'INSERT INTO account_history (account_id, balance, balance_date, fetched_at) VALUES (?, ?, ?, ?)'
         );
-        const fetchedAt = Math.floor(Date.now() / 1000);
+        const fetchedAt = new Date().toISOString();
 
         const insertAccount = db.prepare(
             'INSERT INTO accounts (id, name, currency, balance, balance_date) VALUES (?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET currency=excluded.currency, balance=excluded.balance, balance_date=excluded.balance_date'
         );
         const existsTransaction = db.prepare('SELECT 1 FROM transactions WHERE id = ? LIMIT 1');
         const insertTransaction = db.prepare(
-            'INSERT INTO transactions (id, account_id, posted, amount, description, payee, transacted_at, pending, category) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET account_id=excluded.account_id, posted=excluded.posted, amount=excluded.amount, description=excluded.description, payee=excluded.payee, transacted_at=excluded.transacted_at, pending=excluded.pending, hidden=excluded.hidden'
+            'INSERT INTO transactions (id, account_id, posted, amount, description, payee, transacted_at, pending, category, fetched_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET account_id=excluded.account_id, posted=excluded.posted, amount=excluded.amount, description=excluded.description, payee=excluded.payee, transacted_at=excluded.transacted_at, pending=excluded.pending, hidden=excluded.hidden'
         );
 
         let windowEnd = now;
@@ -356,7 +357,8 @@ export async function refreshAll(): Promise<{ message: string; classifierOutput?
                                 transaction.payee || null,
                                 transaction.transacted_at || null,
                                 transaction.pending ? 1 : 0,
-                                'Uncategorized'
+                                'Uncategorized',
+                                fetchedAt
                             );
                         if (!exists) newTransactionIds.add(String(transaction.id));
                     }

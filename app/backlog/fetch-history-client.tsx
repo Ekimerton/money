@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
 interface FetchSession {
-    fetched_at: number;
+    fetched_at: string;
     date: string;
     total_balance: number;
     transactions: {
