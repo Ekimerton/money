@@ -8,8 +8,10 @@ const getFetchHistory = unstable_cache(async () => {
     const db = new Database(dbPath);
     try {
         // Ensure necessary columns exist for the query (safety during build/first-run)
-        try { db.exec("ALTER TABLE transactions ADD COLUMN fetched_at TEXT;"); } catch (e) {}
-        try { db.exec("ALTER TABLE account_history ADD COLUMN fetched_at TEXT;"); } catch (e) {}
+        try { db.exec("ALTER TABLE transactions ADD COLUMN fetched_at TEXT;"); } catch (e) { }
+        try { db.exec("ALTER TABLE account_history ADD COLUMN fetched_at TEXT;"); } catch (e) { }
+
+        const accounts = db.prepare('SELECT * FROM accounts').all() as any[];
 
         const fetchSessions = db.prepare(`
             SELECT 
@@ -21,9 +23,9 @@ const getFetchHistory = unstable_cache(async () => {
             LIMIT 30
         `).all() as any[];
 
-        return fetchSessions.map(session => {
+        const history = fetchSessions.map(session => {
             const txs = db.prepare(`
-                SELECT id, amount, description, payee, transacted_at, category
+                SELECT *
                 FROM transactions 
                 WHERE fetched_at = ?
             `).all(session.fetched_at) as any[];
@@ -36,28 +38,34 @@ const getFetchHistory = unstable_cache(async () => {
                 total_balance: session.total_balance,
                 transactions: txs.map(t => ({
                     id: String(t.id),
+                    account_id: String(t.account_id),
+                    posted: Number(t.posted),
                     amount: String(t.amount),
                     description: String(t.description ?? ''),
                     payee: t.payee ?? null,
                     transacted_at: Number(t.transacted_at ?? 0),
                     category: String(t.category ?? 'Uncategorized'),
+                    pending: Boolean(t.pending),
+                    hidden: Boolean(t.hidden),
                 }))
             };
         });
+
+        return { history, accounts };
     } catch (error) {
         console.error("Fetch history failed (this is expected if DB is not initialized):", error);
-        return [];
+        return { history: [], accounts: [] };
     } finally {
         db.close();
     }
-}, ["fetch-history-v2"], { tags: ["transactions", "accounts"] });
+}, ["fetch-history-v3"], { tags: ["transactions", "accounts"] });
 
 
 export default async function FetchHistoryPage() {
-    const history = await getFetchHistory();
+    const { history, accounts } = await getFetchHistory();
     return (
         <div className="">
-            <FetchHistoryClient initialHistory={history} />
+            <FetchHistoryClient initialHistory={history} accounts={accounts} />
         </div>
     );
 }
