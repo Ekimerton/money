@@ -91,7 +91,7 @@ export default function SpendingPageClient({ transactions, accounts }: SpendingP
 
     return (
         <div className="w-full max-w-7xl mx-auto pb-4">
-            <div className="px-4 flex max-sm:pt-8 sm:hidden">
+            <div className="px-4 flex max-sm:pt-8 sm:hidden pb-4">
                 <div className="grid flex-1 gap-1 max-sm:text-center ">
                     <h2 className="font-bold text-muted-foreground uppercase text-sm font-mono">
                         Monthly Spend

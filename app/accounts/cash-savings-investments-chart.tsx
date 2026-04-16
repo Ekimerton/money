@@ -125,9 +125,19 @@ export function CashSavingsInvestmentsChart({ accounts, timeRange }: { accounts:
                     <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-neutral-200 dark:stroke-neutral-800" />
                     <XAxis
                         dataKey="date"
-                        tick={false}
                         tickLine={false}
                         axisLine={false}
+                        tickMargin={8}
+                        minTickGap={40}
+                        tickFormatter={(value, index) => {
+                            if (index === 0 || index === filteredData.length - 1) return ""
+                            const date = new Date(value + "T00:00:00")
+                            return date.toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                            })
+                        }}
+                        className="text-[10px] font-mono text-neutral-500 fill-neutral-500"
                     />
                     <ChartTooltip
                         cursor={false}

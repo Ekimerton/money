@@ -120,7 +120,7 @@ export function MonthlySpendStackedBarChart({ transactions }: { transactions: Tr
     }) as any, [chartConfig, categories])
 
     return (
-        <div className="sm:px-4">
+        <div className="">
             <ChartContainer config={chartConfig} className="aspect-auto h-[300px] max-sm:h-[200px] w-full">
                 <BarChart data={chartData} margin={{ left: 12, right: 12 }}>
                     <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-neutral-200 dark:stroke-neutral-800" />
@@ -128,15 +128,15 @@ export function MonthlySpendStackedBarChart({ transactions }: { transactions: Tr
                         dataKey="date"
                         tickLine={false}
                         axisLine={false}
-                        tickMargin={8}
-                        minTickGap={10}
+                        tickMargin={4}
+                        interval={0}
                         tickFormatter={(value) => {
                             const date = new Date(value + "T00:00:00Z")
                             return date.toLocaleDateString("en-US", {
                                 month: "short",
                             })
                         }}
-                        className="text-xs font-mono text-neutral-500 fill-neutral-500"
+                        className="text-[10px] font-mono text-neutral-500 fill-neutral-500"
                     />
                     <ChartTooltip
                         cursor={{ fill: "var(--color-neutral-100)", opacity: 0.1 }}
