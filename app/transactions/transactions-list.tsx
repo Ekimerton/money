@@ -171,13 +171,17 @@ export function TransactionsList({ transactions, accounts, showIncome = false }:
                                     </div>
                                     {isExpanded && (
                                         <div className="mt-2 w-full overflow-hidden font-mono text-xs text-neutral-800 dark:text-neutral-200 space-y-1.5">
-                                            <div className="flex w-full items-center justify-between">
+                                            <div className="flex w-full items-start justify-between gap-2">
                                                 <span className="w-20 shrink-0 text-neutral-600 dark:text-neutral-400">Payee</span>
-                                                <span className="truncate max-w-[60%]">{t.payee ?? '-'}</span>
+                                                <span className="text-right whitespace-normal break-words [hyphens:auto] min-w-0 flex-1 text-neutral-900 dark:text-neutral-100" lang="en">
+                                                    {t.payee ?? '-'}
+                                                </span>
                                             </div>
-                                            <div className="flex w-full items-center justify-between">
+                                            <div className="flex w-full items-start justify-between gap-2">
                                                 <span className="w-20 shrink-0 text-neutral-600 dark:text-neutral-400">Desc</span>
-                                                <span className="truncate max-w-[60%]">{t.description || '-'}</span>
+                                                <span className="text-right whitespace-normal break-words [hyphens:auto] min-w-0 flex-1 text-neutral-900 dark:text-neutral-100" lang="en">
+                                                    {t.description || '-'}
+                                                </span>
                                             </div>
                                             <div className="flex w-full items-center justify-between">
                                                 <span className="w-20 shrink-0 text-neutral-600 dark:text-neutral-400">Category</span>
