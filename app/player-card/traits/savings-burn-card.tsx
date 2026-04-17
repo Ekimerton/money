@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Transaction } from "@/lib/types"
+import { TransactionWithAccount, calculatePlayerStats } from "../lib/utils"
 import { Pie, PieChart, Cell } from "recharts"
 import {
     ChartConfig,
@@ -12,43 +12,14 @@ import {
 import { TrendingUp, Sparkles, AlertCircle, Zap, ShieldCheck } from "lucide-react"
 
 interface SavingsBurnCardProps {
-    transactions: Transaction[]
+    transactions: TransactionWithAccount[]
 }
 
 export function SavingsBurnCard({ transactions }: SavingsBurnCardProps) {
     const { chartData, chartConfig, personality, quip, icon, savingsRate } = React.useMemo(() => {
-        const monthYear = new Set<string>()
-        let totalIncome = 0
-        let totalExpenses = 0
+        const { meanIncome, meanExpenses, meanSavings, savingsRate: sRate } = calculatePlayerStats(transactions)
 
-        for (const t of transactions) {
-            if (t.hidden || t.category === "Internal Transfer") continue
-            
-            const transactedAt = Number(t.transacted_at)
-            if (isNaN(transactedAt)) continue
-
-            const date = new Date(transactedAt * 1000)
-            monthYear.add(`${date.getFullYear()}-${date.getMonth()}`)
-
-            const amount = parseFloat(t.amount as any)
-            if (isNaN(amount)) continue
-
-            if (amount > 0) {
-                totalIncome += amount
-            } else if (amount < 0) {
-                totalExpenses += Math.abs(amount)
-            }
-        }
-
-        const monthsCount = Math.max(1, monthYear.size)
-        const meanIncome = (totalIncome || 0) / monthsCount
-        const meanExpenses = (totalExpenses || 0) / monthsCount
-        const meanSavings = meanIncome - meanExpenses
-
-        const sRate = meanIncome > 0 ? (meanSavings / meanIncome) * 100 : (meanSavings < 0 ? -100 : 0)
-
-
-        const mainColor = "rgb(23, 23, 23)" // neutral-900
+        const mainColor = "oklch(62% 0.14 155)"
         const secondaryColor = "rgb(212, 212, 212)" // neutral-300
 
         let data: any[] = []
@@ -64,6 +35,7 @@ export function SavingsBurnCard({ transactions }: SavingsBurnCardProps) {
                 Spent: { label: "Total Spend", color: secondaryColor },
             }
         } else {
+            // Burn phase gets a cautionary gray/neutral
             data = [
                 { name: "Burn", value: Math.abs(meanSavings), fill: "rgb(163, 163, 163)" },
                 { name: "Income", value: meanIncome, fill: secondaryColor },
@@ -73,6 +45,7 @@ export function SavingsBurnCard({ transactions }: SavingsBurnCardProps) {
                 Income: { label: "Total Income", color: secondaryColor },
             }
         }
+
 
         let p = ""
         let q = ""

@@ -1,4 +1,5 @@
 import { Transaction } from "@/lib/types";
+import { TransactionWithAccount } from "./lib/utils";
 import PlayerCardClient from "./player-card-client";
 
 export const dynamic = "force-dynamic";
@@ -18,12 +19,21 @@ export default async function PlayerCardPage() {
         accountsResponse.json()
     ]);
 
-    const transactions: Transaction[] = transactionsData.transactions;
+    const transactionsRaw: Transaction[] = transactionsData.transactions;
     const accounts = accountsData.accounts;
-    const totalBalance = accounts.reduce((acc: number, curr: any) => acc + (curr.balance || 0), 0);
+    
+    // Enrich transactions with account types for better behavioral analysis
+    const accountTypeMap = new Map(accounts.map((acc: any) => [acc.id, acc.type]));
+    const transactions: TransactionWithAccount[] = transactionsRaw.map(t => ({
+        ...t,
+        accountType: accountTypeMap.get(t.account_id)
+    }));
+
+    const totalBalance = accounts.reduce((acc: number, curr: any) => acc + (parseFloat(curr.balance) || 0), 0);
     const savingsBalance = accounts
         .filter((acc: any) => acc.type?.toLowerCase().includes("savings"))
-        .reduce((acc: number, curr: any) => acc + (curr.balance || 0), 0);
+        .reduce((acc: number, curr: any) => acc + (parseFloat(curr.balance) || 0), 0);
+
 
     return (
         <div>

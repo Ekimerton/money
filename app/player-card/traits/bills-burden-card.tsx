@@ -1,7 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { Transaction } from "@/lib/types"
+import { TransactionWithAccount } from "../lib/utils"
+import { calculatePlayerStats } from "../lib/utils"
 import { Pie, PieChart, Cell } from "recharts"
 import {
     ChartConfig,
@@ -12,34 +13,32 @@ import {
 import { Receipt, Sparkles, AlertCircle, CheckCircle2, TrendingUp } from "lucide-react"
 
 interface BillsBurdenCardProps {
-    transactions: Transaction[]
+    transactions: TransactionWithAccount[]
 }
 
 export function BillsBurdenCard({ transactions }: BillsBurdenCardProps) {
     const { chartData, chartConfig, personality, quip, icon, billsPercent, otherPercent } = React.useMemo(() => {
-        let billsTotal = 0
-        let totalExpenses = 0
+        const { meanIncome, monthsCount } = calculatePlayerStats(transactions)
 
+        let totalBills = 0
         for (const t of transactions) {
             if (t.hidden || t.category === "Internal Transfer") continue
-            const amount = parseFloat(t.amount)
-            if (!(amount < 0)) continue
-
-            const abs = Math.abs(amount)
-            totalExpenses += abs
-
-            const cat = t.category || ""
-            if (cat === "Bills") {
-                billsTotal += abs
+            if (t.category === "Bills") {
+                totalBills += Math.abs(parseFloat(t.amount as any) || 0)
             }
         }
+        const meanBills = monthsCount > 0 ? totalBills / monthsCount : 0
+        
+        const billsTotal = meanBills
+        const otherTotal = Math.max(0, meanIncome - meanBills)
 
-        const otherTotal = Math.max(0, totalExpenses - billsTotal)
-        const bPercent = totalExpenses > 0 ? (billsTotal / totalExpenses) * 100 : 0
-        const oPercent = 100 - bPercent
+        const bPercent = meanIncome > 0 ? (meanBills / meanIncome) * 100 : 0
+        const oPercent = Math.max(0, 100 - bPercent)
 
-        const groceriesColor = "rgb(23, 23, 23)" // neutral-900 (Bills)
-        const otherColor = "rgb(212, 212, 212)"     // neutral-300 (Other)
+
+        const groceriesColor = "oklch(62% 0.14 155)"
+        const otherColor = "rgb(212, 212, 212)"     // neutral-300
+
 
         const data = [
             { name: "Fixed Costs", value: billsTotal, fill: groceriesColor },
@@ -56,10 +55,11 @@ export function BillsBurdenCard({ transactions }: BillsBurdenCardProps) {
         let i = null
         const iconClass = "w-4 h-4 text-neutral-950 dark:text-neutral-50"
 
-        if (totalExpenses === 0) {
+        if (meanIncome === 0) {
             p = "Mystery Member"
             q = "Not enough data yet to analyze your fixed costs."
             i = <Sparkles className={iconClass} />
+
         } else if (bPercent < 25) {
             p = "Lean Flyer"
             q = "Your fixed overhead is remarkably low, giving you maximum financial agility."

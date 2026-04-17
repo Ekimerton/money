@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Transaction } from "@/lib/types"
+import { TransactionWithAccount } from "./lib/utils"
 import { EatingHabitCard } from "./traits/eating-habit-card"
 import { BillsBurdenCard } from "./traits/bills-burden-card"
 import { HousingBurdenCard } from "./traits/housing-burden-card"
@@ -10,10 +10,11 @@ import { WealthDepthCard } from "./traits/wealth-depth-card"
 import { Sparkles, Lock } from "lucide-react"
 
 interface PlayerCardClientProps {
-    transactions: Transaction[]
+    transactions: TransactionWithAccount[]
     totalBalance: number
     savingsBalance: number
 }
+
 
 export default function PlayerCardClient({ transactions, totalBalance, savingsBalance }: PlayerCardClientProps) {
     return (

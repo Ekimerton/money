@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Transaction } from "@/lib/types"
+import { TransactionWithAccount, calculatePlayerStats } from "../lib/utils"
 import { Pie, PieChart, Cell } from "recharts"
 import {
     ChartConfig,
@@ -9,50 +9,32 @@ import {
     ChartTooltip,
     ChartTooltipContent,
 } from "@/components/ui/chart"
-import { Home, Sparkles, ShieldCheck, AlertTriangle } from "lucide-react"
+import { Home, Sparkles, AlertCircle, Building, CheckCircle, ShieldCheck, AlertTriangle } from "lucide-react"
 
 interface HousingBurdenCardProps {
-    transactions: Transaction[]
+    transactions: TransactionWithAccount[]
 }
 
 export function HousingBurdenCard({ transactions }: HousingBurdenCardProps) {
     const { chartData, chartConfig, personality, quip, icon, rentPercent, otherPercent, avgIncome, avgRent } = React.useMemo(() => {
-        const monthYear = new Set<string>()
-        let totalIncome = 0
+        const { meanIncome, monthsCount } = calculatePlayerStats(transactions)
+        
+        // Rent is specific, so we still iterate for that part
         let totalRent = 0
-
         for (const t of transactions) {
             if (t.hidden || t.category === "Internal Transfer") continue
-            
-            const transactedAt = Number(t.transacted_at)
-            if (isNaN(transactedAt)) continue
-
-            const date = new Date(transactedAt * 1000)
-            monthYear.add(`${date.getFullYear()}-${date.getMonth()}`)
-
-            const amount = parseFloat(t.amount as any)
-            if (isNaN(amount)) continue
-            const abs = Math.abs(amount)
-            const cat = t.category || ""
-
-            if (amount > 0) {
-                totalIncome += amount
-            }
-            if (amount < 0 && cat === "Rent") {
-                totalRent += abs
+            if (t.category === "Rent") {
+                totalRent += Math.abs(parseFloat(t.amount as any) || 0)
             }
         }
-
-        const monthsCount = Math.max(1, monthYear.size)
-        const meanIncome = (totalIncome || 0) / monthsCount
-        const meanRent = (totalRent || 0) / monthsCount
-
+        const meanRent = monthsCount > 0 ? totalRent / monthsCount : 0
 
         const rPercent = meanIncome > 0 ? (meanRent / meanIncome) * 100 : 0
         const remainingPercent = Math.max(0, 100 - rPercent)
 
-        const rentColor = "rgb(23, 23, 23)" // neutral-900 (Rent)
-        const incomeColor = "rgb(212, 212, 212)" // neutral-300 (Remaining)
+        const rentColor = "oklch(62% 0.14 155)"
+        const incomeColor = "rgb(212, 212, 212)" // neutral-300
+
 
         const data = [
             { name: "Rent", value: meanRent, fill: rentColor },

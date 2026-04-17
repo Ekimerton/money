@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Transaction } from "@/lib/types"
+import { TransactionWithAccount } from "../lib/utils"
 import { Pie, PieChart, Cell } from "recharts"
 import {
     ChartConfig,
@@ -12,8 +12,9 @@ import {
 import { Utensils, ShoppingBasket, Sparkles, Flame } from "lucide-react"
 
 interface EatingHabitCardProps {
-    transactions: Transaction[]
+    transactions: TransactionWithAccount[]
 }
+
 
 const COLORS = {
     groceries: "var(--neutral-900)", 
@@ -42,8 +43,9 @@ export function EatingHabitCard({ transactions }: EatingHabitCardProps) {
         ].filter(d => d.value > 0)
 
         // Using CSS variables or hex values that work with the theme
-        const groceriesColor = "rgb(23, 23, 23)" // neutral-900
+        const groceriesColor = "oklch(62% 0.14 155)"
         const diningColor = "rgb(212, 212, 212)" // neutral-300
+
 
         const chartDataWithColors = [
             { name: "Groceries", value: groceriesTotal, fill: groceriesColor },
