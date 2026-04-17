@@ -33,8 +33,12 @@ export default async function PlayerCardPage() {
 
     const totalBalance = accounts.reduce((acc: number, curr: any) => acc + (parseFloat(curr.balance) || 0), 0);
     const savingsBalance = accounts
-        .filter((acc: any) => acc.type?.toLowerCase().includes("savings"))
+        .filter((acc: any) => {
+            const type = acc.type?.toLowerCase() || "";
+            return type.includes("savings") || type.includes("checking");
+        })
         .reduce((acc: number, curr: any) => acc + (parseFloat(curr.balance) || 0), 0);
+
 
 
     return (
