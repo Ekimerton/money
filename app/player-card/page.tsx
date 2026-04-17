@@ -23,7 +23,9 @@ export default async function PlayerCardPage() {
     const accounts = accountsData.accounts;
     
     // Enrich transactions with account types for better behavioral analysis
-    const accountTypeMap = new Map(accounts.map((acc: any) => [acc.id, acc.type]));
+    const accountTypeMap = new Map<string, string>(
+        accounts.map((acc: any) => [acc.id, acc.type])
+    );
     const transactions: TransactionWithAccount[] = transactionsRaw.map(t => ({
         ...t,
         accountType: accountTypeMap.get(t.account_id)

@@ -16,8 +16,12 @@ interface EatingHabitCardProps {
 }
 
 
-export function EatingHabitCard({ transactions }: EatingHabitCardProps) {
+const COLORS = {
+    groceries: "var(--neutral-900)", 
+    dining: "var(--neutral-300)",    
+}
 
+export function EatingHabitCard({ transactions }: EatingHabitCardProps) {
     const { chartData, chartConfig, personality, quip, icon, groceriesPercent, diningPercent } = React.useMemo(() => {
         let groceriesTotal = 0
         let diningTotal = 0

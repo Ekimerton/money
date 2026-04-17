@@ -1,7 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { TransactionWithAccount, calculatePlayerStats } from "../lib/utils"
+import { TransactionWithAccount } from "../lib/utils"
+import { calculatePlayerStats } from "../lib/utils"
 import { Pie, PieChart, Cell } from "recharts"
 import {
     ChartConfig,
