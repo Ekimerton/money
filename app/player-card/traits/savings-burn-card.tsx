@@ -88,7 +88,7 @@ export function SavingsBurnCard({ transactions }: SavingsBurnCardProps) {
         <div className="flex flex-col p-4 rounded-xl border bg-card hover:bg-neutral-50 dark:hover:bg-neutral-900 transition-colors h-full min-h-[320px]">
             <div className="flex items-center justify-between mb-4">
                 <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground font-mono">
-                    Savings vs Burn Rate
+                    Savings vs Spend
                 </span>
                 {icon}
             </div>
@@ -122,9 +122,7 @@ export function SavingsBurnCard({ transactions }: SavingsBurnCardProps) {
                 <div className="space-y-0.5">
                     <h3 className="text-lg font-bold tracking-tight leading-tight">{personality}</h3>
                     <p className="text-[10px] font-mono font-bold text-neutral-500 uppercase tracking-tighter">
-                        {savingsRate >= 0 
-                            ? `${Math.round(savingsRate)}% Savings Rate` 
-                            : `${Math.abs(Math.round(savingsRate))}% Burn Rate`}
+                        {savingsRate > 0 ? `${Math.round(savingsRate)}% Saved` : `${Math.abs(Math.round(savingsRate))}% Deficit`}
                     </p>
                 </div>
                 
