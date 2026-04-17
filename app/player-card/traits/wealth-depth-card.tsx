@@ -87,32 +87,31 @@ export function WealthDepthCard({ transactions, totalBalance, savingsBalance }: 
                 {icon}
             </div>
 
-            <div className="flex-1 flex flex-col items-center justify-center py-6">
-                <div className="relative flex flex-col items-center">
+            <div className="flex-1 flex flex-col items-center justify-center py-4">
+                <div className="flex flex-col items-center">
                     <span className="text-6xl font-black font-mono tracking-tighter text-neutral-950 dark:text-neutral-50 tabular-nums">
                         {monthsSaved.toFixed(1)}
                     </span>
-                    <span className="text-xs uppercase font-bold text-neutral-500 tracking-[0.2em] -mt-1">
+                    <span className="text-[10px] uppercase font-bold text-neutral-400 tracking-[0.2em] -mt-1">
                         Months Saved
                     </span>
                 </div>
                 
-                {/* Subtle progress indicator for the 6-month goal */}
-                <div className="w-full max-w-[120px] h-1.5 bg-neutral-100 dark:bg-neutral-800 rounded-full mt-8 overflow-hidden">
+                {/* Progress bar centered in the visual area */}
+                <div className="w-full max-w-[160px] h-1.5 bg-neutral-100 dark:bg-neutral-800 rounded-full mt-6 overflow-hidden">
                     <div 
                         className="h-full transition-all duration-1000"
                         style={{ width: `${Math.min((monthsSaved / 6) * 100, 100)}%`, backgroundColor: "oklch(62% 0.14 155)" }}
                     />
-
                 </div>
-                <span className="text-[8px] uppercase font-bold text-neutral-400 mt-2 tracking-widest">
-                    Goal: 6.0 Months
-                </span>
             </div>
 
             <div className="mt-4 text-center space-y-2">
                 <div className="space-y-0.5">
-                    <h3 className="text-lg font-bold tracking-tight leading-tight">{personality}</h3>
+                    <h3 className="text-lg font-bold tracking-tight">{personality}</h3>
+                    <p className="text-[10px] font-mono font-bold text-neutral-500 uppercase tracking-tighter">
+                        {monthsSaved.toFixed(1)} months of income saved
+                    </p>
                 </div>
                 
                 <p className="text-xs text-muted-foreground italic leading-tight px-2">
@@ -122,4 +121,5 @@ export function WealthDepthCard({ transactions, totalBalance, savingsBalance }: 
         </div>
     )
 }
+
 
