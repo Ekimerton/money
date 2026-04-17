@@ -2,13 +2,6 @@
 
 import * as React from "react"
 import { TransactionWithAccount, calculatePlayerStats } from "../lib/utils"
-import { Pie, PieChart, Cell } from "recharts"
-import {
-    ChartConfig,
-    ChartContainer,
-    ChartTooltip,
-    ChartTooltipContent,
-} from "@/components/ui/chart"
 import { Shield, Sparkles, Trophy, Landmark } from "lucide-react"
 
 interface WealthDepthCardProps {
