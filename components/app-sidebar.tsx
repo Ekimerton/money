@@ -1,6 +1,6 @@
 "use client"
 import * as React from "react"
-import { Cog, Banknote, Landmark, Brain, BanknoteArrowDown, Bell } from "lucide-react"
+import { Cog, Banknote, Landmark, Brain, BanknoteArrowDown, Bell, UserCircle } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 
@@ -36,6 +36,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               <Link href={"/spending"} prefetch={true}>
                 <BanknoteArrowDown className="mx-1 !size-5" />
                 Spending
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild isActive={pathname.startsWith("/player-card")}>
+              <Link href={"/player-card"} prefetch={true}>
+                <UserCircle className="mx-1 !size-5" />
+                Player Card
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
