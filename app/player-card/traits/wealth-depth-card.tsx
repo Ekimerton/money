@@ -82,10 +82,11 @@ export function WealthDepthCard({ transactions, totalBalance, savingsBalance }: 
         <div className="flex flex-col p-4 rounded-xl border bg-card hover:bg-neutral-50 dark:hover:bg-neutral-900 transition-colors h-full min-h-[320px]">
             <div className="flex items-center justify-between mb-4">
                 <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground font-mono">
-                    Wealth Depth
+                    Short Term Savings vs Income
                 </span>
                 {icon}
             </div>
+
 
             <div className="flex-1 flex flex-col items-center justify-center py-4">
                 <div className="flex flex-col items-center">
