@@ -24,10 +24,14 @@ export function HousingBurdenCard({ transactions }: HousingBurdenCardProps) {
         for (const t of transactions) {
             if (t.hidden || t.category === "Internal Transfer") continue
             
-            const date = new Date(t.transacted_at * 1000)
+            const transactedAt = Number(t.transacted_at)
+            if (isNaN(transactedAt)) continue
+
+            const date = new Date(transactedAt * 1000)
             monthYear.add(`${date.getFullYear()}-${date.getMonth()}`)
 
-            const amount = parseFloat(t.amount)
+            const amount = parseFloat(t.amount as any)
+            if (isNaN(amount)) continue
             const abs = Math.abs(amount)
             const cat = t.category || ""
 
@@ -40,8 +44,9 @@ export function HousingBurdenCard({ transactions }: HousingBurdenCardProps) {
         }
 
         const monthsCount = Math.max(1, monthYear.size)
-        const meanIncome = totalIncome / monthsCount
-        const meanRent = totalRent / monthsCount
+        const meanIncome = (totalIncome || 0) / monthsCount
+        const meanRent = (totalRent || 0) / monthsCount
+
 
         const rPercent = meanIncome > 0 ? (meanRent / meanIncome) * 100 : 0
         const remainingPercent = Math.max(0, 100 - rPercent)

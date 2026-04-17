@@ -24,10 +24,15 @@ export function SavingsBurnCard({ transactions }: SavingsBurnCardProps) {
         for (const t of transactions) {
             if (t.hidden || t.category === "Internal Transfer") continue
             
-            const date = new Date(t.transacted_at * 1000)
+            const transactedAt = Number(t.transacted_at)
+            if (isNaN(transactedAt)) continue
+
+            const date = new Date(transactedAt * 1000)
             monthYear.add(`${date.getFullYear()}-${date.getMonth()}`)
 
-            const amount = parseFloat(t.amount)
+            const amount = parseFloat(t.amount as any)
+            if (isNaN(amount)) continue
+
             if (amount > 0) {
                 totalIncome += amount
             } else if (amount < 0) {
@@ -36,11 +41,12 @@ export function SavingsBurnCard({ transactions }: SavingsBurnCardProps) {
         }
 
         const monthsCount = Math.max(1, monthYear.size)
-        const meanIncome = totalIncome / monthsCount
-        const meanExpenses = totalExpenses / monthsCount
+        const meanIncome = (totalIncome || 0) / monthsCount
+        const meanExpenses = (totalExpenses || 0) / monthsCount
         const meanSavings = meanIncome - meanExpenses
 
         const sRate = meanIncome > 0 ? (meanSavings / meanIncome) * 100 : (meanSavings < 0 ? -100 : 0)
+
 
         const mainColor = "rgb(23, 23, 23)" // neutral-900
         const secondaryColor = "rgb(212, 212, 212)" // neutral-300
