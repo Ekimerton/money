@@ -21,10 +21,17 @@ export default async function PlayerCardPage() {
     const transactions: Transaction[] = transactionsData.transactions;
     const accounts = accountsData.accounts;
     const totalBalance = accounts.reduce((acc: number, curr: any) => acc + (curr.balance || 0), 0);
+    const savingsBalance = accounts
+        .filter((acc: any) => acc.type?.toLowerCase().includes("savings"))
+        .reduce((acc: number, curr: any) => acc + (curr.balance || 0), 0);
 
     return (
         <div>
-            <PlayerCardClient transactions={transactions} totalBalance={totalBalance} />
+            <PlayerCardClient 
+                transactions={transactions} 
+                totalBalance={totalBalance} 
+                savingsBalance={savingsBalance} 
+            />
         </div>
     );
 

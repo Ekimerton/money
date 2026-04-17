@@ -12,9 +12,10 @@ import { Sparkles, Lock } from "lucide-react"
 interface PlayerCardClientProps {
     transactions: Transaction[]
     totalBalance: number
+    savingsBalance: number
 }
 
-export default function PlayerCardClient({ transactions, totalBalance }: PlayerCardClientProps) {
+export default function PlayerCardClient({ transactions, totalBalance, savingsBalance }: PlayerCardClientProps) {
     return (
         <div className="w-full max-w-7xl mx-auto pb-4">
             {/* Standard Header */}
@@ -47,8 +48,9 @@ export default function PlayerCardClient({ transactions, totalBalance }: PlayerC
                     <SavingsBurnCard transactions={transactions} />
                 </div>
                 <div className="w-full sm:w-[calc(50%-8px)] lg:w-[calc(33.333%-11px)] xl:w-[calc(25%-12px)]">
-                    <WealthDepthCard transactions={transactions} totalBalance={totalBalance} />
+                    <WealthDepthCard transactions={transactions} totalBalance={totalBalance} savingsBalance={savingsBalance} />
                 </div>
+
 
                 {/* Coming Soon Traits to fill the 8-card grid */}
                 {[...Array(3)].map((_, i) => (

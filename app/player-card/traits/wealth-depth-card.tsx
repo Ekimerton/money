@@ -14,9 +14,10 @@ import { Shield, Sparkles, Trophy, Landmark } from "lucide-react"
 interface WealthDepthCardProps {
     transactions: Transaction[]
     totalBalance: number
+    savingsBalance: number
 }
 
-export function WealthDepthCard({ transactions, totalBalance }: WealthDepthCardProps) {
+export function WealthDepthCard({ transactions, totalBalance, savingsBalance }: WealthDepthCardProps) {
     const { chartData, chartConfig, personality, quip, icon, monthsSaved } = React.useMemo(() => {
         const monthYear = new Set<string>()
         let totalIncome = 0
@@ -34,8 +35,9 @@ export function WealthDepthCard({ transactions, totalBalance }: WealthDepthCardP
         const monthsCount = Math.max(1, monthYear.size)
         const meanIncome = totalIncome / monthsCount
 
-        // Net worth in terms of salary months
-        const mSaved = meanIncome > 0 ? totalBalance / meanIncome : 0
+        // Focused on specific savings accounts
+        const mSaved = meanIncome > 0 ? (savingsBalance || 0) / meanIncome : 0
+
 
         const mainColor = "rgb(23, 23, 23)" // neutral-900
         const secondaryColor = "rgb(240, 240, 240)" // very light gray
