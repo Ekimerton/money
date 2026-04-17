@@ -24,21 +24,21 @@ const COLORS = [
     "oklch(62% 0.14 120)", // yellow-green
 ]
 
-function monthKeyUTC(d: Date): string {
-    return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`
+function monthKey(d: Date): string {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
 }
 
-function firstOfMonthISOUTCFromKey(key: string): string {
+function firstOfMonthISOFromKey(key: string): string {
     return `${key}-01`
 }
 
 function last12MonthKeys(): string[] {
     const now = new Date()
-    const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1))
+    const start = new Date(now.getFullYear(), now.getMonth(), 1)
     const keys: string[] = []
     for (let i = 11; i >= 0; i--) {
-        const d = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() - i, 1))
-        keys.push(monthKeyUTC(d))
+        const d = new Date(start.getFullYear(), start.getMonth() - i, 1)
+        keys.push(monthKey(d))
     }
     return keys
 }
@@ -47,19 +47,27 @@ export function MonthlySpendStackedBarChart({ transactions }: { transactions: Tr
     const { chartData, categories, chartConfig } = React.useMemo(() => {
         const byMonthByCategory: Record<string, Record<string, number>> = {}
         const categoryTotals: Record<string, number> = {}
+        const seenIds = new Set<string>()
 
         const monthKeys = new Set<string>(last12MonthKeys())
 
         for (const tx of transactions) {
+            if (!tx.id || seenIds.has(tx.id)) continue
+            seenIds.add(tx.id)
+
             if (tx.hidden) continue
-            if (tx.category === "Internal Transfer") continue
-            const amount = Number(tx.amount)
-            if (!(amount < 0)) continue
+            
+            const rawCategory = tx.category || "Uncategorized"
+            if (rawCategory.trim().toLowerCase() === "internal transfer") continue
+
+            const amount = parseFloat(String(tx.amount || "0").replace(/[^0-9.-]/g, ""))
+            if (isNaN(amount) || !(amount < 0)) continue
+
             const d = new Date(tx.transacted_at * 1000)
-            const key = monthKeyUTC(new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1)))
+            const key = monthKey(new Date(d.getFullYear(), d.getMonth(), 1))
             if (!monthKeys.has(key)) continue
 
-            const category = tx.category || "Uncategorized"
+            const category = rawCategory.trim()
             const abs = Math.abs(amount)
             if (!byMonthByCategory[key]) byMonthByCategory[key] = {}
             byMonthByCategory[key][category] = (byMonthByCategory[key][category] || 0) + abs
@@ -69,17 +77,13 @@ export function MonthlySpendStackedBarChart({ transactions }: { transactions: Tr
         const keysOrdered = last12MonthKeys()
         const allCategories = Object.keys(categoryTotals).sort((a, b) => a.localeCompare(b))
 
-        const rowsAll = keysOrdered.map((k) => {
-            const row: Record<string, any> = { date: firstOfMonthISOUTCFromKey(k) }
+        const rows = keysOrdered.map((k) => {
+            const row: Record<string, any> = { date: firstOfMonthISOFromKey(k) }
             const catMap = byMonthByCategory[k] || {}
             for (const cat of allCategories) {
                 row[cat] = catMap[cat] || 0
             }
             return row
-        })
-        const rows = rowsAll.filter((row) => {
-            const total = allCategories.reduce((acc, cat) => acc + (Number(row[cat]) || 0), 0)
-            return total > 0
         })
 
         const cfg: ChartConfig = {} as ChartConfig
@@ -131,7 +135,7 @@ export function MonthlySpendStackedBarChart({ transactions }: { transactions: Tr
                         tickMargin={4}
                         interval={0}
                         tickFormatter={(value) => {
-                            const date = new Date(value + "T00:00:00Z")
+                            const date = new Date(value + "T00:00:00")
                             return date.toLocaleDateString("en-US", {
                                 month: "short",
                             })
@@ -152,7 +156,7 @@ export function MonthlySpendStackedBarChart({ transactions }: { transactions: Tr
                                     return (
                                         <div className="flex justify-between w-full pb-2 text-neutral-950 dark:text-neutral-50">
                                             <p>
-                                                {new Date(dateValue + "T00:00:00Z").toLocaleDateString("en-US", {
+                                                {new Date(dateValue + "T00:00:00").toLocaleDateString("en-US", {
                                                     month: "short",
                                                     year: "numeric",
                                                 })}

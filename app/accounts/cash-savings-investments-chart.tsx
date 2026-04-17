@@ -131,10 +131,11 @@ export function CashSavingsInvestmentsChart({ accounts, timeRange }: { accounts:
                         minTickGap={40}
                         tickFormatter={(value, index) => {
                             if (index === 0 || index === filteredData.length - 1) return ""
-                            const date = new Date(value + "T00:00:00")
+                            const date = new Date(value + "T00:00:00Z")
                             return date.toLocaleDateString("en-US", {
                                 month: "short",
                                 day: "numeric",
+                                timeZone: "UTC",
                             })
                         }}
                         className="text-[10px] font-mono text-neutral-500 fill-neutral-500"
@@ -149,9 +150,10 @@ export function CashSavingsInvestmentsChart({ accounts, timeRange }: { accounts:
                                     return (
                                         <div className="flex justify-between w-full pb-2 text-neutral-950 dark:text-neutral-50">
                                             <p>
-                                                {new Date(dateValue + "T00:00:00").toLocaleDateString("en-US", {
+                                                {new Date(dateValue + "T00:00:00Z").toLocaleDateString("en-US", {
                                                     month: "short",
                                                     day: "numeric",
+                                                    timeZone: "UTC",
                                                 })}
                                             </p>
                                             <p className="font-mono">

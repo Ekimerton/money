@@ -138,9 +138,10 @@ export function CumulativeSpendLineChart({ transactions }: { transactions: Trans
                                 return (
                                     <div className="flex justify-between w-full pb-2 text-neutral-950 dark:text-neutral-50">
                                         <p>
-                                            {new Date(dateValue + "T00:00:00").toLocaleDateString("en-US", {
+                                            {new Date(dateValue + "T00:00:00Z").toLocaleDateString("en-US", {
                                                 month: "short",
                                                 day: "numeric",
+                                                timeZone: "UTC",
                                             })}
                                         </p>
                                         <p className="font-mono">
