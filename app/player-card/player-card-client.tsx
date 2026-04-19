@@ -3,6 +3,7 @@
 import * as React from "react"
 import { TransactionWithAccount } from "./lib/utils"
 import { EatingHabitCard } from "./traits/eating-habit-card"
+import { TravelRentCard } from "./traits/travel-rent-card"
 import { BillsBurdenCard } from "./traits/bills-burden-card"
 import { HousingBurdenCard } from "./traits/housing-burden-card"
 import { SavingsBurnCard } from "./traits/savings-burn-card"
@@ -38,6 +39,9 @@ export default function PlayerCardClient({ transactions, totalBalance, savingsBa
                 {/* Active Traits */}
                 <div className="w-full sm:w-[calc(50%-8px)] lg:w-[calc(33.333%-11px)] xl:w-[calc(25%-12px)]">
                     <EatingHabitCard transactions={transactions} />
+                </div>
+                <div className="w-full sm:w-[calc(50%-8px)] lg:w-[calc(33.333%-11px)] xl:w-[calc(25%-12px)]">
+                    <TravelRentCard transactions={transactions} />
                 </div>
                 <div className="w-full sm:w-[calc(50%-8px)] lg:w-[calc(33.333%-11px)] xl:w-[calc(25%-12px)]">
                     <BillsBurdenCard transactions={transactions} />
