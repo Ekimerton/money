@@ -28,12 +28,13 @@ export function TravelRentCard({ transactions }: TravelRentCardProps) {
             const amount = Math.abs(parseFloat(t.amount as any) || 0)
             const cat = t.category || ""
 
-            if (cat === "Travel") {
+            if (cat === "Transport") {
                 totalTravel += amount
             } else if (cat === "Rent") {
                 totalRent += amount
             }
         }
+
 
         const meanTravel = totalTravel / monthsCount
         const meanRent = totalRent / monthsCount
