@@ -2,81 +2,45 @@
 
 import * as React from "react"
 import { TransactionWithAccount, calculatePlayerStats } from "../lib/utils"
-import { Pie, PieChart, Cell } from "recharts"
-import {
-    ChartConfig,
-    ChartContainer,
-    ChartTooltip,
-    ChartTooltipContent,
-} from "@/components/ui/chart"
-import { TrendingUp, Sparkles, AlertCircle, Zap, ShieldCheck } from "lucide-react"
+import { TrendingUp, Sparkles, AlertCircle, Zap, ShieldCheck, Wallet, PiggyBank } from "lucide-react"
 
 interface SavingsBurnCardProps {
     transactions: TransactionWithAccount[]
 }
 
 export function SavingsBurnCard({ transactions }: SavingsBurnCardProps) {
-    const { chartData, chartConfig, personality, quip, icon, savingsRate } = React.useMemo(() => {
+    const { personality, quip, icon, savingsRate } = React.useMemo(() => {
         const { meanIncome, meanExpenses, meanSavings, savingsRate: sRate } = calculatePlayerStats(transactions)
-
-        const mainColor = "oklch(62% 0.14 155)"
-        const secondaryColor = "rgb(212, 212, 212)" // neutral-300
-
-        let data: any[] = []
-        let cfg: ChartConfig = {}
-
-        if (meanSavings >= 0) {
-            data = [
-                { name: "Saved", value: meanSavings, fill: mainColor },
-                { name: "Spent", value: meanExpenses, fill: secondaryColor },
-            ].filter(d => d.value > 0)
-            cfg = {
-                Saved: { label: "Net Savings", color: mainColor },
-                Spent: { label: "Total Spend", color: secondaryColor },
-            }
-        } else {
-            // Burn phase gets a cautionary gray/neutral
-            data = [
-                { name: "Burn", value: Math.abs(meanSavings), fill: "rgb(163, 163, 163)" },
-                { name: "Income", value: meanIncome, fill: secondaryColor },
-            ].filter(d => d.value > 0)
-            cfg = {
-                Burn: { label: "Net Burn", color: "rgb(163, 163, 163)" },
-                Income: { label: "Total Income", color: secondaryColor },
-            }
-        }
-
 
         let p = ""
         let q = ""
         let i = null
-        const iconClass = "w-4 h-4 text-neutral-950 dark:text-neutral-50"
+        const iconClass = "w-12 h-12 opacity-90"
+        const iconStyle = { color: "oklch(62% 0.14 155)" }
 
-        if (meanIncome === 0 && meanExpenses === 0) {
-            p = "Mystery Member"
-            q = "Not enough cash flow data to determine your burn rate."
-            i = <Sparkles className={iconClass} />
-        } else if (sRate > 30) {
+        if (meanIncome === 0) {
+            p = "Mystery Player"
+            q = "Income data is required to calculate your savings rate."
+            i = <Sparkles className={iconClass} style={iconStyle} />
+        } else if (sRate >= 20) {
             p = "Wealth Builder"
-            q = "You're accumulating capital at a high rate. Your burn is well under control."
-            i = <ShieldCheck className={iconClass} />
+            q = "You're consistently putting away a significant portion of your income."
+            i = <TrendingUp className={iconClass} style={iconStyle} />
         } else if (sRate >= 10) {
-            p = "Stable Accumulator"
-            q = "You maintain a consistent surplus month-over-month."
-            i = <TrendingUp className={iconClass} />
+            p = "Steady Saver"
+            q = "A solid savings habit that builds a strong future over time."
+            i = <PiggyBank className={iconClass} style={iconStyle} />
         } else if (sRate >= 0) {
-            p = "Cash Flow Neutral"
-            q = "You're spending nearly everything you earn. There's little room for savings."
-            i = <Zap className={iconClass} />
+            p = "Conservative Spender"
+            q = "You're living within your means, with a small cushion to spare."
+            i = <Wallet className={iconClass} style={iconStyle} />
         } else {
-            p = "Capital Burner"
-            q = "Your expenses are outpacing your income. You are currently in a burn phase."
-            i = <AlertCircle className={iconClass} />
+            p = "Deficit Spender"
+            q = "Your monthly spending is currently exceeding your income."
+            i = <AlertCircle className={iconClass} style={iconStyle} />
         }
 
         return {
-            chartData: data,
-            chartConfig: cfg,
             personality: p,
             quip: q,
             icon: i,
@@ -90,36 +54,23 @@ export function SavingsBurnCard({ transactions }: SavingsBurnCardProps) {
                 <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground font-mono">
                     Savings vs Spend
                 </span>
-                {icon}
             </div>
 
-            <div className="flex-1 flex flex-col items-center justify-center relative py-2">
-                <div className="h-28 w-full">
-                    <ChartContainer config={chartConfig} className="h-full w-full">
-                        <PieChart>
-                            <Pie
-                                data={chartData}
-                                dataKey="value"
-                                nameKey="name"
-                                innerRadius={30}
-                                outerRadius={45}
-                                strokeWidth={2}
-                            >
-                                {chartData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={entry.fill} />
-                                ))}
-                            </Pie>
-                            <ChartTooltip
-                                cursor={false}
-                                content={<ChartTooltipContent hideLabel />}
-                            />
-                        </PieChart>
-                    </ChartContainer>
+            <div className="flex-1 flex flex-col items-center justify-center py-6">
+                <div 
+                    className="p-8 rounded-full shadow-sm flex items-center justify-center border transition-all duration-500"
+                    style={{ 
+                        backgroundColor: "oklch(62% 0.14 155 / 0.08)",
+                        borderColor: "oklch(62% 0.14 155 / 0.2)"
+                    }}
+                >
+                    {icon}
                 </div>
             </div>
 
+
             <div className="mt-4 text-center space-y-2">
-                <div className="space-y-0.5">
+                <div className="space-y-1">
                     <h3 className="text-lg font-bold tracking-tight leading-tight">{personality}</h3>
                     <p className="text-[10px] font-mono font-bold text-neutral-500 uppercase tracking-tighter">
                         {savingsRate > 0 ? `${Math.round(savingsRate)}% Saved` : `${Math.abs(Math.round(savingsRate))}% Deficit`}

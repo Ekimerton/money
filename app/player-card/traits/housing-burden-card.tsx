@@ -2,24 +2,17 @@
 
 import * as React from "react"
 import { TransactionWithAccount, calculatePlayerStats } from "../lib/utils"
-import { Pie, PieChart, Cell } from "recharts"
-import {
-    ChartConfig,
-    ChartContainer,
-    ChartTooltip,
-    ChartTooltipContent,
-} from "@/components/ui/chart"
-import { Home, Sparkles, AlertCircle, Building, CheckCircle, ShieldCheck, AlertTriangle } from "lucide-react"
+import { Home, Sparkles, ShieldCheck, AlertTriangle, Building, Construction } from "lucide-react"
 
 interface HousingBurdenCardProps {
     transactions: TransactionWithAccount[]
 }
 
 export function HousingBurdenCard({ transactions }: HousingBurdenCardProps) {
-    const { chartData, chartConfig, personality, quip, icon, rentPercent, otherPercent, avgIncome, avgRent } = React.useMemo(() => {
+    const { personality, quip, icon, rentPercent, otherPercent } = React.useMemo(() => {
         const { meanIncome, monthsCount } = calculatePlayerStats(transactions)
         
-        // Rent is specific, so we still iterate for that part
+        // Rent is specific
         let totalRent = 0
         for (const t of transactions) {
             if (t.hidden || t.category === "Internal Transfer") continue
@@ -32,53 +25,40 @@ export function HousingBurdenCard({ transactions }: HousingBurdenCardProps) {
         const rPercent = meanIncome > 0 ? (meanRent / meanIncome) * 100 : 0
         const remainingPercent = Math.max(0, 100 - rPercent)
 
-        const rentColor = "oklch(62% 0.14 155)"
-        const incomeColor = "rgb(212, 212, 212)" // neutral-300
-
-
-        const data = [
-            { name: "Rent", value: meanRent, fill: rentColor },
-            { name: "Remaining", value: Math.max(0, meanIncome - meanRent), fill: incomeColor },
-        ].filter(d => d.value > 0)
-
-        const cfg: ChartConfig = {
-            "Rent": { label: "Monthly Rent", color: rentColor },
-            "Remaining": { label: "Disposable Income", color: incomeColor },
-        }
-
         let p = ""
         let q = ""
         let i = null
-        const iconClass = "w-4 h-4 text-neutral-950 dark:text-neutral-50"
+        const iconClass = "w-12 h-12 opacity-90"
+        const iconStyle = { color: "oklch(62% 0.14 155)" }
 
         if (meanIncome === 0) {
             p = "Mystery Resident"
             q = "Income data is required to calculate your housing burden."
-            i = <Sparkles className={iconClass} />
+            i = <Sparkles className={iconClass} style={iconStyle} />
         } else if (rPercent < 20) {
             p = "Secure Resident"
             q = "Your housing costs are well below the recommended threshold."
-            i = <ShieldCheck className={iconClass} />
+            i = <ShieldCheck className={iconClass} style={iconStyle} />
         } else if (rPercent < 35) {
             p = "Balanced Tenancy"
             q = "You maintain a sustainable balance between income and housing costs."
-            i = <Home className={iconClass} />
+            i = <Home className={iconClass} style={iconStyle} />
+        } else if (rPercent < 50) {
+            p = "Committed Foundation"
+            q = "A significant portion of your income goes to housing, but it's still manageable."
+            i = <Building className={iconClass} style={iconStyle} />
         } else {
             p = "House Burdened"
             q = "A large portion of your monthly income is committed to housing."
-            i = <AlertTriangle className={iconClass} />
+            i = <Construction className={iconClass} style={iconStyle} />
         }
 
         return {
-            chartData: data,
-            chartConfig: cfg,
             personality: p,
             quip: q,
             icon: i,
             rentPercent: rPercent,
-            otherPercent: remainingPercent,
-            avgIncome: meanIncome,
-            avgRent: meanRent
+            otherPercent: remainingPercent
         }
     }, [transactions])
 
@@ -88,36 +68,23 @@ export function HousingBurdenCard({ transactions }: HousingBurdenCardProps) {
                 <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground font-mono">
                     Rent vs Income
                 </span>
-                {icon}
             </div>
 
-            <div className="flex-1 flex flex-col items-center justify-center relative py-2">
-                <div className="h-28 w-full">
-                    <ChartContainer config={chartConfig} className="h-full w-full">
-                        <PieChart>
-                            <Pie
-                                data={chartData}
-                                dataKey="value"
-                                nameKey="name"
-                                innerRadius={30}
-                                outerRadius={45}
-                                strokeWidth={2}
-                            >
-                                {chartData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={entry.fill} />
-                                ))}
-                            </Pie>
-                            <ChartTooltip
-                                cursor={false}
-                                content={<ChartTooltipContent hideLabel />}
-                            />
-                        </PieChart>
-                    </ChartContainer>
+            <div className="flex-1 flex flex-col items-center justify-center py-6">
+                <div 
+                    className="p-8 rounded-full shadow-sm flex items-center justify-center border transition-all duration-500"
+                    style={{ 
+                        backgroundColor: "oklch(62% 0.14 155 / 0.08)",
+                        borderColor: "oklch(62% 0.14 155 / 0.2)"
+                    }}
+                >
+                    {icon}
                 </div>
             </div>
 
+
             <div className="mt-4 text-center space-y-2">
-                <div className="space-y-0.5">
+                <div className="space-y-1">
                     <h3 className="text-lg font-bold tracking-tight leading-tight">{personality}</h3>
                     <p className="text-[10px] font-mono font-bold text-neutral-500 uppercase tracking-tighter">
                         {Math.round(rentPercent)}% Rent • {Math.round(otherPercent)}% Income

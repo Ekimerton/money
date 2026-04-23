@@ -2,22 +2,14 @@
 
 import * as React from "react"
 import { TransactionWithAccount, calculatePlayerStats } from "../lib/utils"
-import { Pie, PieChart, Cell } from "recharts"
-import {
-    ChartConfig,
-    ChartContainer,
-    ChartTooltip,
-    ChartTooltipContent,
-} from "@/components/ui/chart"
-import { Plane, Home, Sparkles, Map, Globe } from "lucide-react"
+import { Plane, Home, Sparkles, Compass, Globe } from "lucide-react"
 
 interface TravelRentCardProps {
     transactions: TransactionWithAccount[]
 }
 
 export function TravelRentCard({ transactions }: TravelRentCardProps) {
-    const { chartData, chartConfig, personality, quip, icon, travelPercent, rentPercent } = React.useMemo(() => {
-
+    const { personality, quip, icon, travelPercent, rentPercent } = React.useMemo(() => {
         const { monthsCount } = calculatePlayerStats(transactions)
         
         let totalTravel = 0
@@ -35,59 +27,42 @@ export function TravelRentCard({ transactions }: TravelRentCardProps) {
             }
         }
 
-
-        const meanTravel = totalTravel / monthsCount
-        const meanRent = totalRent / monthsCount
-
         const combinedTotal = totalTravel + totalRent
         const tPercent = combinedTotal > 0 ? (totalTravel / combinedTotal) * 100 : 0
         const rPercent = combinedTotal > 0 ? (totalRent / combinedTotal) * 100 : 0
         
-        const mainColor = "oklch(62% 0.14 155)"
-        const secondaryColor = "rgb(212, 212, 212)" // neutral-300
-
-        const data = [
-            { name: "Travel", value: totalTravel, fill: mainColor },
-            { name: "Rent", value: totalRent, fill: secondaryColor },
-        ].filter(d => d.value > 0)
-
-        const cfg: ChartConfig = {
-            "Travel": { label: "Travel", color: mainColor },
-            "Rent": { label: "Rent", color: secondaryColor },
-        }
+        const rentMultiplier = totalRent > 0 ? totalTravel / totalRent : 0
 
         let p = ""
         let q = ""
         let i = null
-        const iconClass = "w-4 h-4 text-neutral-950 dark:text-neutral-50"
-
-        const rentMultiplier = totalRent > 0 ? totalTravel / totalRent : 0
+        const iconClass = "w-12 h-12 opacity-90"
+        const iconStyle = { color: "oklch(62% 0.14 155)" }
 
         if (combinedTotal === 0) {
             p = "Static Soul"
             q = "No travel or housing data detected yet."
-            i = <Sparkles className={iconClass} />
+            i = <Sparkles className={iconClass} style={iconStyle} />
         } else if (rentMultiplier < 0.1) {
             p = "Homebody"
             q = "You find comfort and value in your home base. Travel is a rare indulgence."
-            i = <Home className={iconClass} />
+            i = <Home className={iconClass} style={iconStyle} />
         } else if (rentMultiplier < 0.3) {
             p = "Vacationer"
             q = "You balance a stable home life with the occasional getaway."
-            i = <Map className={iconClass} />
+            i = <Compass className={iconClass} style={iconStyle} />
         } else if (rentMultiplier < 0.6) {
             p = "Jetsetter"
             q = "A significant portion of your lifestyle is spent exploring the world."
-            i = <Plane className={iconClass} />
+            i = <Plane className={iconClass} style={iconStyle} />
         } else {
             p = "Digital Nomad"
             q = "Your travel budget is rivaling your rent. The world is your true home."
-            i = <Globe className={iconClass} />
+            i = <Globe className={iconClass} style={iconStyle} />
         }
 
+
         return {
-            chartData: data,
-            chartConfig: cfg,
             personality: p,
             quip: q,
             icon: i,
@@ -102,36 +77,23 @@ export function TravelRentCard({ transactions }: TravelRentCardProps) {
                 <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground font-mono">
                     Travel vs Rent
                 </span>
-                {icon}
             </div>
 
-            <div className="flex-1 flex flex-col items-center justify-center relative py-2">
-                <div className="h-28 w-full">
-                    <ChartContainer config={chartConfig} className="h-full w-full">
-                        <PieChart>
-                            <Pie
-                                data={chartData}
-                                dataKey="value"
-                                nameKey="name"
-                                innerRadius={30}
-                                outerRadius={45}
-                                strokeWidth={2}
-                            >
-                                {chartData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={entry.fill} />
-                                ))}
-                            </Pie>
-                            <ChartTooltip
-                                cursor={false}
-                                content={<ChartTooltipContent hideLabel />}
-                            />
-                        </PieChart>
-                    </ChartContainer>
+            <div className="flex-1 flex flex-col items-center justify-center py-6">
+                <div 
+                    className="p-8 rounded-full shadow-sm flex items-center justify-center border transition-all duration-500"
+                    style={{ 
+                        backgroundColor: "oklch(62% 0.14 155 / 0.08)",
+                        borderColor: "oklch(62% 0.14 155 / 0.2)"
+                    }}
+                >
+                    {icon}
                 </div>
             </div>
 
+
             <div className="mt-4 text-center space-y-2">
-                <div className="space-y-0.5">
+                <div className="space-y-1">
                     <h3 className="text-lg font-bold tracking-tight leading-tight">{personality}</h3>
                     <p className="text-[10px] font-mono font-bold text-neutral-500 uppercase tracking-tighter">
                         {Math.round(travelPercent)}% TRAVEL • {Math.round(rentPercent)}% RENT
@@ -145,4 +107,3 @@ export function TravelRentCard({ transactions }: TravelRentCardProps) {
         </div>
     )
 }
-
