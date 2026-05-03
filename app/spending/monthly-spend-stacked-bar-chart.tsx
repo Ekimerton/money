@@ -13,16 +13,7 @@ import {
 } from "@/components/ui/chart"
 import { Transaction } from "@/lib/types"
 
-const COLORS = [
-    "oklch(62% 0.15 155)", // green
-    "oklch(62% 0.15 240)", // blue
-    "oklch(62% 0.13 300)", // purple
-    "oklch(62% 0.14 200)", // teal
-    "oklch(62% 0.14 260)", // indigo
-    "oklch(62% 0.14 20)",  // orange
-    "oklch(62% 0.14 340)", // pink
-    "oklch(62% 0.14 120)", // yellow-green
-]
+
 
 function monthKey(d: Date): string {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
@@ -56,7 +47,7 @@ export function MonthlySpendStackedBarChart({ transactions }: { transactions: Tr
             seenIds.add(tx.id)
 
             if (tx.hidden) continue
-            
+
             const rawCategory = tx.category || "Uncategorized"
             if (rawCategory.trim().toLowerCase() === "internal transfer") continue
 
@@ -75,7 +66,7 @@ export function MonthlySpendStackedBarChart({ transactions }: { transactions: Tr
         }
 
         const keysOrdered = last12MonthKeys()
-        const allCategories = Object.keys(categoryTotals).sort((a, b) => a.localeCompare(b))
+        const allCategories = Object.keys(categoryTotals).sort((a, b) => categoryTotals[b] - categoryTotals[a])
 
         const rows = keysOrdered.map((k) => {
             const row: Record<string, any> = { date: firstOfMonthISOFromKey(k) }
@@ -87,8 +78,24 @@ export function MonthlySpendStackedBarChart({ transactions }: { transactions: Tr
         })
 
         const cfg: ChartConfig = {} as ChartConfig
+        const n = allCategories.length
         allCategories.forEach((cat, idx) => {
-            ; (cfg as any)[cat] = { label: cat, color: COLORS[idx % COLORS.length] }
+            let hue = 155
+            let chroma = 0.14
+            if (n > 1) {
+                const mid = (n - 1) / 2
+                if (idx <= mid) {
+                    const t = mid === 0 ? 0 : idx / mid
+                    hue = 155 + t * (240 - 155)
+                    chroma = 0.14 + t * (0.15 - 0.14)
+                } else {
+                    const t = (idx - mid) / (n - 1 - mid)
+                    hue = 240 + t * (300 - 240)
+                    chroma = 0.15 + t * (0.13 - 0.15)
+                }
+            }
+            const color = `oklch(62% ${chroma.toFixed(3)} ${hue.toFixed(1)})`
+                ; (cfg as any)[cat] = { label: cat, color }
         })
 
         return { chartData: rows, categories: allCategories, chartConfig: cfg }
@@ -125,7 +132,7 @@ export function MonthlySpendStackedBarChart({ transactions }: { transactions: Tr
 
     return (
         <div className="">
-            <ChartContainer config={chartConfig} className="aspect-auto h-[300px] max-sm:h-[200px] w-full">
+            <ChartContainer config={chartConfig} className="aspect-auto h-[300px] max-sm:h-[160px] w-full">
                 <BarChart data={chartData} margin={{ left: 12, right: 12 }}>
                     <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-neutral-200 dark:stroke-neutral-800" />
                     <XAxis

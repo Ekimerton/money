@@ -182,7 +182,7 @@ export function AccountsTableClient({ accounts, timeRange }: AccountsTableClient
     }, [accounts, timeRange]);
 
     return (
-        <div className="p-4">
+        <div className="p-4 max-sm:pt-0">
             {/* Total Row for Mobile */}
             <Link
                 prefetch={true}

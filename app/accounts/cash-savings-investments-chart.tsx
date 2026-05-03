@@ -116,29 +116,25 @@ export function CashSavingsInvestmentsChart({ accounts, timeRange }: { accounts:
     }) as any, [chartConfig])
 
     return (
-        <div className="sm:px-4">
+        <div className="">
             <ChartContainer
                 config={chartConfig}
-                className="aspect-auto h-[300px] max-sm:h-[200px] w-full"
+                className="aspect-auto h-[300px] max-sm:h-[200px] w-full max-sm:-mb-8 -z-10"
             >
-                <AreaChart data={filteredData} margin={{ left: 12, right: 12 }}>
+                <AreaChart data={filteredData} margin={{ left: 0, right: 0 }}>
+                    <defs>
+                        <linearGradient id="fillInvestments" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor={chartConfig.investments.color} stopOpacity={0.4} />
+                            <stop offset="95%" stopColor={chartConfig.investments.color} stopOpacity={0.1} />
+                        </linearGradient>
+
+                    </defs>
                     <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-neutral-200 dark:stroke-neutral-800" />
                     <XAxis
                         dataKey="date"
+                        tick={false}
                         tickLine={false}
                         axisLine={false}
-                        tickMargin={8}
-                        minTickGap={40}
-                        tickFormatter={(value, index) => {
-                            if (index === 0 || index === filteredData.length - 1) return ""
-                            const date = new Date(value + "T00:00:00Z")
-                            return date.toLocaleDateString("en-US", {
-                                month: "short",
-                                day: "numeric",
-                                timeZone: "UTC",
-                            })
-                        }}
-                        className="text-[10px] font-mono text-neutral-500 fill-neutral-500"
                     />
                     <ChartTooltip
                         cursor={false}
@@ -171,8 +167,7 @@ export function CashSavingsInvestmentsChart({ accounts, timeRange }: { accounts:
                         dataKey="investments"
                         type="bump"
                         stroke={chartConfig.investments.color}
-                        fill={chartConfig.investments.color}
-                        fillOpacity={0.15}
+                        fill="url(#fillInvestments)"
                         strokeWidth={2}
                         dot={false}
                         stackId={1}
@@ -190,8 +185,8 @@ export function CashSavingsInvestmentsChart({ accounts, timeRange }: { accounts:
                     <Area
                         dataKey="cash"
                         type="bump"
-                        stroke="oklch(62% 0.14 155)"
-                        fill="oklch(62% 0.14 155)"
+                        stroke={chartConfig.cash.color}
+                        fill={chartConfig.cash.color}
                         fillOpacity={0.15}
                         strokeWidth={2}
                         dot={false}
