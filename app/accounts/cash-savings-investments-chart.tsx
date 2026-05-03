@@ -33,7 +33,8 @@ function matchesType(type: string | undefined, keyword: string): boolean {
     return type.toLowerCase().includes(keyword)
 }
 
-export function CashSavingsInvestmentsChart({ accounts, timeRange }: { accounts: Account[]; timeRange: string }) {
+export function CashSavingsInvestmentsChart({ accounts, timeRange, showTotals = true }: { accounts: Account[]; timeRange: string; showTotals?: boolean }) {
+
     const fullData = React.useMemo(() => {
         const dailyTotals: Record<string, { checking: number; credit: number; savings: number; investments: number; shortTerm: number; total: number }> = {}
 
@@ -108,7 +109,7 @@ export function CashSavingsInvestmentsChart({ accounts, timeRange }: { accounts:
                 </div>
                 <div className="flex items-center gap-2 ml-8">
                     <span className="text-neutral-950 font-mono font-medium tabular-nums dark:text-neutral-50">
-                        {Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(numericValue)}
+                        {showTotals ? Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(numericValue) : "$••••"}
                     </span>
                 </div>
             </div>
@@ -153,7 +154,10 @@ export function CashSavingsInvestmentsChart({ accounts, timeRange }: { accounts:
                                                 })}
                                             </p>
                                             <p className="font-mono">
-                                                {payload[0].payload.total.toLocaleString("en-US", { style: "currency", currency: "USD" })}
+                                                {showTotals ? payload[0].payload.total.toLocaleString("en-US", {
+                                                    style: "currency",
+                                                    currency: "USD",
+                                                }) : "$••••"}
                                             </p>
                                         </div>
                                     )

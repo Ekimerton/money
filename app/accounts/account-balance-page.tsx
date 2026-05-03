@@ -8,9 +8,14 @@ import { Account } from "@/lib/types";
 import { CashSavingsInvestmentsChart } from "./cash-savings-investments-chart";
 import { AccountsTableClient } from "./accounts-table-client";
 import { Coin3D } from "@/components/coin3d";
+import { Eye, EyeOff } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
 export function AccountBalancePage({ accounts }: { accounts: Account[] }) {
     const [timeRange, setTimeRange] = React.useState("90d");
+    const [showTotals, setShowTotals] = React.useState(true);
     const chartView = "account";
+
 
     const fullChartData = React.useMemo(() => {
         const dailyData: { [date: string]: { [key: string]: number } } = {};
@@ -90,14 +95,22 @@ export function AccountBalancePage({ accounts }: { accounts: Account[] }) {
 
             <div className="p-4 flex max-sm:pt-8">
                 <div className="grid flex-1 gap-1 max-sm:text-center ">
-                    <h2 className="font-bold text-muted-foreground uppercase text-sm font-mono">
+                    <h2 className="font-bold text-muted-foreground uppercase text-sm font-mono flex items-center gap-1 max-sm:justify-center">
                         Lifetime Net Worth
+                        <Button
+                            variant="ghost"
+                            size="iconSm"
+                            onClick={() => setShowTotals(!showTotals)}
+                            className="h-4 w-4 p-0 text-muted-foreground hover:text-foreground hover:bg-transparent"
+                        >
+                            {showTotals ? <Eye className="size-3" /> : <EyeOff className="size-3" />}
+                        </Button>
                     </h2>
                     <h1 className="text-2xl font-bold max-sm:text-4xl text-neutral-900 dark:text-neutral-100">
-                        {Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(finalNetWorth)}
+                        {showTotals ? Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(finalNetWorth) : "$••••"}
                         <span className={`text-base ml-2 font-mono max-sm:hidden ${changeNetWorth > 0 ? "text-green-700" : changeNetWorth < 0 ? "text-red-700" : "text-neutral-500"} `}>
                             {changeSign}
-                            {formattedAbsChange}
+                            {showTotals ? formattedAbsChange : "$••••"}
                             {" "}
                             <span className={isInfinitePercent ? "text-neutral-500" : ""}>({formattedPercentChange})</span>
                         </span>
@@ -105,7 +118,7 @@ export function AccountBalancePage({ accounts }: { accounts: Account[] }) {
 
                     <h2 className={`text-base ml-2 font-medium font-mono sm:hidden ${changeNetWorth > 0 ? "text-green-700" : changeNetWorth < 0 ? "text-red-700" : ""}`}>
                         {changeSign}
-                        {formattedAbsChange}
+                        {showTotals ? formattedAbsChange : "$••••"}
                         {" "}
                         <span className={isInfinitePercent ? "text-neutral-500" : ""}>({formattedPercentChange})</span>
                     </h2>
@@ -114,9 +127,9 @@ export function AccountBalancePage({ accounts }: { accounts: Account[] }) {
                     <TimeRangeSelect value={timeRange as any} onValueChange={setTimeRange as any} />
                 </div>
             </div >
-            <CashSavingsInvestmentsChart accounts={accounts} timeRange={timeRange} />
+            <CashSavingsInvestmentsChart accounts={accounts} timeRange={timeRange} showTotals={showTotals} />
             <MobileTimeRangeTabs value={timeRange as any} onValueChange={setTimeRange as any} />
-            <AccountsTableClient accounts={accounts} timeRange={timeRange} />
+            <AccountsTableClient accounts={accounts} timeRange={timeRange} showTotals={showTotals} />
             <Coin3D />
         </div >
     )

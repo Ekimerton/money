@@ -13,9 +13,11 @@ import { Account } from "@/lib/types";
 interface AccountsTableClientProps {
     accounts: Account[];
     timeRange: string;
+    showTotals?: boolean;
 }
 
-export function AccountsTableClient({ accounts, timeRange }: AccountsTableClientProps) {
+export function AccountsTableClient({ accounts, timeRange, showTotals = true }: AccountsTableClientProps) {
+
     const router = useRouter();
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
@@ -195,10 +197,10 @@ export function AccountsTableClient({ accounts, timeRange }: AccountsTableClient
                     </div>
                     <div className="flex items-center space-x-2 text-neutral-900 dark:text-neutral-100">
                         <span className="">
-                            {new Intl.NumberFormat('en-US', {
+                            {showTotals ? new Intl.NumberFormat('en-US', {
                                 style: 'currency',
                                 currency: 'USD',
-                            }).format(totals.balance)}
+                            }).format(totals.balance) : "$••••"}
                         </span>
                     </div>
                 </div>
@@ -239,10 +241,10 @@ export function AccountsTableClient({ accounts, timeRange }: AccountsTableClient
                             </div>
                             <div className="flex items-center space-x-2 text-neutral-900 dark:text-neutral-100">
                                 <span className="">
-                                    {new Intl.NumberFormat('en-US', {
+                                    {showTotals ? new Intl.NumberFormat('en-US', {
                                         style: 'currency',
                                         currency: account.currency || 'USD',
-                                    }).format(parseFloat(account.balance))}
+                                    }).format(parseFloat(account.balance)) : "$••••"}
                                 </span>
                             </div>
                         </div>
