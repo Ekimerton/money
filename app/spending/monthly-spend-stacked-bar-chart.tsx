@@ -78,24 +78,20 @@ export function MonthlySpendStackedBarChart({ transactions }: { transactions: Tr
         })
 
         const cfg: ChartConfig = {} as ChartConfig
-        const n = allCategories.length
+        const palette = [
+            "oklch(45% 0.14 155)", // Dark Green
+            "oklch(45% 0.15 240)", // Dark Blue
+            "oklch(45% 0.13 300)", // Dark Purple
+            "oklch(65% 0.14 155)", // Green
+            "oklch(65% 0.15 240)", // Blue
+            "oklch(65% 0.13 300)", // Purple
+            "oklch(85% 0.08 155)", // Light Green
+            "oklch(85% 0.08 240)", // Light Blue
+            "oklch(85% 0.08 300)", // Light Purple
+        ]
         allCategories.forEach((cat, idx) => {
-            let hue = 155
-            let chroma = 0.14
-            if (n > 1) {
-                const mid = (n - 1) / 2
-                if (idx <= mid) {
-                    const t = mid === 0 ? 0 : idx / mid
-                    hue = 155 + t * (240 - 155)
-                    chroma = 0.14 + t * (0.15 - 0.14)
-                } else {
-                    const t = (idx - mid) / (n - 1 - mid)
-                    hue = 240 + t * (300 - 240)
-                    chroma = 0.15 + t * (0.13 - 0.15)
-                }
-            }
-            const color = `oklch(62% ${chroma.toFixed(3)} ${hue.toFixed(1)})`
-                ; (cfg as any)[cat] = { label: cat, color }
+            const color = palette[idx % palette.length]
+            ;(cfg as any)[cat] = { label: cat, color }
         })
 
         return { chartData: rows, categories: allCategories, chartConfig: cfg }
