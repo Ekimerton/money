@@ -129,7 +129,7 @@ export function CashSavingsInvestmentsChart({ accounts, timeRange }: { accounts:
                         </linearGradient>
 
                     </defs>
-                    <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-neutral-200 dark:stroke-neutral-800" />
+
                     <XAxis
                         dataKey="date"
                         tick={false}
