@@ -54,7 +54,6 @@ export function CashSavingsInvestmentsChart({ accounts, timeRange, showTotals = 
                 if (isChecking) dailyTotals[date].checking += entry.balance
                 if (isCredit) dailyTotals[date].credit += entry.balance
                 if (isSavings) dailyTotals[date].savings += entry.balance
-                // Treat short-term investments as cash, not long-term investments
                 if (isShortTermInvestment) {
                     dailyTotals[date].shortTerm += entry.balance
                 } else if (isInvestment) {
@@ -114,7 +113,7 @@ export function CashSavingsInvestmentsChart({ accounts, timeRange, showTotals = 
                 </div>
             </div>
         )
-    }) as any, [chartConfig])
+    }) as any, [chartConfig, showTotals])
 
     return (
         <div className="">
@@ -126,9 +125,8 @@ export function CashSavingsInvestmentsChart({ accounts, timeRange, showTotals = 
                     <defs>
                         <linearGradient id="fillInvestments" x1="0" y1="0" x2="0" y2="1">
                             <stop offset="5%" stopColor={chartConfig.investments.color} stopOpacity={0.4} />
-                            <stop offset="95%" stopColor={chartConfig.investments.color} stopOpacity={0.1} />
+                            <stop offset="95%" stopColor={chartConfig.investments.color} stopOpacity={0} />
                         </linearGradient>
-
                     </defs>
 
                     <XAxis
