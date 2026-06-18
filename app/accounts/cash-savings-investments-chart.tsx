@@ -81,7 +81,7 @@ export function CashSavingsInvestmentsChart({ accounts, timeRange }: { accounts:
         return fullData.filter((d) => d.date >= startDateStr)
     }, [fullData, startDateStr])
 
-    const tooltipFormatter = React.useCallback(((value: any, name: any, item: any, _index: number, p: any) => {
+    const tooltipFormatter = (value: any, name: any, item: any, _index: number, p: any) => {
         const indicatorColor = item?.payload?.fill || item?.color
         const key = String(name)
         const labelText = (chartConfig as any)[key]?.label ?? key
@@ -107,7 +107,7 @@ export function CashSavingsInvestmentsChart({ accounts, timeRange }: { accounts:
                 </div>
             </div>
         )
-    }) as any, [chartConfig])
+    }
 
     return (
         <div className="sm:px-4">

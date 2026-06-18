@@ -50,7 +50,7 @@ export function BacklogClient({ initialTransactions, initialCategories }: Backlo
         };
         fetchTop3();
         return () => { active = false };
-    }, [current?.id]);
+    }, [current]);
 
     const markCategory = async (category: string) => {
         if (!current) return;
