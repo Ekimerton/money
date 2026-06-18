@@ -92,7 +92,7 @@ export function CumulativeSpendLineChart({ transactions }: { transactions: Trans
         return { chartData: rows, categories: allCategories, chartConfig: cfg }
     }, [transactions])
 
-    const tooltipFormatter = React.useCallback(((value: any, name: any, item: any, _index: number, p: any) => {
+    const tooltipFormatter = (value: any, name: any, item: any, _index: number, p: any) => {
         const indicatorColor = item?.payload?.stroke || item?.color
         const key = String(name)
         const labelText = (chartConfig as any)[key]?.label ?? key
@@ -119,7 +119,7 @@ export function CumulativeSpendLineChart({ transactions }: { transactions: Trans
                 </div>
             </div>
         )
-    }) as any, [chartConfig, categories])
+    }
 
     return (
         <ChartContainer config={chartConfig} className="aspect-auto h-[300px] max-sm:h-[220px] w-full">
