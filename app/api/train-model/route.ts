@@ -1,6 +1,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import Database from 'better-sqlite3';
+import { getDb } from '@/lib/db';
 import path from 'path';
 import { exec } from 'child_process';
 import { revalidateTag } from 'next/cache';
@@ -27,14 +27,14 @@ export async function POST(req: NextRequest) {
         });
 
         const now = new Date().toISOString();
-        const db = new Database(dbPath);
+        const db = getDb();
         db.prepare(`
             INSERT INTO user_config (id, classifier_training_date)
             VALUES (1, ?)
             ON CONFLICT(id) DO UPDATE SET
                 classifier_training_date = excluded.classifier_training_date
         `).run(now);
-        db.close();
+        /* db.close removed */
 
         revalidateTag('settings');
 

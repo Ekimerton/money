@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Database from 'better-sqlite3';
+import { getDb } from '@/lib/db';
 import path from 'path';
 import { revalidateTag } from 'next/cache';
 
@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
         if (!userName || typeof userName !== 'string' || userName.trim().length === 0) {
             return NextResponse.json({ error: 'userName is required.' }, { status: 400 });
         }
-        const db = new Database(dbPath);
+        const db = getDb();
 
         // Upsert display_name on the single-row user_config (id = 1)
         const stmt = db.prepare(`
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
         `);
         stmt.run(userName.trim());
 
-        db.close();
+        /* db.close removed */
 
         revalidateTag('settings');
         return NextResponse.json({ message: 'User name saved successfully!' }, { status: 200 });

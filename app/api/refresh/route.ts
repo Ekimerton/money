@@ -1,4 +1,4 @@
-import Database from 'better-sqlite3';
+import { getDb } from '@/lib/db';
 import path from 'path';
 import { revalidateTag } from 'next/cache';
 interface UserConfigRow {
@@ -11,7 +11,7 @@ const dbPath = path.join(process.cwd(), './data/user_data.db');
 // and can be closed properly after each request.
 
 export async function POST(req: Request) {
-  const db = new Database(dbPath);
+  const db = getDb();
   try {
     // Retrieve simplefin_url from the single-row user_config table
     const simplefinUrlRow = db
@@ -98,6 +98,6 @@ export async function POST(req: Request) {
       headers: { 'Content-Type': 'application/json' },
     });
   } finally {
-    db.close(); // Ensure the database connection is closed
+    /* db.close removed */ // Ensure the database connection is closed
   }
 } 
