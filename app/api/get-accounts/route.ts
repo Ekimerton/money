@@ -1,4 +1,4 @@
-import Database from 'better-sqlite3';
+import { getDb } from '@/lib/db';
 import path from 'path';
 
 interface Transaction {
@@ -18,7 +18,7 @@ interface Account {
 }
 
 const dbPath = path.join(process.cwd(), './data/user_data.db');
-const db = new Database(dbPath);
+const db = getDb();
 
 export async function GET(request: Request) {
   try {

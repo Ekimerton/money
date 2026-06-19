@@ -7,7 +7,7 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppHeader } from "@/components/app-header";
 import { Toaster } from "@/components/ui/sonner";
 import { unstable_cache } from 'next/cache';
-import Database from 'better-sqlite3';
+import { getDb } from '@/lib/db';
 import path from 'path';
 
 const geistSans = Geist({
@@ -32,12 +32,12 @@ export default async function RootLayout({
 }>) {
   const getUncatCount = unstable_cache(async () => {
     const dbPath = path.join(process.cwd(), './data/user_data.db');
-    const db = new Database(dbPath);
+    const db = getDb();
     try {
       const row = db.prepare("SELECT COUNT(*) as count FROM transactions WHERE category = 'Uncategorized' AND hidden = 0").get() as any;
       return Number(row?.count ?? 0);
     } finally {
-      db.close();
+      /* db.close removed */
     }
   }, ["uncat-count-v1"], { tags: ["transactions"] });
 
