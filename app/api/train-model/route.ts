@@ -1,17 +1,17 @@
+import path from 'path';
 
 import { NextRequest, NextResponse } from 'next/server';
-import Database from 'better-sqlite3';
-import path from 'path';
+import { getDb } from '@/lib/db';
 import { exec } from 'child_process';
 import { revalidateTag } from 'next/cache';
 
-const dbPath = path.join(process.cwd(), './data/user_data.db');
 const trainModelScriptPath = path.join(process.cwd(), './data/train_model.py');
 const pythonExecutablePath = path.join(process.cwd(), './data/.venv/bin/python');
 const modelSavePath = path.join(process.cwd(), './data/model');
 
 export async function POST(req: NextRequest) {
     try {
+        const dbPath = path.join(process.cwd(), './data/user_data.db');
         const cmd = `${pythonExecutablePath} ${trainModelScriptPath} ${dbPath} ${modelSavePath}`;
 
         const { stdout, stderr } = await new Promise<{ stdout: string; stderr: string }>((resolve, reject) => {
@@ -27,14 +27,13 @@ export async function POST(req: NextRequest) {
         });
 
         const now = new Date().toISOString();
-        const db = new Database(dbPath);
+        const db = getDb();
         db.prepare(`
             INSERT INTO user_config (id, classifier_training_date)
             VALUES (1, ?)
             ON CONFLICT(id) DO UPDATE SET
                 classifier_training_date = excluded.classifier_training_date
         `).run(now);
-        db.close();
 
         revalidateTag('settings');
 

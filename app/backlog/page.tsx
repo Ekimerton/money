@@ -1,12 +1,10 @@
-import Database from 'better-sqlite3';
-import path from 'path';
+import { getDb } from '@/lib/db';
 import { BacklogClient } from '@/app/backlog/backlog-client';
 import { Transaction } from '@/lib/types';
 import { unstable_cache } from 'next/cache';
 
 const getBacklogData = unstable_cache(async () => {
-    const dbPath = path.join(process.cwd(), './data/user_data.db');
-    const db = new Database(dbPath);
+        const db = getDb();
     try {
         const rows = db.prepare("SELECT * FROM transactions WHERE category = 'Uncategorized' AND hidden = 0 ORDER BY transacted_at DESC").all() as any[];
         const transactions: Transaction[] = rows.map((r) => ({
@@ -25,8 +23,7 @@ const getBacklogData = unstable_cache(async () => {
         const categories = db.prepare("SELECT DISTINCT category FROM transactions WHERE category IS NOT NULL AND category != 'Uncategorized'").all().map((row: any) => row.category) as string[];
         return { transactions, categories };
     } finally {
-        db.close();
-    }
+            }
 }, ["backlog-v1"], { tags: ["transactions"] });
 
 export default async function BacklogPage() {
