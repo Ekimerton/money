@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Database from 'better-sqlite3';
+import { getDb } from '@/lib/db';
 import path from 'path';
 import { revalidateTag } from 'next/cache';
 
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
 
         const ACCESS_URL = await claimResponse.text();
 
-        const db = new Database(dbPath);
+        const db = getDb();
         const stmt = db.prepare(`
             INSERT INTO user_config (id, simplefin_url)
             VALUES (1, ?)
@@ -36,7 +36,6 @@ export async function POST(req: NextRequest) {
                 simplefin_url = excluded.simplefin_url;
         `);
         stmt.run(ACCESS_URL);
-        db.close();
 
         revalidateTag('settings');
         return NextResponse.json({ message: 'SimpleFIN URL saved successfully!', simplefinUrl: ACCESS_URL }, { status: 200 });

@@ -1,6 +1,6 @@
 "use server"
 
-import Database from "better-sqlite3";
+import { getDb } from "@/lib/db";
 import path from "path";
 import { spawn } from "child_process";
 import { revalidateTag } from "next/cache";
@@ -70,7 +70,7 @@ function markInternalTransfersForTransactions(db: any, transactionIds: string[])
 }
 
 export async function setAutoCategorize(autoCategorize: boolean): Promise<void> {
-    const db = new Database(dbPath);
+    const db = getDb();
     try {
         const stmt = db.prepare(`
             INSERT INTO user_config (id, auto_categorize)
@@ -81,12 +81,11 @@ export async function setAutoCategorize(autoCategorize: boolean): Promise<void> 
         stmt.run(autoCategorize ? 1 : 0);
         revalidateTag('settings');
     } finally {
-        db.close();
     }
 }
 
 export async function setAutoMarkInternalTransfers(enabled: boolean): Promise<void> {
-    const db = new Database(dbPath);
+    const db = getDb();
     try {
         const stmt = db.prepare(`
             INSERT INTO user_config (id, auto_mark_duplicates)
@@ -97,12 +96,11 @@ export async function setAutoMarkInternalTransfers(enabled: boolean): Promise<vo
         stmt.run(enabled ? 1 : 0);
         revalidateTag('settings');
     } finally {
-        db.close();
     }
 }
 
 export async function refreshRecent(processAll?: boolean): Promise<{ message: string; classifierOutput?: string; updatedDuplicates?: number; newTransactions?: number; categorizedCount?: number; }> {
-    const db = new Database(dbPath);
+    const db = getDb();
     try {
         const userConfig = db.prepare(
             'SELECT simplefin_url, auto_categorize, auto_mark_duplicates FROM user_config WHERE id = 1'
@@ -262,17 +260,15 @@ export async function refreshRecent(processAll?: boolean): Promise<{ message: st
         console.error('Error in refreshRecent action:', error);
         throw error;
     } finally {
-        db.close();
     }
 }
 
 export async function getUncategorizedCount(): Promise<number> {
-    const db = new Database(dbPath);
+    const db = getDb();
     try {
         const row = db.prepare("SELECT COUNT(*) as count FROM transactions WHERE category = 'Uncategorized' AND hidden = 0").get() as any;
         return Number(row?.count ?? 0);
     } finally {
-        db.close();
     }
 }
 
