@@ -1,11 +1,11 @@
 import SettingsClient from "@/app/settings/settings-client";
-import Database from 'better-sqlite3';
-import path from 'path';
+import { getDb } from '@/lib/db';
+
 import { unstable_cache } from 'next/cache';
 
 const getSettingsData = unstable_cache(async () => {
-    const dbPath = path.join(process.cwd(), './data/user_data.db');
-    const db = new Database(dbPath);
+
+    const db = getDb();
     try {
         const userConfig = db
             .prepare(
@@ -26,7 +26,7 @@ const getSettingsData = unstable_cache(async () => {
         };
         return userConfig;
     } finally {
-        db.close();
+        // // db.close(); // Managed globally
     }
 }, ["settings-v1"], { tags: ["settings"] });
 

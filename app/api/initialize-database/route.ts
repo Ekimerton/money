@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Database from 'better-sqlite3';
-import path from 'path';
+import { getDb } from '@/lib/db';
 
-const dbPath = path.join(process.cwd(), './data/user_data.db');
+
+
 
 export async function POST(req: NextRequest) {
   try {
-    const db = new Database(dbPath);
+    const db = getDb();
 
     db.exec(`
       CREATE TABLE IF NOT EXISTS accounts (
@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
       // ignore if column already exists
     }
 
-    db.close();
+    // // db.close(); // Managed globally
 
     return NextResponse.json({ message: 'Database initialized successfully!' }, { status: 200 });
   } catch (error: any) {
