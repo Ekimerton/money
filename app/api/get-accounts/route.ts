@@ -1,5 +1,5 @@
-import Database from 'better-sqlite3';
-import path from 'path';
+import { getDb } from '@/lib/db';
+
 
 interface Transaction {
   id: string;
@@ -17,8 +17,8 @@ interface Account {
   balance_date: number;
 }
 
-const dbPath = path.join(process.cwd(), './data/user_data.db');
-const db = new Database(dbPath);
+
+const db = getDb();
 
 export async function GET(request: Request) {
   try {
