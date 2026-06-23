@@ -47,9 +47,6 @@ export default function SettingsClient({
         } catch (err: any) {
             setError(err.message);
             toast.error(err.message || 'Failed to save user name.');
-        } finally {
-            setLoading(false);
-        }
     };
 
     const refreshRecent = async () => {
@@ -65,9 +62,6 @@ export default function SettingsClient({
             const msg = err?.message || 'Failed to refresh recent data.';
             setError(msg);
             toast.error(msg);
-        } finally {
-            setLoading(false);
-        }
     };
 
     const refreshAll = async () => {
@@ -83,9 +77,6 @@ export default function SettingsClient({
             const msg = err?.message || 'Failed to perform full refresh.';
             setError(msg);
             toast.error(msg);
-        } finally {
-            setLoading(false);
-        }
     };
 
     const handleAutoCategorizeToggle = async (newValue: boolean) => {
@@ -280,9 +271,6 @@ export default function SettingsClient({
                                 } catch (err: any) {
                                     setError(err.message);
                                     toast.error(err.message || 'Failed to train model.');
-                                } finally {
-                                    setLoading(false);
-                                }
                             }}
                             disabled={loading}
                         >

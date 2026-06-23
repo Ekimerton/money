@@ -101,9 +101,6 @@ export async function POST(req: NextRequest) {
                     )
                     .all() as Array<{ category: string }>;
                 categories = rows.map((r) => r.category);
-            } finally {
-                catDb.close();
-            }
         } catch (_) {
             // ignore and proceed without categories context
         }
@@ -141,9 +138,6 @@ export async function POST(req: NextRequest) {
         let rows: any[] = [];
         try {
             rows = db.prepare(parsed.sql).all();
-        } finally {
-            db.close();
-        }
 
         return new Response(JSON.stringify({ chart: parsed.chart, rows, sql: parsed.sql }), {
             status: 200,
