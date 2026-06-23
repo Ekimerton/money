@@ -85,9 +85,6 @@ export default function DashboardPage() {
 
             } catch (err: any) {
                 setError(err.message);
-            } finally {
-                setLoading(false);
-            }
         };
 
         fetchDashboardData();

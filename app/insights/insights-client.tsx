@@ -50,9 +50,6 @@ export default function InsightsClient() {
             setData(json);
         } catch (err: any) {
             setError(err?.message || "Something went wrong");
-        } finally {
-            setLoading(false);
-        }
     };
 
     const EmptyChartSpace = () => (

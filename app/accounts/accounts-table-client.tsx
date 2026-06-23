@@ -63,10 +63,6 @@ export function AccountsTableClient({ accounts, timeRange }: AccountsTableClient
                     console.error('Failed to save one or more updates');
                 }
             }
-        } finally {
-            setIsSaving(false);
-            setIsSettingsOpen(false);
-        }
     };
 
     // Match the time window semantics used in `account-balance-page.tsx`

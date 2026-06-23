@@ -51,9 +51,6 @@ export default function Home() {
     } catch (err: any) {
       setError(err.message);
       console.error(err);
-    } finally {
-      setLoading(false);
-    }
   };
 
   const refreshRecentDatabase = async () => {
@@ -79,9 +76,6 @@ export default function Home() {
     } catch (err: any) {
       setError(err.message);
       console.error(err);
-    } finally {
-      setLoading(false);
-    }
   };
 
   const refreshDatabase = async () => {
@@ -105,9 +99,6 @@ export default function Home() {
     } catch (err: any) {
       setError(err.message);
       console.error(err);
-    } finally {
-      setLoading(false);
-    }
   };
 
   const loadDataFromDb = async () => {
@@ -137,9 +128,6 @@ export default function Home() {
     } catch (err: any) {
       setError(err.message);
       console.error(err);
-    } finally {
-      setLoading(false);
-    }
   };
 
   const saveSimplefinUrl = async () => {
@@ -162,9 +150,6 @@ export default function Home() {
     } catch (err: any) {
       setError(err.message);
       console.error(err);
-    } finally {
-      setLoading(false);
-    }
   };
 
   const trainModel = async () => {
@@ -188,9 +173,6 @@ export default function Home() {
     } catch (err: any) {
       setError(err.message);
       console.error(err);
-    } finally {
-      setLoading(false);
-    }
   };
 
   const markInternalTransfers = async () => {
@@ -213,9 +195,6 @@ export default function Home() {
     } catch (err: any) {
       setError(err.message);
       console.error(err);
-    } finally {
-      setLoading(false);
-    }
   };
 
   const deleteUserConfig = async () => {
@@ -241,9 +220,6 @@ export default function Home() {
     } catch (err: any) {
       setError(err.message);
       console.error(err);
-    } finally {
-      setLoading(false);
-    }
   };
 
   const saveUserName = async () => {
@@ -266,9 +242,6 @@ export default function Home() {
     } catch (err: any) {
       setError(err.message);
       console.error(err);
-    } finally {
-      setLoading(false);
-    }
   };
 
   const fetchUserConfig = async () => {
@@ -310,9 +283,6 @@ export default function Home() {
     } catch (err: any) {
       setError(err.message);
       console.error(err);
-    } finally {
-      setLoading(false);
-    }
   };
 
   useEffect(() => {
