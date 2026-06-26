@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Database from 'better-sqlite3';
-import path from 'path';
-
-const dbPath = path.join(process.cwd(), './data/user_data.db');
+import { getDb } from '@/lib/db';
 
 export async function POST(_req: NextRequest) {
-    const db = new Database(dbPath);
     try {
+        const db = getDb();
         const threeDaysInSeconds = 3 * 24 * 60 * 60;
 
         const updateSql = `
@@ -35,8 +32,6 @@ export async function POST(_req: NextRequest) {
     } catch (error: any) {
         console.error('Error marking internal transfers:', error);
         return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
-    } finally {
-        db.close();
     }
 }
 

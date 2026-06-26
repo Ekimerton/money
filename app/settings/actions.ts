@@ -1,11 +1,9 @@
 "use server"
 
-import Database from "better-sqlite3";
 import path from "path";
 import { spawn } from "child_process";
 import { revalidateTag } from "next/cache";
-
-const dbPath = path.join(process.cwd(), "./data/user_data.db");
+import { getDb } from "@/lib/db";
 const pythonExecutablePath = path.join(process.cwd(), "./data/.venv/bin/python");
 
 async function classifyTransactionsByIds(transactionIds: string[]): Promise<{ output: string; categorizedCount?: number; }> {
@@ -70,39 +68,31 @@ function markInternalTransfersForTransactions(db: any, transactionIds: string[])
 }
 
 export async function setAutoCategorize(autoCategorize: boolean): Promise<void> {
-    const db = new Database(dbPath);
-    try {
-        const stmt = db.prepare(`
-            INSERT INTO user_config (id, auto_categorize)
-            VALUES (1, ?)
-            ON CONFLICT(id) DO UPDATE SET
-                auto_categorize = excluded.auto_categorize
-        `);
-        stmt.run(autoCategorize ? 1 : 0);
-        revalidateTag('settings');
-    } finally {
-        db.close();
-    }
+    const db = getDb();
+    const stmt = db.prepare(`
+        INSERT INTO user_config (id, auto_categorize)
+        VALUES (1, ?)
+        ON CONFLICT(id) DO UPDATE SET
+            auto_categorize = excluded.auto_categorize
+    `);
+    stmt.run(autoCategorize ? 1 : 0);
+    revalidateTag('settings');
 }
 
 export async function setAutoMarkInternalTransfers(enabled: boolean): Promise<void> {
-    const db = new Database(dbPath);
-    try {
-        const stmt = db.prepare(`
-            INSERT INTO user_config (id, auto_mark_duplicates)
-            VALUES (1, ?)
-            ON CONFLICT(id) DO UPDATE SET
-                auto_mark_duplicates = excluded.auto_mark_duplicates
-        `);
-        stmt.run(enabled ? 1 : 0);
-        revalidateTag('settings');
-    } finally {
-        db.close();
-    }
+    const db = getDb();
+    const stmt = db.prepare(`
+        INSERT INTO user_config (id, auto_mark_duplicates)
+        VALUES (1, ?)
+        ON CONFLICT(id) DO UPDATE SET
+            auto_mark_duplicates = excluded.auto_mark_duplicates
+    `);
+    stmt.run(enabled ? 1 : 0);
+    revalidateTag('settings');
 }
 
 export async function refreshRecent(processAll?: boolean): Promise<{ message: string; classifierOutput?: string; updatedDuplicates?: number; newTransactions?: number; categorizedCount?: number; }> {
-    const db = new Database(dbPath);
+    const db = getDb();
     try {
         const userConfig = db.prepare(
             'SELECT simplefin_url, auto_categorize, auto_mark_duplicates FROM user_config WHERE id = 1'
@@ -261,19 +251,13 @@ export async function refreshRecent(processAll?: boolean): Promise<{ message: st
     } catch (error: any) {
         console.error('Error in refreshRecent action:', error);
         throw error;
-    } finally {
-        db.close();
     }
 }
 
 export async function getUncategorizedCount(): Promise<number> {
-    const db = new Database(dbPath);
-    try {
-        const row = db.prepare("SELECT COUNT(*) as count FROM transactions WHERE category = 'Uncategorized' AND hidden = 0").get() as any;
-        return Number(row?.count ?? 0);
-    } finally {
-        db.close();
-    }
+    const db = getDb();
+    const row = db.prepare("SELECT COUNT(*) as count FROM transactions WHERE category = 'Uncategorized' AND hidden = 0").get() as any;
+    return Number(row?.count ?? 0);
 }
 
 export async function getTop3PredictionsForTransaction(tx: { payee: string | null; description: string | null; amount: string | number; account_id: string; }): Promise<Array<{ category: string; confidence: number }>> {
