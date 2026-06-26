@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Database from 'better-sqlite3';
-import path from 'path';
+import { getDb } from '@/lib/db';
 import { revalidateTag } from 'next/cache';
-
-const dbPath = path.join(process.cwd(), './data/user_data.db');
 
 export async function POST(req: NextRequest) {
     try {
@@ -13,7 +10,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'autoCategorize must be a boolean.' }, { status: 400 });
         }
 
-        const db = new Database(dbPath);
+        const db = getDb();
 
         const stmt = db.prepare(`
             INSERT INTO user_config (id, auto_categorize)
@@ -22,8 +19,6 @@ export async function POST(req: NextRequest) {
                 auto_categorize = excluded.auto_categorize
         `);
         stmt.run(autoCategorize ? 1 : 0);
-
-        db.close();
 
         revalidateTag('settings');
         return NextResponse.json({ message: 'Auto categorize setting saved successfully!' }, { status: 200 });
