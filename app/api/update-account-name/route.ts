@@ -1,10 +1,7 @@
-import Database from 'better-sqlite3';
-import path from 'path';
-
-const dbPath = path.join(process.cwd(), './data/user_data.db');
-const db = new Database(dbPath);
+import { getDb } from '@/lib/db';
 
 export async function POST(request: Request) {
+    const db = getDb();
     try {
         const { accountId, newName } = await request.json();
 
