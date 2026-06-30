@@ -1,14 +1,12 @@
 import { Account } from "@/lib/types";
-import Database from 'better-sqlite3';
-import path from 'path';
+import { getDb } from '@/lib/db';
 import { AccountBalancePage } from "./account-balance-page";
 
 export default async function AccountsPage() {
-    const dbPath = path.join(process.cwd(), './data/user_data.db');
-    const db = new Database(dbPath);
-    try {
-        const days = 365;
-        const rows = db.prepare('SELECT * FROM accounts').all() as any[];
+    const db = getDb();
+
+    const days = 365;
+    const rows = db.prepare('SELECT * FROM accounts').all() as any[];
 
         const accounts: Account[] = rows.map((r) => ({
             id: String(r.id),
@@ -61,7 +59,4 @@ export default async function AccountsPage() {
                 <AccountBalancePage accounts={accounts} />
             </div>
         );
-    } finally {
-        db.close();
-    }
 } 
