@@ -1,5 +1,5 @@
+import { getDb } from '@/lib/db';
 
-import Database from 'better-sqlite3';
 import path from 'path';
 import { spawn } from 'child_process';
 import { revalidateTag } from 'next/cache';
@@ -11,11 +11,11 @@ interface LatestTransactionRow {
     latest_posted: number;
 }
 
-const dbPath = path.join(process.cwd(), './data/user_data.db');
+
 const pythonExecutablePath = path.join(process.cwd(), './data/.venv/bin/python');
 
 export async function POST(req: Request) {
-    const db = new Database(dbPath);
+    const db = getDb();
     try {
         let autoCategorize = false;
         try {
@@ -137,7 +137,5 @@ export async function POST(req: Request) {
             status: 500,
             headers: { 'Content-Type': 'application/json' },
         });
-    } finally {
-        db.close();
     }
 } 
