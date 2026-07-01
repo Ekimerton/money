@@ -1,30 +1,40 @@
-import { getDb } from '@/lib/db';
-import path from 'path';
+import { getDb } from './db';
+import { Account, Transaction } from './types';
 
-interface Transaction {
-  id: string;
-  account_id: string;
-  amount: number;
-  transacted_at: number;
-  description: string;
-  category: string;
+export async function getTransactions(accountId?: string, month?: string, year?: string): Promise<Transaction[]> {
+    const db = getDb();
+    let query = 'SELECT * FROM transactions';
+    const params: any[] = [];
+    const conditions: string[] = [];
+
+    if (accountId) {
+      conditions.push('account_id = ?');
+      params.push(accountId);
+    }
+
+    if (month && year) {
+      const startDate = new Date(Date.UTC(parseInt(year), parseInt(month), 1));
+      const endDate = new Date(Date.UTC(parseInt(year), parseInt(month) + 1, 0, 23, 59, 59, 999));
+
+      conditions.push('transacted_at >= ?');
+      params.push(Math.floor(startDate.getTime() / 1000));
+
+      conditions.push('transacted_at <= ?');
+      params.push(Math.floor(endDate.getTime() / 1000));
+    }
+
+    if (conditions.length > 0) {
+      query += ' WHERE ' + conditions.join(' AND ');
+    }
+
+    query += ' ORDER BY transacted_at DESC';
+
+    const transactions = db.prepare(query).all(...params) as Transaction[];
+    return transactions;
 }
 
-interface Account {
-  id: string;
-  name: string;
-  balance: number;
-  balance_date: number;
-}
-
-
-const db = getDb();
-
-export async function GET(request: Request) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const days = parseInt(searchParams.get('days') || '90');
-
+export async function getAccounts(days: number = 90): Promise<Account[]> {
+    const db = getDb();
     const accounts = db.prepare('SELECT * FROM accounts').all() as Account[];
 
     for (const account of accounts) {
@@ -62,15 +72,11 @@ export async function GET(request: Request) {
       (account as any).balanceHistory = balanceHistory;
     }
 
-    return new Response(JSON.stringify({ accounts }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  } catch (error: any) {
-    console.error('Error fetching accounts and calculating historical balances:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
-} 
+    return accounts;
+}
+
+export async function getCategories(): Promise<string[]> {
+    const db = getDb();
+    const categories = db.prepare('SELECT DISTINCT category FROM transactions').all().map((row: any) => row.category);
+    return categories;
+}

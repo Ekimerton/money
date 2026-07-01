@@ -1,6 +1,6 @@
+import { getDb } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
 import { revalidateTag } from 'next/cache';
-import Database from 'better-sqlite3';
 import path from 'path';
 
 export async function POST(req: NextRequest) {
@@ -11,8 +11,8 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Missing transactionId or newCategory' }, { status: 400 });
         }
 
-        const dbPath = path.join(process.cwd(), './data/user_data.db');
-        const db = new Database(dbPath);
+
+        const db = getDb();
 
         // Read previous category to decide if backlog cache should be invalidated
         const prevRow = db.prepare('SELECT category FROM transactions WHERE id = ?').get(transactionId) as { category?: string } | undefined;
@@ -27,7 +27,6 @@ export async function POST(req: NextRequest) {
 
         const stmt = db.prepare('UPDATE transactions SET category = ? WHERE id = ?');
         stmt.run(normalized, transactionId);
-        db.close();
 
         // Invalidate only when backlog is affected
         const affectsBacklog = prevCategory === 'Uncategorized' || normalized === 'Uncategorized';
