@@ -45,3 +45,6 @@ next-env.d.ts
 data/user_data.db
 data/model/*
 data/user-settings.json
+data/user_data.db-shm
+data/user_data.db-wal
+data/.venv/
