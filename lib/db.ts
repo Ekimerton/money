@@ -1,10 +1,20 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
+import Database from 'better-sqlite3';
+import path from 'path';
 
-export async function POST(req: NextRequest) {
-  try {
-    // getDb() automatically initializes the schema
-    const db = getDb();
+let db: Database.Database | null = null;
+
+export function getDb(): Database.Database {
+    if (db) return db;
+
+    const globalDb = (globalThis as any).__db as Database.Database | undefined;
+    if (globalDb) {
+        db = globalDb;
+        return db;
+    }
+
+    const dbPath = path.join(process.cwd(), './data/user_data.db');
+    db = new Database(dbPath);
+    db.pragma('journal_mode = WAL');
 
     db.exec(`
       CREATE TABLE IF NOT EXISTS accounts (
@@ -51,9 +61,7 @@ export async function POST(req: NextRequest) {
       // ignore if column already exists
     }
 
-    return NextResponse.json({ message: 'Database initialized successfully!' }, { status: 200 });
-  } catch (error: any) {
-    console.error('Error initializing database:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-} 
+    (globalThis as any).__db = db;
+
+    return db;
+}
