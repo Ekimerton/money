@@ -1,3 +1,4 @@
+import { getDb } from "@/lib/db";
 import { NextRequest, NextResponse } from 'next/server';
 import Database from 'better-sqlite3';
 import path from 'path';
@@ -13,7 +14,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Missing payee or newCategory' }, { status: 400 });
         }
 
-        const db = new Database(dbPath);
+        const db = getDb();
 
         const normalized = (() => {
             const value = String(newCategory ?? '').trim();
@@ -31,7 +32,7 @@ export async function POST(req: NextRequest) {
         const nextCountRow = db.prepare("SELECT COUNT(*) as cnt FROM transactions WHERE payee = ? AND category = 'Uncategorized'").get(payee) as { cnt?: number } | undefined;
         const nextUncatCount = Number(nextCountRow?.cnt ?? 0);
 
-        db.close();
+
 
         if ((prevUncatCount === 0 && nextUncatCount > 0) || (prevUncatCount > 0 && nextUncatCount === 0)) {
             revalidateTag('transactions');
