@@ -12,30 +12,46 @@ const getFetchHistory = unstable_cache(async () => {
         try { db.exec("ALTER TABLE account_history ADD COLUMN fetched_at TEXT;"); } catch (e) { }
 
         const accounts = db.prepare('SELECT * FROM accounts').all() as any[];
+        const allHistory = db.prepare('SELECT account_id, balance, fetched_at FROM account_history').all() as any[];
 
-        const fetchSessions = db.prepare(`
-            SELECT 
-                fetched_at,
-                SUM(CAST(balance AS REAL)) as total_balance
-            FROM account_history
-            GROUP BY fetched_at
-            ORDER BY fetched_at DESC
-            LIMIT 30
-        `).all() as any[];
+        // Get the unique fetched_at times, sorted descending
+        const uniqueFetchedTimes = Array.from(new Set(allHistory.map(h => h.fetched_at)))
+            .filter(Boolean)
+            .sort((a, b) => b.localeCompare(a))
+            .slice(0, 30);
 
-        const history = fetchSessions.map(session => {
+        const history = uniqueFetchedTimes.map(fetchedAt => {
+            const balancesAtTime: Record<string, number> = {};
+
+            accounts.forEach(acc => {
+                const entries = allHistory.filter(h => h.account_id === acc.id);
+                if (entries.length > 0) {
+                    entries.sort((a, b) => a.fetched_at.localeCompare(b.fetched_at));
+                    const historyBeforeOrAt = entries.filter(e => e.fetched_at <= fetchedAt);
+                    if (historyBeforeOrAt.length > 0) {
+                        balancesAtTime[acc.id] = parseFloat(historyBeforeOrAt[historyBeforeOrAt.length - 1].balance);
+                    } else {
+                        balancesAtTime[acc.id] = parseFloat(entries[0].balance);
+                    }
+                } else {
+                    balancesAtTime[acc.id] = parseFloat(acc.balance);
+                }
+            });
+
+            const totalBalance = Object.values(balancesAtTime).reduce((sum, val) => sum + val, 0);
+
             const txs = db.prepare(`
                 SELECT *
                 FROM transactions 
                 WHERE fetched_at = ?
-            `).all(session.fetched_at) as any[];
+            `).all(fetchedAt) as any[];
 
-            const dateObj = isNaN(Number(session.fetched_at)) ? new Date(session.fetched_at) : new Date(Number(session.fetched_at) * 1000);
+            const dateObj = isNaN(Number(fetchedAt)) ? new Date(fetchedAt) : new Date(Number(fetchedAt) * 1000);
 
             return {
-                fetched_at: session.fetched_at,
+                fetched_at: fetchedAt,
                 date: dateObj.toISOString(),
-                total_balance: session.total_balance,
+                total_balance: totalBalance,
                 transactions: txs.map(t => ({
                     id: String(t.id),
                     account_id: String(t.account_id),
