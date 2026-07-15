@@ -13,7 +13,11 @@ const getFetchHistory = unstable_cache(async () => {
         try { db.exec("ALTER TABLE account_history ADD COLUMN fetched_at TEXT;"); } catch (e) { }
 
         const accounts = db.prepare('SELECT * FROM accounts').all() as any[];
-        const allHistory = db.prepare('SELECT account_id, balance, fetched_at FROM account_history').all() as any[];
+        const allHistoryRaw = db.prepare('SELECT account_id, balance, fetched_at FROM account_history').all() as any[];
+        const allHistory = allHistoryRaw.map(h => ({
+            ...h,
+            fetched_at: String(h.fetched_at ?? '')
+        }));
 
         // Get the unique fetched_at times, sorted descending
         const uniqueFetchedTimes = Array.from(new Set(allHistory.map(h => h.fetched_at)))
