@@ -12,7 +12,9 @@ export interface UserSettings {
     autoRefreshDaily?: boolean;
 }
 
-const SETTINGS_PATH = path.join(process.cwd(), './data/user-settings.json');
+import { getDataPath } from './paths';
+
+const SETTINGS_PATH = getDataPath('user-settings.json');
 
 export async function getSettings(): Promise<UserSettings> {
     try {

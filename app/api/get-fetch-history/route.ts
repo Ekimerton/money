@@ -1,11 +1,12 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 import { NextResponse } from 'next/server';
+import { getDataPath } from '@/lib/paths';
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-    const dbPath = path.join(process.cwd(), './data/user_data.db');
+    const dbPath = getDataPath('user_data.db');
     const db = new Database(dbPath);
 
     try {

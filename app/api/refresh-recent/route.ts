@@ -9,8 +9,10 @@ interface LatestTransactionRow {
     latest_posted: number;
 }
 
-const dbPath = path.join(process.cwd(), './data/user_data.db');
-const pythonExecutablePath = path.join(process.cwd(), './data/.venv/bin/python');
+import { getDataPath } from '@/lib/paths';
+
+const dbPath = getDataPath('user_data.db');
+const pythonExecutablePath = getDataPath('.venv', 'bin', 'python');
 
 export async function POST(req: Request) {
     const db = new Database(dbPath);
@@ -138,7 +140,7 @@ export async function POST(req: Request) {
 
         let classifierOutput: string | undefined;
         if (autoCategorize) {
-            const dataDir = path.join(process.cwd(), 'data');
+            const dataDir = getDataPath();
             const scriptPath = path.join(dataDir, 'classify_transaction.py');
             classifierOutput = await new Promise<string>((resolve) => {
                 const proc = spawn(pythonExecutablePath, [scriptPath, String(startDate)], { cwd: dataDir });

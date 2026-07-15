@@ -3,6 +3,7 @@ import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
 import { GoogleGenerativeAI, FunctionDeclaration, SchemaType } from '@google/generative-ai';
+import { getDataPath } from '@/lib/paths';
 
 type ChartType = 'cumulative' | 'pie' | 'area' | 'bar';
 
@@ -11,10 +12,10 @@ type ModelResponse = {
     chart: ChartType;
 };
 
-const dbPath = path.join(process.cwd(), './data/user_data.db');
+const dbPath = getDataPath('user_data.db');
 
 function getGeminiClient() {
-    const settingsPath = path.join(process.cwd(), './data/user-settings.json');
+    const settingsPath = getDataPath('user-settings.json');
     let apiKey = '';
     try {
         const raw = fs.readFileSync(settingsPath, 'utf8');

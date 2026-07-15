@@ -2,9 +2,10 @@ import { FetchHistoryClient } from '../fetch-history-client';
 import Database from 'better-sqlite3';
 import path from 'path';
 import { unstable_cache } from 'next/cache';
+import { getDataPath } from '@/lib/paths';
 
 const getFetchHistory = unstable_cache(async () => {
-    const dbPath = path.join(process.cwd(), './data/user_data.db');
+    const dbPath = getDataPath('user_data.db');
     const db = new Database(dbPath);
     try {
         // Ensure necessary columns exist for the query (safety during build/first-run)

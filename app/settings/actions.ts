@@ -7,11 +7,13 @@ import { spawn } from "child_process";
 import { revalidateTag } from "next/cache";
 import { getSettings, updateSettings } from "@/lib/settings";
 
-const dbPath = path.join(process.cwd(), "./data/user_data.db");
-const pythonExecutablePath = path.join(process.cwd(), "./data/.venv/bin/python");
+import { getDataPath } from "@/lib/paths";
+
+const dbPath = getDataPath('user_data.db');
+const pythonExecutablePath = getDataPath('.venv', 'bin', 'python');
 
 async function classifyTransactionsByIds(transactionIds: string[]): Promise<{ output: string; categorizedCount?: number; }> {
-    const dataDir = path.join(process.cwd(), 'data');
+    const dataDir = getDataPath();
     const scriptPath = path.join(dataDir, 'classify_transaction.py');
     if (transactionIds.length === 0) {
         return { output: 'No transactions to classify.' };
@@ -421,7 +423,7 @@ export async function refreshAll(): Promise<{ message: string; classifierOutput?
         let classifierOutput: string | undefined;
         let categorizedCount: number | undefined;
         if (autoCategorize) {
-            const dataDir = path.join(process.cwd(), 'data');
+            const dataDir = getDataPath();
             const scriptPath = path.join(dataDir, 'classify_transaction.py');
             classifierOutput = await new Promise<string>((resolve) => {
                 const proc = spawn(pythonExecutablePath, [scriptPath, String(earliestStartDate)], { cwd: dataDir });
@@ -468,7 +470,7 @@ export async function getUncategorizedCount(): Promise<number> {
 }
 
 export async function getTop3PredictionsForTransaction(tx: { payee: string | null; description: string | null; amount: string | number; account_id: string; }): Promise<Array<{ category: string; confidence: number }>> {
-    const dataDir = path.join(process.cwd(), 'data');
+    const dataDir = getDataPath();
     const scriptPath = path.join(dataDir, 'classify_transaction.py');
     const payee = (tx.payee ?? '').toString();
     const description = (tx.description ?? '').toString();

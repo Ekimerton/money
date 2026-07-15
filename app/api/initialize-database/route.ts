@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Database from 'better-sqlite3';
-import path from 'path';
+import { getDataPath } from '@/lib/paths';
 
-const dbPath = path.join(process.cwd(), './data/user_data.db');
+const dbPath = getDataPath('user_data.db');
 
 export async function POST(req: NextRequest) {
   try {

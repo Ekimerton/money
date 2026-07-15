@@ -4,10 +4,12 @@ import { exec } from 'child_process';
 import { revalidateTag } from 'next/cache';
 import { updateSettings } from '@/lib/settings';
 
-const dbPath = path.join(process.cwd(), './data/user_data.db');
-const trainModelScriptPath = path.join(process.cwd(), './data/train_model.py');
-const pythonExecutablePath = path.join(process.cwd(), './data/.venv/bin/python');
-const modelSavePath = path.join(process.cwd(), './data/model');
+import { getDataPath } from '@/lib/paths';
+
+const dbPath = getDataPath('user_data.db');
+const trainModelScriptPath = getDataPath('train_model.py');
+const pythonExecutablePath = getDataPath('.venv', 'bin', 'python');
+const modelSavePath = getDataPath('model');
 
 export async function POST(req: NextRequest) {
     try {

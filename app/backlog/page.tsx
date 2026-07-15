@@ -4,9 +4,10 @@ import { BacklogClient } from '@/app/backlog/backlog-client';
 
 import { Transaction } from '@/lib/types';
 import { unstable_cache } from 'next/cache';
+import { getDataPath } from '@/lib/paths';
 
 const getBacklogData = unstable_cache(async () => {
-    const dbPath = path.join(process.cwd(), './data/user_data.db');
+    const dbPath = getDataPath('user_data.db');
     const db = new Database(dbPath);
     try {
         const rows = db.prepare("SELECT * FROM transactions WHERE category = 'Uncategorized' AND hidden = 0 ORDER BY transacted_at DESC").all() as any[];

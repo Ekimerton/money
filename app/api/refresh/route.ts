@@ -1,9 +1,10 @@
 import Database from 'better-sqlite3';
 import path from 'path';
+import { getDataPath } from '@/lib/paths';
 import { revalidateTag } from 'next/cache';
 import { getSettings } from '@/lib/settings';
 
-const dbPath = path.join(process.cwd(), './data/user_data.db');
+const dbPath = getDataPath('user_data.db');
 
 export async function POST(req: Request) {
   const db = new Database(dbPath);

@@ -17,7 +17,9 @@ interface Account {
   balance_date: number;
 }
 
-const dbPath = path.join(process.cwd(), './data/user_data.db');
+import { getDataPath } from '@/lib/paths';
+
+const dbPath = getDataPath('user_data.db');
 const db = new Database(dbPath);
 
 export async function GET(request: Request) {
