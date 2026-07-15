@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import path from 'path';
-import { revalidateTag } from 'next/cache';
+import { revalidateTag } from '@/lib/revalidate';
 import { updateSettings } from '@/lib/settings';
 
 export async function POST(req: NextRequest) {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { revalidateTag } from 'next/cache';
+import { revalidateTag } from '@/lib/revalidate';
 import Database from 'better-sqlite3';
 
 export async function POST(req: NextRequest) {

@@ -2,7 +2,7 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 import { spawn } from 'child_process';
-import { revalidateTag } from 'next/cache';
+import { revalidateTag } from '@/lib/revalidate';
 import { getSettings } from '@/lib/settings';
 
 interface LatestTransactionRow {

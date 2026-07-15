@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 import { getDataPath } from '@/lib/paths';
-import { revalidateTag } from 'next/cache';
+import { revalidateTag } from '@/lib/revalidate';
 import { getSettings } from '@/lib/settings';
 
 const dbPath = getDataPath('user_data.db');

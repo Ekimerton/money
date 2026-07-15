@@ -4,7 +4,7 @@ import Database from "better-sqlite3";
 import path from "path";
 import fs from "fs";
 import { spawn } from "child_process";
-import { revalidateTag } from "next/cache";
+import { revalidateTag } from "@/lib/revalidate";
 import { getSettings, updateSettings } from "@/lib/settings";
 
 import { getDataPath } from "@/lib/paths";

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Database from 'better-sqlite3';
 import { getDataPath } from '@/lib/paths';
-import { revalidateTag } from 'next/cache';
+import { revalidateTag } from '@/lib/revalidate';
 
 const dbPath = getDataPath('user_data.db');
 

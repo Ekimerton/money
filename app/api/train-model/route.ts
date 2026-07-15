@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import path from 'path';
 import { exec } from 'child_process';
-import { revalidateTag } from 'next/cache';
+import { revalidateTag } from '@/lib/revalidate';
 import { updateSettings } from '@/lib/settings';
 
 import { getDataPath } from '@/lib/paths';
