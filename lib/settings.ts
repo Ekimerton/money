@@ -1,7 +1,13 @@
 import fs from 'fs/promises';
 import { getDataPath } from './paths';
 
-export type InsightChartType = 'cumulative' | 'pie' | 'area' | 'bar';
+export type InsightChartType =
+    | 'cumulative'
+    | 'pie'
+    | 'area'
+    | 'bar'
+    | 'stacked_bar'
+    | 'multi_line';
 
 export interface InsightChartPayload {
     id: string;

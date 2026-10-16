@@ -17,6 +17,8 @@ import {
     Cell,
     BarChart,
     Bar,
+    LineChart,
+    Line,
     CartesianGrid,
     XAxis,
     YAxis,
@@ -33,14 +35,9 @@ import {
     Code2,
     Copy,
     Check,
-    BarChart3,
-    PieChart as PieChartIcon,
-    TrendingUp,
-    Table as TableIcon,
     ArrowDown,
     RotateCcw,
     ArrowLeft,
-    Layers,
     ChevronRight,
     MessageSquare,
 } from "lucide-react";
@@ -52,7 +49,6 @@ import type {
 } from "@/lib/settings";
 
 export type ChartType = InsightChartType;
-type ViewMode = ChartType | "table";
 export type ChartPayload = InsightChartPayload;
 type ChatMessage = InsightChatMessage;
 
@@ -162,6 +158,7 @@ function normalizeChartData(rawRows: any[], targetMode: ChartType) {
         let workingRows = rawRows;
         let seriesCategories = otherKeys;
 
+        let didPivot = false;
         if (otherKeys.length === 2) {
             const [k1, k2] = otherKeys;
             const sample = rawRows.find((r) => r[k1] != null && r[k2] != null) || rawRows[0];
@@ -169,6 +166,7 @@ function normalizeChartData(rawRows: any[], targetMode: ChartType) {
             const k2IsNum = !isNaN(Number(sample?.[k2])) && typeof sample?.[k2] !== "boolean";
 
             if (!k1IsNum && k2IsNum) {
+                didPivot = true;
                 const pivotMap = new Map<string, Record<string, any>>();
                 const catTotals: Record<string, number> = {};
                 for (const r of rawRows) {
@@ -191,7 +189,9 @@ function normalizeChartData(rawRows: any[], targetMode: ChartType) {
                     return filled;
                 });
             }
-        } else {
+        }
+
+        if (!didPivot) {
             workingRows = rawRows.map((r) => {
                 const copy: Record<string, any> = { [dateKey]: r[dateKey] };
                 for (const c of seriesCategories) {
@@ -510,35 +510,19 @@ function MarkdownContent({ content }: { content: string }) {
 }
 
 /**
- * Embedded interactive chart card rendered inside an assistant turn
+ * Embedded interactive chart card rendered inside an assistant turn.
+ * Renders the exact chart type selected by the AI.
  */
 function EmbeddedChartCard({ chartPayload }: { chartPayload: ChartPayload }) {
-    const [viewMode, setViewMode] = React.useState<ViewMode>(chartPayload.chart);
     const [sqlOpen, setSqlOpen] = React.useState(false);
     const [copiedSql, setCopiedSql] = React.useState(false);
 
-    const activeChartType: ChartType = viewMode === "table" ? chartPayload.chart : viewMode;
+    const chartType: ChartType = chartPayload.chart;
 
-    const normalized = React.useMemo(() => {
-        const base = normalizeChartData(chartPayload.rows, activeChartType);
-        if (
-            activeChartType === "cumulative" &&
-            chartPayload.chart !== "cumulative" &&
-            base.isTimeSeries
-        ) {
-            const running: Record<string, number> = {};
-            const cumRows = base.rows.map((r) => {
-                const nextRow: Record<string, any> = { [base.dateKey]: r[base.dateKey] };
-                for (const c of base.categories) {
-                    running[c] = (running[c] || 0) + (Number(r[c]) || 0);
-                    nextRow[c] = running[c];
-                }
-                return nextRow;
-            });
-            return { ...base, rows: cumRows };
-        }
-        return base;
-    }, [chartPayload.rows, chartPayload.chart, activeChartType]);
+    const normalized = React.useMemo(
+        () => normalizeChartData(chartPayload.rows, chartType),
+        [chartPayload.rows, chartType]
+    );
 
     const copySql = async () => {
         try {
@@ -559,58 +543,10 @@ function EmbeddedChartCard({ chartPayload }: { chartPayload: ChartPayload }) {
             );
         }
 
-        if (viewMode === "table") {
-            const cols = Object.keys(chartPayload.rows[0]);
-            return (
-                <div className="max-h-[300px] overflow-auto rounded-lg border border-neutral-200 dark:border-neutral-800">
-                    <table className="w-full text-left text-xs border-collapse">
-                        <thead className="sticky top-0 bg-neutral-100 dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800">
-                            <tr>
-                                {cols.map((col) => (
-                                    <th
-                                        key={col}
-                                        className="px-3 py-2 font-mono font-semibold text-neutral-700 dark:text-neutral-300"
-                                    >
-                                        {formatLabel(col)}
-                                    </th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-neutral-200/60 dark:divide-neutral-800/60">
-                            {chartPayload.rows.map((r, rIdx) => (
-                                <tr
-                                    key={rIdx}
-                                    className="hover:bg-neutral-50 dark:hover:bg-neutral-900/50"
-                                >
-                                    {cols.map((col) => {
-                                        const val = r[col];
-                                        const isNum =
-                                            typeof val === "number" ||
-                                            (typeof val === "string" &&
-                                                val.trim() !== "" &&
-                                                !isNaN(Number(val)) &&
-                                                !/^\d{4}/.test(val));
-                                        return (
-                                            <td
-                                                key={col}
-                                                className="px-3 py-1.5 font-mono text-neutral-700 dark:text-neutral-300"
-                                            >
-                                                {isNum ? formatCurrency(Number(val)) : String(val ?? "")}
-                                            </td>
-                                        );
-                                    })}
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            );
-        }
-
         const { isTimeSeries, dateKey, categories, labelKey, valueKey, rows, isMonthly } =
             normalized;
 
-        if (viewMode === "pie") {
+        if (chartType === "pie") {
             const total = rows.reduce((acc, r) => acc + (Number(r?.[valueKey]) || 0), 0);
             return (
                 <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
@@ -691,8 +627,14 @@ function EmbeddedChartCard({ chartPayload }: { chartPayload: ChartPayload }) {
             );
         }
 
-        // Time-series Area / Cumulative / Bar
-        if (isTimeSeries || viewMode === "area" || viewMode === "cumulative") {
+        // Time-series or Multi-Series Charts: multi_line, area, cumulative, stacked_bar, or time-series bar
+        if (
+            isTimeSeries ||
+            chartType === "multi_line" ||
+            chartType === "area" ||
+            chartType === "cumulative" ||
+            chartType === "stacked_bar"
+        ) {
             const xKey = isTimeSeries ? dateKey : labelKey;
             const seriesKeys = isTimeSeries ? categories : [valueKey];
             const chartConfig: any = {};
@@ -702,6 +644,11 @@ function EmbeddedChartCard({ chartPayload }: { chartPayload: ChartPayload }) {
                     color: COLORS[idx % COLORS.length],
                 };
             });
+
+            const showPercentageAndSum =
+                chartType === "stacked_bar" ||
+                chartType === "area" ||
+                chartType === "cumulative";
 
             const tooltipFormatter = ((
                 value: any,
@@ -715,7 +662,7 @@ function EmbeddedChartCard({ chartPayload }: { chartPayload: ChartPayload }) {
                 const labelText = chartConfig[key]?.label ?? formatLabel(key);
                 const numericValue = Number(value);
                 const sum =
-                    seriesKeys.length > 1 && p
+                    showPercentageAndSum && seriesKeys.length > 1 && p
                         ? seriesKeys.reduce((acc, cat) => acc + (Number(p?.[cat]) || 0), 0)
                         : 0;
                 const percent = sum > 0 ? numericValue / sum : 0;
@@ -728,7 +675,7 @@ function EmbeddedChartCard({ chartPayload }: { chartPayload: ChartPayload }) {
                             />
                             <span className="text-neutral-500 dark:text-neutral-400">
                                 {labelText}
-                                {seriesKeys.length > 1
+                                {showPercentageAndSum && seriesKeys.length > 1
                                     ? ` (${Intl.NumberFormat("en-US", {
                                           style: "percent",
                                           maximumFractionDigits: 0,
@@ -751,14 +698,79 @@ function EmbeddedChartCard({ chartPayload }: { chartPayload: ChartPayload }) {
                 return (
                     <div className="flex justify-between gap-4 w-full pb-1.5 border-b border-neutral-100 dark:border-neutral-800 mb-1 text-neutral-950 dark:text-neutral-50">
                         <span>{isTimeSeries ? formatDateTooltip(rawX, isMonthly) : String(rawX)}</span>
-                        {seriesKeys.length > 1 && (
+                        {showPercentageAndSum && seriesKeys.length > 1 && (
                             <span className="font-mono font-semibold">{formatCurrency(total)}</span>
                         )}
                     </div>
                 );
             };
 
-            if (viewMode === "area" || viewMode === "cumulative") {
+            if (chartType === "multi_line") {
+                return (
+                    <ChartContainer
+                        config={chartConfig}
+                        className="aspect-auto h-[260px] max-sm:h-[210px] w-full"
+                    >
+                        <LineChart data={rows} margin={{ left: 4, right: 12, top: 8, bottom: 0 }}>
+                            <CartesianGrid
+                                vertical={false}
+                                strokeDasharray="3 3"
+                                className="stroke-neutral-200/70 dark:stroke-neutral-800/70"
+                            />
+                            <XAxis
+                                dataKey={xKey}
+                                tickLine={false}
+                                axisLine={false}
+                                tickMargin={6}
+                                minTickGap={28}
+                                tickFormatter={(v) =>
+                                    isTimeSeries ? formatDateAxis(v, isMonthly) : String(v).slice(0, 12)
+                                }
+                                className="text-[10px] font-mono text-neutral-500"
+                            />
+                            <YAxis
+                                tickLine={false}
+                                axisLine={false}
+                                width={48}
+                                tickFormatter={(v) => formatCompactCurrency(Number(v))}
+                                className="text-[10px] font-mono text-neutral-500"
+                            />
+                            <ChartTooltip
+                                content={
+                                    <ChartTooltipContent
+                                        labelFormatter={renderLabelHeader}
+                                        indicator="dot"
+                                        formatter={tooltipFormatter}
+                                    />
+                                }
+                            />
+                            {seriesKeys.map((cat) => (
+                                <Line
+                                    key={cat}
+                                    dataKey={cat}
+                                    type="monotone"
+                                    stroke={chartConfig[cat]?.color}
+                                    strokeWidth={2.5}
+                                    dot={
+                                        rows.length <= 24
+                                            ? { r: 3, fill: chartConfig[cat]?.color, strokeWidth: 0 }
+                                            : false
+                                    }
+                                    activeDot={{ r: 5, strokeWidth: 0 }}
+                                />
+                            ))}
+                            {seriesKeys.length > 1 && (
+                                <ChartLegend
+                                    content={<ChartLegendContent />}
+                                    className="max-sm:hidden text-neutral-950 dark:text-neutral-50 pt-2"
+                                />
+                            )}
+                        </LineChart>
+                    </ChartContainer>
+                );
+            }
+
+            if (chartType === "area" || chartType === "cumulative") {
                 return (
                     <ChartContainer
                         config={chartConfig}
@@ -822,7 +834,8 @@ function EmbeddedChartCard({ chartPayload }: { chartPayload: ChartPayload }) {
                 );
             }
 
-            // Time-series BarChart
+            // Stacked BarChart vs Standard/Grouped Time-Series BarChart
+            const isStacked = chartType === "stacked_bar";
             return (
                 <ChartContainer
                     config={chartConfig}
@@ -840,7 +853,9 @@ function EmbeddedChartCard({ chartPayload }: { chartPayload: ChartPayload }) {
                             axisLine={false}
                             tickMargin={6}
                             minTickGap={24}
-                            tickFormatter={(v) => formatDateAxis(v, isMonthly)}
+                            tickFormatter={(v) =>
+                                isTimeSeries ? formatDateAxis(v, isMonthly) : String(v).slice(0, 12)
+                            }
                             className="text-[10px] font-mono text-neutral-500"
                         />
                         <YAxis
@@ -865,9 +880,13 @@ function EmbeddedChartCard({ chartPayload }: { chartPayload: ChartPayload }) {
                                 dataKey={cat}
                                 fill={chartConfig[cat]?.color}
                                 radius={
-                                    idx === seriesKeys.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]
+                                    isStacked
+                                        ? idx === seriesKeys.length - 1
+                                            ? [4, 4, 0, 0]
+                                            : [0, 0, 0, 0]
+                                        : [4, 4, 0, 0]
                                 }
-                                stackId="1"
+                                stackId={isStacked ? "1" : undefined}
                             />
                         ))}
                         {seriesKeys.length > 1 && (
@@ -950,14 +969,6 @@ function EmbeddedChartCard({ chartPayload }: { chartPayload: ChartPayload }) {
         );
     };
 
-    const modeOptions: Array<{ mode: ViewMode; label: string; icon: React.ComponentType<any> }> = [
-        { mode: "bar", label: "Bar", icon: BarChart3 },
-        { mode: "area", label: "Area", icon: TrendingUp },
-        { mode: "cumulative", label: "Cumulative", icon: Layers },
-        { mode: "pie", label: "Pie", icon: PieChartIcon },
-        { mode: "table", label: "Table", icon: TableIcon },
-    ];
-
     return (
         <div className="my-3 rounded-2xl border border-neutral-200/90 dark:border-neutral-800 bg-white/80 dark:bg-neutral-900/60 p-4 shadow-xs backdrop-blur-xs">
             {/* Header */}
@@ -967,11 +978,13 @@ function EmbeddedChartCard({ chartPayload }: { chartPayload: ChartPayload }) {
                         <h4 className="font-semibold text-sm text-neutral-900 dark:text-neutral-100 truncate">
                             {chartPayload.title}
                         </h4>
-                        {normalized.grandTotal > 0 && viewMode !== "cumulative" && (
-                            <span className="rounded-md bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 font-mono text-xs font-medium text-neutral-700 dark:text-neutral-300">
-                                {formatCurrency(normalized.grandTotal)}
-                            </span>
-                        )}
+                        {normalized.grandTotal > 0 &&
+                            chartType !== "cumulative" &&
+                            chartType !== "multi_line" && (
+                                <span className="rounded-md bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 font-mono text-xs font-medium text-neutral-700 dark:text-neutral-300">
+                                    {formatCurrency(normalized.grandTotal)}
+                                </span>
+                            )}
                     </div>
                     {chartPayload.subtitle && (
                         <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
@@ -980,31 +993,8 @@ function EmbeddedChartCard({ chartPayload }: { chartPayload: ChartPayload }) {
                     )}
                 </div>
 
-                {/* Controls: View mode pills + SQL toggle */}
-                <div className="flex items-center gap-1 flex-wrap">
-                    <div className="inline-flex items-center rounded-lg bg-neutral-100 dark:bg-neutral-800/90 p-0.5">
-                        {modeOptions.map((opt) => {
-                            const Icon = opt.icon;
-                            const active = viewMode === opt.mode;
-                            return (
-                                <button
-                                    key={opt.mode}
-                                    type="button"
-                                    onClick={() => setViewMode(opt.mode)}
-                                    title={`View as ${opt.label}`}
-                                    className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium transition-colors ${
-                                        active
-                                            ? "bg-white dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 shadow-2xs"
-                                            : "text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200"
-                                    }`}
-                                >
-                                    <Icon className="size-3" />
-                                    <span className="max-sm:hidden">{opt.label}</span>
-                                </button>
-                            );
-                        })}
-                    </div>
-
+                {/* Controls: SQL toggle */}
+                <div className="flex items-center gap-1">
                     <Button
                         type="button"
                         variant="ghost"
@@ -1076,7 +1066,6 @@ export default function InsightsClient({
     const [messages, setMessages] = React.useState<ChatMessage[]>([]);
     const [prompt, setPrompt] = React.useState("");
     const [loading, setLoading] = React.useState(false);
-    const [copiedMsgId, setCopiedMsgId] = React.useState<string | null>(null);
     const [showScrollBottom, setShowScrollBottom] = React.useState(false);
 
     const scrollContainerRef = React.useRef<HTMLDivElement | null>(null);

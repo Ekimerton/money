@@ -10,7 +10,22 @@ import {
     InsightThread,
 } from '@/lib/settings';
 
-export type ChartType = 'cumulative' | 'pie' | 'area' | 'bar';
+export type ChartType =
+    | 'cumulative'
+    | 'pie'
+    | 'area'
+    | 'bar'
+    | 'stacked_bar'
+    | 'multi_line';
+
+const ALLOWED_CHART_TYPES: ChartType[] = [
+    'bar',
+    'stacked_bar',
+    'multi_line',
+    'area',
+    'cumulative',
+    'pie',
+];
 
 export interface ChartPayload {
     id: string;
@@ -129,23 +144,26 @@ SQL & Financial Data Rules:
 How to Respond (Text + Embedded Charts + Follow-ups):
 - You can reply with rich, helpful Markdown text, embedded interactive charts (by calling the \`render_chart\` tool), or BOTH!
 - Use \`explore_database\` first whenever you need to verify merchant names, check specific transactions, or get exact numbers for a text-only question.
-- Call \`render_chart\` whenever a visual chart helps illustrate the answer (e.g., trends over time, category breakdowns, merchant comparisons, cumulative spend, net worth / balance history). You can even call \`render_chart\` multiple times if comparing two different views!
+- Call \`render_chart\` whenever a visual chart helps illustrate the answer. You are responsible for choosing the best chart type for the data (the user cannot manually switch chart types, unless they ask you in a follow-up).
 - Even when you call \`render_chart\`, ALWAYS provide a concise, insightful natural-language Markdown response summarizing the key takeaways, notable numbers, averages, or spikes so the user gets both visual and written analysis.
 - Do NOT dump raw JSON blocks for charts in your text response—use the \`render_chart\` tool to embed charts.
 
-Chart Types & Column Naming Rules for \`render_chart\`:
-- \`bar\`: Best for categorical comparisons (e.g., top merchants, category totals) AND discrete time-series (e.g., monthly or daily spend).
+Chart Types & Selection Heuristics for \`render_chart\`:
+- \`bar\`: Best for single-series categorical comparisons (e.g., top 10 merchants, category totals) OR single-series discrete time-series (e.g., monthly total spend).
   - For categorical bar charts: return \`label\` and \`value\` columns (e.g., \`SELECT category AS label, ROUND(SUM(ABS(CAST(amount AS REAL))), 2) AS value ...\`).
   - For single-series time-series bar charts: return \`date\` and a human-readable Title Case value column (e.g., \`SELECT STRFTIME('%Y-%m-01', transacted_at, 'unixepoch') AS date, ROUND(SUM(ABS(CAST(amount AS REAL))), 2) AS "Monthly Spend" ...\`).
-  - For multi-series time-series bar charts: either return wide columns (\`date\`, \`"Dining Out"\`, \`"Groceries"\`) using \`SUM(CASE WHEN ...)\` OR return \`date\`, \`series\` (or \`category\`), and \`value\`—the UI automatically pivots 3-column \`(date, series, value)\` data!
-- \`pie\`: Best for composition/percentage breakdowns (e.g., spending by category). Return \`label\` and \`value\` columns.
-- \`area\`: Best for continuous time-series trends (e.g., account balance history or spending trends over many data points). Return \`date\` and one or more value columns (or \`date\`, \`series\`, \`value\`).
-- \`cumulative\`: Use when the user asks for cumulative spend, running total, or growth over time. Return \`date\` and cumulative value column(s) (or daily values to be stacked/accumulated).
+- \`stacked_bar\`: Best for discrete time periods (e.g., monthly or weekly spend) broken down into multiple categories, merchants, or accounts where both the **overall period total** and the **composition breakdown** matter (e.g., "monthly spending by category", "spending breakdown over the last 6 months").
+  - Return either wide columns (\`date\`, \`"Category A"\`, \`"Category B"\`) OR 3 columns (\`date\`, \`category\`, \`value\`)—the UI automatically pivots 3-column \`(date, series, value)\` rows!
+- \`multi_line\`: Best for comparing the trajectories/trends of **2 or more series over time** on the same axis without stacking (e.g., "compare dining out vs groceries over time", "compare balances across my accounts", "trend of top categories over the year"). Also great for unstacked line trends.
+  - Return either wide columns (\`date\`, \`"Series A"\`, \`"Series B"\`) OR 3 columns (\`date\`, \`series\`, \`value\`).
+- \`pie\`: Best for composition/percentage share of a whole over a single time range (e.g., spending share by category). Return \`label\` and \`value\` columns.
+- \`area\`: Best for a single continuous time-series trend over many data points (e.g., daily net worth or account balance history). Return \`date\` and value column(s).
+- \`cumulative\`: Use when the user asks for cumulative spend, running total, or growth over time. Return \`date\` and cumulative value column(s).
 
 Follow-Up Suggestions:
 - At the very end of your final Markdown response, include 2 to 3 short, natural follow-up questions the user can click next, wrapped in a \`<followups>\` tag containing a JSON string array.
 - Example:
-  \`<followups>["Break this down by month", "Which individual transactions were the largest?", "Compare this to the previous 3 months"]</followups>\`
+  \`<followups>["Show this as a stacked bar chart by category", "Which individual transactions were the largest?", "Compare this to the previous 3 months"]</followups>\`
 `;
 }
 
@@ -292,13 +310,13 @@ export async function POST(req: NextRequest) {
         const renderChartDeclaration: FunctionDeclaration = {
             name: 'render_chart',
             description:
-                'Execute a read-only SQLite SELECT query and embed an interactive chart in your response to the user. Use this whenever a visual graph (bar, pie, area, cumulative) adds value to your answer.',
+                'Execute a read-only SQLite SELECT query and embed an interactive chart in your response to the user. Choose the best chart type for the data.',
             parameters: {
                 type: SchemaType.OBJECT,
                 properties: {
                     title: {
                         type: SchemaType.STRING,
-                        description: 'Clean, descriptive title for the chart (e.g. "Monthly Amazon Spending", "Top Spending Categories")',
+                        description: 'Clean, descriptive title for the chart (e.g. "Monthly Spending by Category", "Dining Out vs. Groceries")',
                     },
                     subtitle: {
                         type: SchemaType.STRING,
@@ -306,14 +324,15 @@ export async function POST(req: NextRequest) {
                     },
                     chart: {
                         type: SchemaType.STRING,
-                        description: "The chart type: 'bar', 'pie', 'area', or 'cumulative'",
-                        enum: ['bar', 'pie', 'area', 'cumulative'],
+                        description:
+                            "The chart type to render: 'bar' (single-series or grouped bar), 'stacked_bar' (stacked bar breakdown over time), 'multi_line' (unstacked multi-series line graph for comparing trends), 'pie' (donut breakdown), 'area', or 'cumulative'",
+                        enum: ['bar', 'stacked_bar', 'multi_line', 'pie', 'area', 'cumulative'],
                         format: 'enum',
                     },
                     sql: {
                         type: SchemaType.STRING,
                         description:
-                            "The SQLite SELECT query that produces the chart data. Follow column naming rules: 'date' for time series, 'label' and 'value' for categorical bar/pie charts.",
+                            "The SQLite SELECT query that produces the chart data. Follow column naming rules: 'date' for time series (with wide series columns or (date, series, value)), 'label' and 'value' for categorical bar/pie charts.",
                     },
                 },
                 required: ['title', 'chart', 'sql'],
@@ -419,7 +438,7 @@ export async function POST(req: NextRequest) {
                     try {
                         const sql = String(chartArgs?.sql || '').trim().replace(/;+\s*$/, '');
                         const chartType: ChartType =
-                            chartArgs?.chart && ['bar', 'pie', 'area', 'cumulative'].includes(chartArgs.chart)
+                            chartArgs?.chart && ALLOWED_CHART_TYPES.includes(chartArgs.chart)
                                 ? chartArgs.chart
                                 : 'bar';
                         const title = String(chartArgs?.title || 'Financial Insight').trim();
@@ -500,7 +519,7 @@ export async function POST(req: NextRequest) {
                     if (
                         parsed &&
                         typeof parsed.sql === 'string' &&
-                        ['bar', 'pie', 'area', 'cumulative'].includes(parsed.chart) &&
+                        ALLOWED_CHART_TYPES.includes(parsed.chart) &&
                         !UNSAFE_SQL_REGEX.test(parsed.sql)
                     ) {
                         const rows = dbToClose.prepare(parsed.sql).all();
