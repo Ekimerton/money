@@ -1156,8 +1156,7 @@ export default function InsightsClient({
     };
 
     const handleOpenThread = (thread: InsightThread) => {
-        setActiveThreadId(thread.id);
-        setMessages(thread.messages || []);
+        sendMessage(thread.firstPrompt);
     };
 
     const startNewChat = () => {
@@ -1172,7 +1171,14 @@ export default function InsightsClient({
         if (!trimmed || loading) return;
 
         const now = Date.now();
-        const threadId = activeThreadId || `thread_${now}_${Math.random().toString(36).slice(2, 7)}`;
+        const isFirstTurn = messages.length === 0;
+        const existingByPrompt = threads.find(
+            (t) => t.firstPrompt.trim().toLowerCase() === trimmed.toLowerCase()
+        );
+        const threadId =
+            activeThreadId ||
+            existingByPrompt?.id ||
+            `thread_${now}_${Math.random().toString(36).slice(2, 7)}`;
         if (!activeThreadId) {
             setActiveThreadId(threadId);
         }
@@ -1189,10 +1195,24 @@ export default function InsightsClient({
         setPrompt("");
         setLoading(true);
 
-        const firstPromptText =
-            updatedMessages.find((m) => m.role === "user")?.content || trimmed;
-        const existingThread = threads.find((t) => t.id === threadId);
-        const createdAt = existingThread?.createdAt || now;
+        if (isFirstTurn) {
+            const updatedThread: InsightThread = {
+                id: threadId,
+                firstPrompt: trimmed,
+                createdAt: existingByPrompt?.createdAt || now,
+                updatedAt: now,
+                messages: [],
+            };
+            setThreads((prev) => [
+                updatedThread,
+                ...prev.filter(
+                    (t) =>
+                        t.id !== threadId &&
+                        t.firstPrompt.trim().toLowerCase() !== trimmed.toLowerCase()
+                ),
+            ]);
+            persistThread(updatedThread);
+        }
 
         try {
             const payloadMessages = updatedMessages.map((m) => ({
@@ -1232,19 +1252,6 @@ export default function InsightsClient({
 
             const finalMessages = [...updatedMessages, assistantMsg];
             setMessages(finalMessages);
-
-            const updatedThread: InsightThread = {
-                id: threadId,
-                firstPrompt: firstPromptText,
-                createdAt,
-                updatedAt: Date.now(),
-                messages: finalMessages,
-            };
-            setThreads((prev) => [
-                updatedThread,
-                ...prev.filter((t) => t.id !== threadId),
-            ]);
-            persistThread(updatedThread);
         } catch (err: any) {
             const errorMsg: ChatMessage = {
                 id: `assistant_err_${Date.now()}`,
@@ -1271,16 +1278,6 @@ export default function InsightsClient({
             if (prompt.trim() && !loading) {
                 sendMessage(prompt);
             }
-        }
-    };
-
-    const handleCopyMessage = async (msg: ChatMessage) => {
-        try {
-            await navigator.clipboard.writeText(msg.content);
-            setCopiedMsgId(msg.id);
-            setTimeout(() => setCopiedMsgId(null), 1800);
-        } catch {
-            // ignore
         }
     };
 
@@ -1409,30 +1406,6 @@ export default function InsightsClient({
                                                         />
                                                     ))}
 
-                                                {/* Message footer actions */}
-                                                <div className="flex items-center gap-1 pt-1">
-                                                    {msg.content && (
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleCopyMessage(msg)}
-                                                            className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 dark:hover:bg-neutral-800 dark:hover:text-neutral-200 transition-colors"
-                                                            title="Copy response"
-                                                        >
-                                                            {copiedMsgId === msg.id ? (
-                                                                <>
-                                                                    <Check className="size-3 text-emerald-500" />
-                                                                    <span>Copied</span>
-                                                                </>
-                                                            ) : (
-                                                                <>
-                                                                    <Copy className="size-3" />
-                                                                    <span>Copy</span>
-                                                                </>
-                                                            )}
-                                                        </button>
-                                                    )}
-                                                </div>
-
                                                 {/* Suggested Follow-Up Chips on latest turn */}
                                                 {isLastAssistant &&
                                                     !loading &&
@@ -1519,7 +1492,7 @@ export default function InsightsClient({
                             onKeyDown={handleKeyDown}
                             disabled={loading}
                             style={{ fieldSizing: "content" } as React.CSSProperties}
-                            className="flex-1 h-auto min-h-[1.5rem] resize-none bg-transparent border-none px-1 py-0.5 text-sm leading-6 outline-none placeholder:text-neutral-400 dark:placeholder:text-neutral-500 disabled:opacity-50 max-h-40 overflow-y-auto"
+                            className="flex-1 h-auto min-h-[1.5rem] resize-none bg-transparent border-none px-1 py-0.5 text-base sm:text-sm leading-6 outline-none placeholder:text-neutral-400 dark:placeholder:text-neutral-500 disabled:opacity-50 max-h-40 overflow-y-auto"
                         />
 
                         <Button

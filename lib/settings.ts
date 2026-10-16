@@ -73,8 +73,18 @@ export async function getInsightThreads(): Promise<InsightThread[]> {
 
 export async function upsertInsightThread(thread: InsightThread): Promise<InsightThread[]> {
     const current = await getInsightThreads();
-    const filtered = current.filter((t) => t.id !== thread.id);
-    const updated = [thread, ...filtered].slice(0, 50);
+    const normPrompt = thread.firstPrompt.trim().toLowerCase();
+    const filtered = current.filter(
+        (t) => t.id !== thread.id && t.firstPrompt.trim().toLowerCase() !== normPrompt
+    );
+    const lightThread: InsightThread = {
+        id: thread.id,
+        firstPrompt: thread.firstPrompt.trim(),
+        createdAt: thread.createdAt,
+        updatedAt: thread.updatedAt,
+        messages: [],
+    };
+    const updated = [lightThread, ...filtered].slice(0, 50);
     await fs.writeFile(INSIGHTS_HISTORY_PATH, JSON.stringify(updated, null, 2), 'utf-8');
     return updated;
 }
