@@ -9,7 +9,7 @@ export default async function InsightsPage() {
         getInsightThreads(),
     ]);
     return (
-        <div className="h-full w-full flex flex-col overflow-hidden">
+        <div className="h-full w-full min-w-0 flex flex-col overflow-hidden">
             <InsightsClient
                 initialDisplayName={settings.displayName || ""}
                 initialThreads={threads}

@@ -1287,41 +1287,41 @@ export default function InsightsClient({
     const isEmpty = messages.length === 0;
 
     return (
-        <div className="relative flex flex-col h-full w-full bg-background overflow-hidden">
+        <div className="relative flex flex-col h-full w-full min-w-0 bg-background overflow-hidden">
             {/* Main Scrollable Chat Area */}
             <div
                 ref={scrollContainerRef}
                 onScroll={handleScroll}
-                className="flex-1 overflow-y-auto px-4"
+                className="flex-1 w-full min-w-0 overflow-y-auto overflow-x-hidden px-4"
             >
                 {isEmpty ? (
                     /* Gemini-style Empty Greeting State + Previous Queries List */
-                    <div className="mx-auto flex min-h-full max-w-3xl flex-col justify-center py-8 sm:py-12">
-                        <div className="mb-8 space-y-2">
-                            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight bg-gradient-to-r from-indigo-600 via-purple-600 to-emerald-600 dark:from-indigo-400 dark:via-purple-400 dark:to-emerald-400 bg-clip-text text-transparent">
+                    <div className="mx-auto flex min-h-full w-full min-w-0 max-w-3xl flex-col justify-center py-8 sm:py-12">
+                        <div className="mb-8 space-y-2 min-w-0">
+                            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight bg-gradient-to-r from-indigo-600 via-purple-600 to-emerald-600 dark:from-indigo-400 dark:via-purple-400 dark:to-emerald-400 bg-clip-text text-transparent break-words">
                                 Hello{initialDisplayName ? `, ${initialDisplayName}` : " there"}
                             </h1>
-                            <p className="text-lg sm:text-xl font-medium text-neutral-500 dark:text-neutral-400">
+                            <p className="text-lg sm:text-xl font-medium text-neutral-500 dark:text-neutral-400 break-words">
                                 What would you like to know about your finances today?
                             </p>
                         </div>
 
                         {/* Previous Queries List (displaying the first prompt) */}
                         {threads.length > 0 && (
-                            <div className="space-y-2">
+                            <div className="w-full min-w-0 space-y-2">
                                 <p className="text-xs font-medium uppercase tracking-wider text-neutral-400 dark:text-neutral-500 px-1">
                                     Previous Queries
                                 </p>
-                                <div className="divide-y divide-neutral-200/70 dark:divide-neutral-800/80 rounded-2xl border border-neutral-200/80 dark:border-neutral-800/90 bg-neutral-50/50 dark:bg-neutral-900/40 overflow-hidden">
+                                <div className="w-full min-w-0 divide-y divide-neutral-200/70 dark:divide-neutral-800/80 rounded-2xl border border-neutral-200/80 dark:border-neutral-800/90 bg-neutral-50/50 dark:bg-neutral-900/40 overflow-hidden">
                                     {threads.map((thread) => (
                                         <div
                                             key={thread.id}
                                             onClick={() => handleOpenThread(thread)}
-                                            className="group flex items-center justify-between gap-3 px-4 py-3 hover:bg-neutral-100/80 dark:hover:bg-neutral-800/60 cursor-pointer transition-colors"
+                                            className="group flex w-full min-w-0 items-center justify-between gap-3 px-4 py-3 hover:bg-neutral-100/80 dark:hover:bg-neutral-800/60 cursor-pointer transition-colors"
                                         >
-                                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                                            <div className="flex items-center gap-3 min-w-0 flex-1 overflow-hidden">
                                                 <MessageSquare className="size-4 shrink-0 text-neutral-400 dark:text-neutral-500 group-hover:text-neutral-700 dark:group-hover:text-neutral-300 transition-colors" />
-                                                <span className="text-sm text-neutral-800 dark:text-neutral-200 truncate">
+                                                <span className="block min-w-0 flex-1 text-sm text-neutral-800 dark:text-neutral-200 truncate">
                                                     {thread.firstPrompt}
                                                 </span>
                                             </div>
@@ -1329,7 +1329,7 @@ export default function InsightsClient({
                                                 <button
                                                     type="button"
                                                     onClick={(e) => handleDeleteThread(thread.id, e)}
-                                                    className="opacity-0 group-hover:opacity-100 p-1 text-neutral-400 hover:text-red-500 transition-opacity"
+                                                    className="sm:opacity-0 sm:group-hover:opacity-100 p-1 text-neutral-400 hover:text-red-500 transition-opacity"
                                                     title="Delete query"
                                                 >
                                                     <Trash2 className="size-3.5" />
@@ -1344,7 +1344,7 @@ export default function InsightsClient({
                     </div>
                 ) : (
                     /* Active Conversation Thread */
-                    <div className="mx-auto max-w-3xl py-4 sm:py-6 space-y-6">
+                    <div className="mx-auto w-full min-w-0 max-w-3xl py-4 sm:py-6 space-y-6">
                         <div className="flex items-center justify-between">
                             <Button
                                 variant="ghost"
@@ -1506,14 +1506,6 @@ export default function InsightsClient({
                     className="mx-auto max-w-3xl relative"
                 >
                     <div className="relative flex items-end gap-2 rounded-3xl border border-neutral-200/90 dark:border-neutral-800 bg-neutral-50/90 dark:bg-neutral-900/90 px-4 py-2.5 shadow-[0_2px_18px_-4px_rgba(0,0,0,0.06)] focus-within:border-neutral-400 dark:focus-within:border-neutral-700 focus-within:bg-white dark:focus-within:bg-neutral-900 transition-all">
-                        <Sparkles
-                            className={`mb-1.5 size-4 shrink-0 transition-colors ${
-                                loading
-                                    ? "text-indigo-500 animate-pulse"
-                                    : "text-neutral-400 dark:text-neutral-500"
-                            }`}
-                        />
-
                         <textarea
                             ref={textareaRef}
                             rows={1}
