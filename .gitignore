@@ -46,4 +46,5 @@ data/user_data.db
 data/model/*
 data/user-settings.json
 data/.venv
+data/insights-history.json
 
