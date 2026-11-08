@@ -32,11 +32,7 @@ function AccountCrumb() {
         let isMounted = true;
         const fetchAccountName = async () => {
             try {
-                const response = await fetch('/api/get-accounts', {
-                    next: {
-                        tags: ['accounts', 'transactions']
-                    }
-                });
+                const response = await fetch('/api/get-accounts');
                 if (!response.ok) {
                     throw new Error(`Error fetching accounts: ${response.statusText}`);
                 }
@@ -84,10 +80,7 @@ export function AppHeader({ title, className }: AppHeaderProps) {
         let active = true
         const fetchCount = async () => {
             try {
-                const res = await fetch('/api/get-uncategorized-count', {
-                    // Tag so server-side invalidations of 'transactions' refresh this cached response
-                    next: { tags: ['transactions'] },
-                } as any)
+                const res = await fetch('/api/get-uncategorized-count')
                 if (!res.ok) throw new Error('Failed to load count')
                 const data = await res.json()
                 if (active) setUncatCount(Number(data?.count ?? 0))
@@ -143,20 +136,20 @@ export function AppHeader({ title, className }: AppHeaderProps) {
             {/* Mobile buttons */}
             <div className="sm:hidden flex items-center justify-center h-14">
                 <Button asChild variant={isInsights ? "secondary" : "ghost"} size="sm">
-                    <Link href="/insights" prefetch={true}>Insights</Link>
+                    <Link href="/insights">Insights</Link>
                 </Button>
                 <Button asChild variant={isAccounts ? "secondary" : "ghost"} size="sm">
-                    <Link href="/accounts" prefetch={true}>Accounts</Link>
+                    <Link href="/accounts">Accounts</Link>
                 </Button>
                 <Button asChild variant={isSpending ? "secondary" : "ghost"} size="sm">
-                    <Link href="/spending" prefetch={true}>Spending</Link>
+                    <Link href="/spending">Spending</Link>
                 </Button>
             </div>
 
             {/* Mobile top-left notifications icon */}
             <div className="sm:hidden absolute left-4 top-1/2 -translate-y-1/2">
                 <Button asChild variant={isBacklog ? "secondary" : "ghost"} size="sm-icon" aria-label="Backlog">
-                    <Link href="/backlog" className="relative" prefetch={true}>
+                    <Link href="/backlog" className="relative">
                         <Bell className="!size-5" />
                         {typeof uncatCount === 'number' && uncatCount > 0 && false && (
                             <span className="absolute -top-0.5 -right-0.5 block h-2 w-2 rounded-full bg-red-500" />
@@ -168,7 +161,7 @@ export function AppHeader({ title, className }: AppHeaderProps) {
             {/* Mobile top-right person icon linking to settings */}
             <div className="sm:hidden absolute right-4 top-1/2 -translate-y-1/2">
                 <Button asChild variant={isSettings ? "secondary" : "ghost"} size="sm-icon">
-                    <Link href="/settings" aria-label="Settings" prefetch={true}>
+                    <Link href="/settings" aria-label="Settings">
                         <User className="!size-5" />
                     </Link>
                 </Button>

@@ -1,7 +1,6 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 import { getDataPath } from '@/lib/paths';
-import { revalidateTag } from '@/lib/revalidate';
 import { getSettings } from '@/lib/settings';
 
 const dbPath = getDataPath('user_data.db');
@@ -38,9 +37,6 @@ export async function POST(req: Request) {
       const errorData = await response.json();
       throw new Error(errorData.errors ? errorData.errors.join(', ') : 'Failed to fetch data from SimpleFIN.');
     }
-
-    revalidateTag('accounts');
-    revalidateTag('transactions');
 
     const data = await response.json();
     const accounts = data.accounts;

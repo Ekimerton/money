@@ -2,7 +2,6 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 import { spawn } from 'child_process';
-import { revalidateTag } from '@/lib/revalidate';
 import { getSettings } from '@/lib/settings';
 
 interface LatestTransactionRow {
@@ -65,9 +64,6 @@ export async function POST(req: Request) {
             const errorData = await response.json();
             throw new Error(errorData.errors ? errorData.errors.join(', ') : 'Failed to fetch data from SimpleFIN.');
         }
-
-        revalidateTag('accounts');
-        revalidateTag('transactions');
 
         const data = await response.json();
         const accounts = data.accounts;

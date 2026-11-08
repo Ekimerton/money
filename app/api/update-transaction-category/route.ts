@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { revalidateTag } from '@/lib/revalidate';
+import { getDataPath } from '@/lib/paths';
 import Database from 'better-sqlite3';
+
+const dbPath = getDataPath('user_data.db');
 
 export async function POST(req: NextRequest) {
     try {
@@ -10,14 +12,11 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Missing transactionId or newCategory' }, { status: 400 });
         }
 
-        const db = new Database('data/user_data.db');
+        const db = new Database(dbPath);
 
         const stmt = db.prepare('UPDATE transactions SET category = ? WHERE id = ?');
         stmt.run(newCategory, transactionId);
         db.close();
-
-        // Invalidate cached transaction-backed pages and fetches
-        revalidateTag('transactions');
 
         return NextResponse.json({ id: transactionId, category: newCategory });
     } catch (error) {

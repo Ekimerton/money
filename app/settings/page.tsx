@@ -1,8 +1,9 @@
 import SettingsClient from "@/app/settings/settings-client";
-import { unstable_cache } from 'next/cache';
 import { getSettings } from "@/lib/settings";
 
-const getSettingsData = unstable_cache(async () => {
+export const dynamic = "force-dynamic";
+
+async function getSettingsData() {
     try {
         const settings = await getSettings();
 
@@ -25,7 +26,7 @@ const getSettingsData = unstable_cache(async () => {
             auto_refresh_daily: 0,
         };
     }
-}, ["settings-v1"], { tags: ["settings"] });
+}
 
 export default async function SettingsPage() {
     const userConfig = await getSettingsData();

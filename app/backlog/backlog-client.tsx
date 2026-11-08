@@ -8,6 +8,7 @@ import { CategoryPopover } from "@/components/ui/category-popover";
 import { getTop3PredictionsForTransaction } from "@/app/settings/actions";
 import { Skeleton } from "@/components/ui/skeleton";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 interface BacklogClientProps {
     initialTransactions: Transaction[];
@@ -15,9 +16,27 @@ interface BacklogClientProps {
 }
 
 export function BacklogClient({ initialTransactions, initialCategories }: BacklogClientProps) {
+    const router = useRouter();
+    const categorizedIdsRef = React.useRef<Set<string>>(new Set());
     const [queue, setQueue] = React.useState<Transaction[]>(() => initialTransactions);
     const [currentIndex, setCurrentIndex] = React.useState(0);
     const [categories, setCategories] = React.useState<string[]>(() => initialCategories);
+
+    React.useEffect(() => {
+        setQueue(initialTransactions.filter((t) => !categorizedIdsRef.current.has(t.id)));
+        setCurrentIndex((prev) => {
+            const nextLen = initialTransactions.filter((t) => !categorizedIdsRef.current.has(t.id)).length;
+            return prev >= nextLen ? 0 : prev;
+        });
+    }, [initialTransactions]);
+
+    React.useEffect(() => {
+        setCategories((prev) => {
+            const merged = Array.from(new Set([...prev, ...initialCategories]));
+            return merged.sort((a, b) => a.localeCompare(b));
+        });
+    }, [initialCategories]);
+
     const current = queue[currentIndex];
 
     const suggestedCategories = React.useMemo(() => categories.slice(0, 3), [categories]);
@@ -56,15 +75,7 @@ export function BacklogClient({ initialTransactions, initialCategories }: Backlo
     const markCategory = async (category: string) => {
         if (!current) return;
         const txId = current.id;
-        const res = await fetch("/api/update-transaction-category", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ transactionId: txId, newCategory: category }),
-        });
-        if (!res.ok) {
-            console.error("Failed to update category");
-            return;
-        }
+        categorizedIdsRef.current.add(txId);
         // Optimistically remove this item and advance
         setQueue((prev) => prev.filter((t) => t.id !== txId));
         setCurrentIndex(0);
@@ -72,6 +83,19 @@ export function BacklogClient({ initialTransactions, initialCategories }: Backlo
         if (category && !categories.includes(category)) {
             setCategories((prev) => [...prev, category].sort((a, b) => a.localeCompare(b)));
         }
+
+        const res = await fetch("/api/update-transaction-category", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ transactionId: txId, newCategory: category }),
+        });
+        if (!res.ok) {
+            categorizedIdsRef.current.delete(txId);
+            console.error("Failed to update category");
+            router.refresh();
+            return;
+        }
+        router.refresh();
     };
 
     const skip = () => {

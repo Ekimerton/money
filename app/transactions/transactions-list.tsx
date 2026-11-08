@@ -5,6 +5,7 @@ import type { Account, Transaction } from "@/lib/types"
 import { CategoryPopover } from "@/components/ui/category-popover"
 import { toast } from "sonner"
 import { ChevronDownIcon } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 interface TransactionsListProps {
     transactions: Transaction[]
@@ -13,6 +14,7 @@ interface TransactionsListProps {
 }
 
 export function TransactionsList({ transactions, accounts, showIncome = false }: TransactionsListProps) {
+    const router = useRouter()
 
     const [localTransactions, setLocalTransactions] = React.useState<Transaction[]>(transactions)
     const [existingCategories, setExistingCategories] = React.useState<string[]>([])
@@ -25,7 +27,7 @@ export function TransactionsList({ transactions, accounts, showIncome = false }:
     React.useEffect(() => {
         const fetchCategories = async () => {
             try {
-                const res = await fetch('/api/get-categories', { next: { tags: ['accounts', 'transactions'] } as any })
+                const res = await fetch('/api/get-categories')
                 if (!res.ok) throw new Error(`Failed to fetch categories: ${res.status}`)
                 const data = await res.json()
                 setExistingCategories(data.categories ?? [])
@@ -74,6 +76,7 @@ export function TransactionsList({ transactions, accounts, showIncome = false }:
                                         if (!bulkRes.ok) throw new Error(`Error bulk updating categories: ${bulkRes.statusText}`)
                                         setLocalTransactions(prev2 => prev2.map(t => t.payee === original.payee ? { ...t, category: newCategory } : t))
                                         toast.success(`Updated ${byPayee.length} transactions from ${original.payee} to ${newCategory}.`)
+                                        router.refresh()
                                     } catch (err) {
                                         console.error(err)
                                         toast.error("Failed to update transactions.")
@@ -85,6 +88,7 @@ export function TransactionsList({ transactions, accounts, showIncome = false }:
                 }
                 return next
             })
+            router.refresh()
         } catch (err: any) {
             console.error("Failed to update category:", err)
             toast.error("Failed to update category: " + err.message)

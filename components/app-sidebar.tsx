@@ -25,7 +25,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild isActive={pathname.startsWith("/accounts")}>
-              <Link href={"/accounts"} prefetch={true}>
+              <Link href={"/accounts"}>
                 <Landmark className="mx-1 !size-5" />
                 Accounts
               </Link>
@@ -33,7 +33,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton asChild isActive={pathname.startsWith("/spending")}>
-              <Link href={"/spending"} prefetch={true}>
+              <Link href={"/spending"}>
                 <BanknoteArrowDown className="mx-1 !size-5" />
                 Spending
               </Link>
@@ -41,7 +41,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton asChild isActive={pathname.startsWith("/player-card")}>
-              <Link href={"/player-card"} prefetch={true}>
+              <Link href={"/player-card"}>
                 <UserCircle className="mx-1 !size-5" />
                 Player Card
               </Link>
@@ -49,7 +49,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton asChild isActive={pathname.startsWith("/insights")}>
-              <Link href={"/insights"} prefetch={true}>
+              <Link href={"/insights"}>
                 <Brain className="mx-1 !size-5" />
                 Insights
               </Link>
@@ -57,7 +57,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton asChild isActive={pathname.startsWith("/transactions")}>
-              <Link href={"/transactions"} prefetch={true}>
+              <Link href={"/transactions"}>
                 <Banknote className="mx-1 !size-5" />
                 Transactions
               </Link>
@@ -65,7 +65,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton asChild isActive={pathname.startsWith("/backlog")}>
-              <Link href={"/backlog"} prefetch={true}>
+              <Link href={"/backlog"}>
                 <Bell className="mx-1 !size-5" />
                 Backlog
               </Link>
@@ -73,7 +73,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton asChild isActive={pathname.startsWith("/settings")}>
-              <Link href={"/settings"} prefetch={true}>
+              <Link href={"/settings"}>
                 <Cog className="mx-1 !size-5" />
                 Settings
               </Link>

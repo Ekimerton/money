@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import path from 'path';
 import { exec } from 'child_process';
-import { revalidateTag } from '@/lib/revalidate';
 import { updateSettings } from '@/lib/settings';
 
 import { getDataPath } from '@/lib/paths';
@@ -60,8 +59,6 @@ export async function POST(req: NextRequest) {
         } catch { }
 
         await updateSettings({ classifierTrainingDate: now });
-
-        revalidateTag('settings');
 
         return NextResponse.json({ message: 'Model training completed', classifierTrainingDate: now, stdout, stderr, overallAccuracy, perClassAccuracy }, { status: 200 });
     } catch (error: any) {

@@ -1,7 +1,6 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 import { getDataPath } from '@/lib/paths';
-import { revalidateTag } from '@/lib/revalidate';
 
 const dbPath = getDataPath('user_data.db');
 const db = new Database(dbPath);
@@ -19,9 +18,6 @@ export async function POST(request: Request) {
 
         const stmt = db.prepare('UPDATE accounts SET name = ? WHERE id = ?');
         stmt.run(newName, accountId);
-
-        // Invalidate cached accounts data
-        revalidateTag('accounts');
 
         // Return the updated account name
         return new Response(JSON.stringify({ id: accountId, name: newName }), {

@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { revalidateTag } from '@/lib/revalidate';
 import { updateSettings } from '@/lib/settings';
 
 export async function POST(req: NextRequest) {
@@ -27,7 +26,6 @@ export async function POST(req: NextRequest) {
 
         await updateSettings({ simplefinUrl: ACCESS_URL });
 
-        revalidateTag('settings');
         return NextResponse.json({ message: 'SimpleFIN URL saved successfully!', simplefinUrl: ACCESS_URL }, { status: 200 });
     } catch (error: any) {
         console.error('Error saving SimpleFIN URL:', error);

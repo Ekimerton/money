@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { setAutoCategorize as setAutoCategorizeAction, setAutoMarkInternalTransfers, refreshRecent as refreshRecentAction, setAutoRefreshDaily as setAutoRefreshDailyAction } from "@/app/settings/actions";
 import { toast } from "sonner";
 import { useTheme } from "next-themes";
+import { useRouter } from "next/navigation";
 
 interface SettingsClientProps {
     initialDisplayName: string;
@@ -24,6 +25,7 @@ export default function SettingsClient({
     initialMarkDuplicates = false,
     initialAutoRefreshDaily = false,
 }: SettingsClientProps) {
+    const router = useRouter();
     const { theme, setTheme, resolvedTheme } = useTheme();
     const [displayName, setDisplayName] = useState<string>(initialDisplayName);
     const [autoCategorize, setAutoCategorize] = useState<boolean>(initialAutoCategorize);
@@ -65,6 +67,7 @@ export default function SettingsClient({
                 error: (err) => err?.message || 'Failed to fetch new transactions from simplefin.',
             });
             await promise;
+            router.refresh();
         } catch (err: any) {
             setError(err?.message || 'Failed to refresh recent data.');
         } finally {
@@ -82,6 +85,7 @@ export default function SettingsClient({
             const cat = result.categorizedCount ?? 0;
             const dup = result.updatedDuplicates ?? 0;
             toast.success(`Full refresh: ${newTx} new transactions, ${cat} categorized, ${dup} marked duplicate`, { position: 'top-center' });
+            router.refresh();
         } catch (err: any) {
             const msg = err?.message || 'Failed to perform full refresh.';
             setError(msg);

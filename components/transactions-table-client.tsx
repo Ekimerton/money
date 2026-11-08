@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowUpDown } from "lucide-react";
 import { CategoryPopover } from "@/components/ui/category-popover";
@@ -30,6 +30,18 @@ export function TransactionsTableClient({
     const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
     const [accounts, setAccounts] = useState<Account[]>(initialAccounts);
     const [existingCategories, setExistingCategories] = useState<string[]>(initialCategories);
+
+    useEffect(() => {
+        setTransactions(initialTransactions);
+    }, [initialTransactions]);
+
+    useEffect(() => {
+        setAccounts(initialAccounts);
+    }, [initialAccounts]);
+
+    useEffect(() => {
+        setExistingCategories(initialCategories);
+    }, [initialCategories]);
 
     const router = useRouter();
 

@@ -1,10 +1,10 @@
 import { FetchHistoryClient } from '../fetch-history-client';
 import Database from 'better-sqlite3';
-import path from 'path';
-import { unstable_cache } from 'next/cache';
 import { getDataPath } from '@/lib/paths';
 
-const getFetchHistory = unstable_cache(async () => {
+export const dynamic = "force-dynamic";
+
+async function getFetchHistory() {
     const dbPath = getDataPath('user_data.db');
     const db = new Database(dbPath);
     try {
@@ -79,7 +79,7 @@ const getFetchHistory = unstable_cache(async () => {
     } finally {
         db.close();
     }
-}, ["fetch-history-v3"], { tags: ["transactions", "accounts"] });
+}
 
 
 export default async function FetchHistoryPage() {

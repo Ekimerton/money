@@ -4,7 +4,6 @@ import Database from "better-sqlite3";
 import path from "path";
 import fs from "fs";
 import { spawn } from "child_process";
-import { revalidateTag } from "@/lib/revalidate";
 import { getSettings, updateSettings } from "@/lib/settings";
 
 import { getDataPath } from "@/lib/paths";
@@ -75,17 +74,14 @@ function markInternalTransfersForTransactions(db: any, transactionIds: string[])
 
 export async function setAutoCategorize(autoCategorize: boolean): Promise<void> {
     await updateSettings({ autoCategorize });
-    revalidateTag('settings');
 }
 
 export async function setAutoMarkInternalTransfers(enabled: boolean): Promise<void> {
     await updateSettings({ autoMarkDuplicates: enabled });
-    revalidateTag('settings');
 }
 
 export async function setAutoRefreshDaily(enabled: boolean): Promise<void> {
     await updateSettings({ autoRefreshDaily: enabled });
-    revalidateTag('settings');
 }
 
 export async function refreshRecent(): Promise<{ message: string; classifierOutput?: string; updatedDuplicates?: number; newTransactions?: number; categorizedCount?: number; newTransactionSamples?: Array<{ id: string; title: string; category: string }>; }> {
@@ -237,9 +233,6 @@ export async function refreshRecent(): Promise<{ message: string; classifierOutp
                 // ignore sample collection failures
             }
         }
-
-        revalidateTag('accounts');
-        revalidateTag('transactions');
 
         return { message: 'Accounts and transactions fetched and saved successfully', classifierOutput, updatedDuplicates, newTransactions, categorizedCount, newTransactionSamples };
     } catch (error: any) {
@@ -446,9 +439,6 @@ export async function refreshAll(): Promise<{ message: string; classifierOutput?
                 }
             } catch { }
         }
-
-        revalidateTag('accounts');
-        revalidateTag('transactions');
 
         return { message: 'Full refresh completed successfully', updatedDuplicates, newTransactions: newTransactionIds.size, classifierOutput, categorizedCount };
     } catch (error: any) {

@@ -6,8 +6,8 @@ export const dynamic = "force-dynamic";
 
 export default async function PlayerCardPage() {
     const [transactionsResponse, accountsResponse] = await Promise.all([
-        fetch('http://localhost:3000/api/get-transactions', { next: { tags: ['transactions'] } }),
-        fetch('http://localhost:3000/api/get-accounts', { next: { tags: ['accounts'] } })
+        fetch('http://localhost:3000/api/get-transactions'),
+        fetch('http://localhost:3000/api/get-accounts')
     ]);
     
     if (!transactionsResponse.ok || !accountsResponse.ok) {

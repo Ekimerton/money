@@ -1,12 +1,13 @@
 import Database from 'better-sqlite3';
-import path from 'path';
 import { BacklogClient } from '@/app/backlog/backlog-client';
-
 import { Transaction } from '@/lib/types';
-import { unstable_cache } from 'next/cache';
 import { getDataPath } from '@/lib/paths';
+import Link from 'next/link';
+import { History } from 'lucide-react';
 
-const getBacklogData = unstable_cache(async () => {
+export const dynamic = "force-dynamic";
+
+async function getBacklogData() {
     const dbPath = getDataPath('user_data.db');
     const db = new Database(dbPath);
     try {
@@ -29,11 +30,7 @@ const getBacklogData = unstable_cache(async () => {
     } finally {
         db.close();
     }
-}, ["backlog-v1"], { tags: ["transactions"] });
-
-
-import Link from 'next/link';
-import { History } from 'lucide-react';
+}
 
 export default async function BacklogPage() {
     const { transactions, categories } = await getBacklogData();
