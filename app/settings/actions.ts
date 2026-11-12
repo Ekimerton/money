@@ -11,6 +11,105 @@ import { getDataPath } from "@/lib/paths";
 const dbPath = getDataPath('user_data.db');
 const pythonExecutablePath = getDataPath('.venv', 'bin', 'python');
 
+export interface RefreshResult {
+    ok: boolean;
+    message: string;
+    error?: string;
+    errorDetails?: string;
+    warnings?: string[];
+    classifierOutput?: string;
+    updatedDuplicates?: number;
+    newTransactions?: number;
+    categorizedCount?: number;
+    newTransactionSamples?: Array<{ id: string; title: string; category: string }>;
+}
+
+function sanitizeSecrets(input: string): string {
+    return input.replace(/https?:\/\/[^@\s/]+@/gi, 'https://***@');
+}
+
+function formatUnixDate(tsSeconds: number): string {
+    try {
+        return new Date(tsSeconds * 1000).toISOString().slice(0, 10);
+    } catch {
+        return String(tsSeconds);
+    }
+}
+
+async function buildSimplefinHttpError(response: Response, context?: string): Promise<Error> {
+    const statusLabel = `HTTP ${response.status}${response.statusText ? ` ${response.statusText}` : ''}`;
+    let rawBody = '';
+    try {
+        rawBody = await response.text();
+    } catch {
+        // ignore body read errors
+    }
+
+    let detail = '';
+    if (rawBody.trim()) {
+        try {
+            const parsed = JSON.parse(rawBody);
+            if (Array.isArray(parsed?.errors) && parsed.errors.length > 0) {
+                detail = parsed.errors.join('; ');
+            } else if (typeof parsed?.error === 'string' && parsed.error.trim()) {
+                detail = parsed.error.trim();
+            } else if (typeof parsed?.message === 'string' && parsed.message.trim()) {
+                detail = parsed.message.trim();
+            } else {
+                detail = JSON.stringify(parsed).slice(0, 500);
+            }
+        } catch {
+            detail = rawBody.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 500);
+        }
+    }
+
+    const prefix = context ? `SimpleFIN request failed (${statusLabel}) during ${context}` : `SimpleFIN request failed (${statusLabel})`;
+    return new Error(detail ? `${prefix}: ${detail}` : prefix);
+}
+
+function formatActionError(error: unknown, step: string, warnings: string[] = []): { error: string; errorDetails: string } {
+    const err = error as any;
+    const baseMessage = typeof err?.message === 'string' && err.message.trim()
+        ? err.message.trim()
+        : String(error);
+    const codePart = typeof err?.code === 'string' ? ` [${err.code}]` : '';
+
+    const causes: string[] = [];
+    let currentCause = err?.cause;
+    let depth = 0;
+    while (currentCause && depth < 4) {
+        const causeMsg = typeof currentCause?.message === 'string'
+            ? currentCause.message
+            : String(currentCause);
+        const causeCode = typeof currentCause?.code === 'string' ? ` [${currentCause.code}]` : '';
+        causes.push(`${causeMsg}${causeCode}`);
+        currentCause = currentCause?.cause;
+        depth += 1;
+    }
+
+    const causeSummary = causes.length > 0 ? ` (cause: ${causes.join(' -> ')})` : '';
+    const summary = sanitizeSecrets(`[${step}] ${baseMessage}${codePart}${causeSummary}`);
+
+    const detailLines: string[] = [
+        `Step: ${step}`,
+        `Error: ${err?.name || 'Error'}: ${baseMessage}${codePart}`,
+    ];
+    if (causes.length > 0) {
+        detailLines.push(`Cause: ${causes.join(' -> ')}`);
+    }
+    if (warnings.length > 0) {
+        detailLines.push(`SimpleFIN messages seen before failure:\n  - ${warnings.join('\n  - ')}`);
+    }
+    if (typeof err?.stack === 'string') {
+        detailLines.push(`Stack:\n${err.stack}`);
+    }
+
+    return {
+        error: summary,
+        errorDetails: sanitizeSecrets(detailLines.join('\n')),
+    };
+}
+
 async function classifyTransactionsByIds(transactionIds: string[]): Promise<{ output: string; categorizedCount?: number; }> {
     const dataDir = getDataPath();
     const scriptPath = path.join(dataDir, 'classify_transaction.py');
@@ -84,9 +183,13 @@ export async function setAutoRefreshDaily(enabled: boolean): Promise<void> {
     await updateSettings({ autoRefreshDaily: enabled });
 }
 
-export async function refreshRecent(): Promise<{ message: string; classifierOutput?: string; updatedDuplicates?: number; newTransactions?: number; categorizedCount?: number; newTransactionSamples?: Array<{ id: string; title: string; category: string }>; }> {
-    const db = new Database(dbPath);
+export async function refreshRecent(): Promise<RefreshResult> {
+    let db: Database.Database | null = null;
+    let currentStep = 'opening database';
+    const simplefinWarnings = new Set<string>();
     try {
+        db = new Database(dbPath);
+        currentStep = 'initializing schema';
         // TODO: [CLEANUP] Move this schema initialization to a dedicated migration script or a centralized DB init process.
         db.exec(`
           CREATE TABLE IF NOT EXISTS account_history (
@@ -100,6 +203,8 @@ export async function refreshRecent(): Promise<{ message: string; classifierOutp
           CREATE INDEX IF NOT EXISTS idx_account_history_account_id ON account_history (account_id);
           CREATE INDEX IF NOT EXISTS idx_account_history_fetched_at ON account_history (fetched_at);
         `);
+
+        currentStep = 'reading settings';
         const settings = await getSettings();
 
         if (!settings.simplefinUrl) {
@@ -111,39 +216,45 @@ export async function refreshRecent(): Promise<{ message: string; classifierOutp
         const autoMarkDuplicates = !!settings.autoMarkDuplicates;
 
         const urlParts = ACCESS_URL.split('@');
-        const authString = urlParts[0].replace('https://', '');
+        if (urlParts.length < 2) {
+            throw new Error('SimpleFIN access URL in settings is malformed (missing @ separator).');
+        }
+        const authString = urlParts[0].replace(/^https?:\/\//i, '');
         const baseUrl = urlParts[1];
         const [username, password] = authString.split(':');
 
+        currentStep = 'querying latest transaction timestamp';
         const startDate = (() => {
-            const latestTransactionRow = db.prepare('SELECT MAX(posted) as latest_posted FROM transactions').get() as { latest_posted?: number };
+            const latestTransactionRow = db!.prepare('SELECT MAX(posted) as latest_posted FROM transactions').get() as { latest_posted?: number };
             if (latestTransactionRow && latestTransactionRow.latest_posted) {
                 return latestTransactionRow.latest_posted - (24 * 60 * 60);
             }
             return Math.floor(new Date('2025-01-01').getTime() / 1000);
         })();
         const endDate = Math.floor(Date.now() / 1000);
+        const rangeLabel = `${formatUnixDate(startDate)} to ${formatUnixDate(endDate)}`;
 
         const newTransactionIds: string[] = [];
 
+        currentStep = `fetching SimpleFIN accounts (${rangeLabel})`;
         const authHeader = Buffer.from(`${username}:${password}`).toString('base64');
         const response = await fetch(`https://${baseUrl}/accounts?pending=1&start-date=${startDate}&end-date=${endDate}`, {
             headers: { Authorization: `Basic ${authHeader}` },
         });
         if (!response.ok) {
-            let errorMessage = 'Failed to fetch data from SimpleFIN.';
-            try {
-                const errorData = await response.json();
-                if (errorData?.errors) errorMessage = errorData.errors.join(', ');
-            } catch {
-                // ignore
-            }
-            throw new Error(errorMessage);
+            throw await buildSimplefinHttpError(response, `recent refresh (${rangeLabel})`);
         }
 
+        currentStep = `parsing SimpleFIN response (${rangeLabel})`;
         const data = await response.json();
-        const accounts = data.accounts as Array<any>;
+        if (Array.isArray(data?.errors)) {
+            for (const msg of data.errors) {
+                if (typeof msg === 'string' && msg.trim()) simplefinWarnings.add(msg.trim());
+            }
+        }
+        const accounts = (data.accounts as Array<any>) || [];
 
+        currentStep = 'saving accounts and transactions to database';
         const insertAccount = db.prepare(
             'INSERT INTO accounts (id, name, currency, balance, balance_date) VALUES (?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET currency=excluded.currency, balance=excluded.balance, balance_date=excluded.balance_date'
         );
@@ -173,10 +284,11 @@ export async function refreshRecent(): Promise<{ message: string; classifierOutp
                     fetchedAt
                 );
 
-                const insertTransaction = db.prepare(
+                const insertTransaction = db!.prepare(
                     'INSERT INTO transactions (id, account_id, posted, amount, description, payee, transacted_at, pending, category, fetched_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET account_id=excluded.account_id, posted=excluded.posted, amount=excluded.amount, description=excluded.description, payee=excluded.payee, transacted_at=excluded.transacted_at, pending=excluded.pending, hidden=excluded.hidden'
                 );
-                for (const transaction of account.transactions) {
+                const transactions = Array.isArray(account.transactions) ? account.transactions : [];
+                for (const transaction of transactions) {
                     const exists = existsTransaction.get(transaction.id);
                     insertTransaction.run(
                         transaction.id,
@@ -202,12 +314,14 @@ export async function refreshRecent(): Promise<{ message: string; classifierOutp
 
         let updatedDuplicates: number | undefined;
         if (autoMarkDuplicates && newTransactionIds.length > 0) {
+            currentStep = 'marking duplicate internal transfers';
             updatedDuplicates = markInternalTransfersForTransactions(db, newTransactionIds);
         }
 
         let classifierOutput: string | undefined;
         let categorizedCount: number | undefined;
         if (autoCategorize && newTransactionIds.length > 0) {
+            currentStep = 'running transaction classifier';
             const result = await classifyTransactionsByIds(newTransactionIds);
             classifierOutput = result.output;
             categorizedCount = result.categorizedCount;
@@ -234,18 +348,48 @@ export async function refreshRecent(): Promise<{ message: string; classifierOutp
             }
         }
 
-        return { message: 'Accounts and transactions fetched and saved successfully', classifierOutput, updatedDuplicates, newTransactions, categorizedCount, newTransactionSamples };
+        const warnings = Array.from(simplefinWarnings);
+        return {
+            ok: true,
+            message: 'Accounts and transactions fetched and saved successfully',
+            warnings: warnings.length > 0 ? warnings : undefined,
+            classifierOutput,
+            updatedDuplicates,
+            newTransactions,
+            categorizedCount,
+            newTransactionSamples,
+        };
     } catch (error: any) {
-        console.error('Error in refreshRecent action:', error);
-        throw error;
+        const warnings = Array.from(simplefinWarnings);
+        const formatted = formatActionError(error, currentStep, warnings);
+        console.error('Error in refreshRecent action:', formatted.errorDetails);
+        return {
+            ok: false,
+            message: formatted.error,
+            error: formatted.error,
+            errorDetails: formatted.errorDetails,
+            warnings: warnings.length > 0 ? warnings : undefined,
+        };
     } finally {
-        db.close();
+        try {
+            db?.close();
+        } catch {
+            // ignore close error
+        }
     }
 }
 
-export async function refreshAll(): Promise<{ message: string; classifierOutput?: string; updatedDuplicates?: number; newTransactions?: number; categorizedCount?: number; }> {
-    const db = new Database(dbPath);
+export async function refreshAll(): Promise<RefreshResult> {
+    let db: Database.Database | null = null;
+    let currentStep = 'opening database';
+    const simplefinWarnings = new Set<string>();
+    const fetchedAccountIds = new Set<string>();
+    const newTransactionIds = new Set<string>();
+    let completedWindows = 0;
+
     try {
+        db = new Database(dbPath);
+        currentStep = 'initializing schema';
         // TODO: [CLEANUP] Move this schema initialization to a dedicated migration script or a centralized DB init process.
         db.exec(`
           CREATE TABLE IF NOT EXISTS account_history (
@@ -259,6 +403,8 @@ export async function refreshAll(): Promise<{ message: string; classifierOutput?
           CREATE INDEX IF NOT EXISTS idx_account_history_account_id ON account_history (account_id);
           CREATE INDEX IF NOT EXISTS idx_account_history_fetched_at ON account_history (fetched_at);
         `);
+
+        currentStep = 'reading settings';
         const settings = await getSettings();
 
         if (!settings.simplefinUrl) {
@@ -270,7 +416,10 @@ export async function refreshAll(): Promise<{ message: string; classifierOutput?
         const autoMarkDuplicates = !!settings.autoMarkDuplicates;
 
         const urlParts = ACCESS_URL.split('@');
-        const authString = urlParts[0].replace('https://', '');
+        if (urlParts.length < 2) {
+            throw new Error('SimpleFIN access URL in settings is malformed (missing @ separator).');
+        }
+        const authString = urlParts[0].replace(/^https?:\/\//i, '');
         const baseUrl = urlParts[1];
         const [username, password] = authString.split(':');
         const authHeader = Buffer.from(`${username}:${password}`).toString('base64');
@@ -281,9 +430,7 @@ export async function refreshAll(): Promise<{ message: string; classifierOutput?
         const windowDays = 60; // two months
         const windowSeconds = windowDays * 24 * 60 * 60;
 
-        const fetchedAccountIds = new Set<string>();
-        const newTransactionIds = new Set<string>();
-
+        currentStep = 'preparing database statements';
         const insertAccountHistory = db.prepare(
             'INSERT INTO account_history (account_id, balance, balance_date, fetched_at) VALUES (?, ?, ?, ?)'
         );
@@ -302,63 +449,72 @@ export async function refreshAll(): Promise<{ message: string; classifierOutput?
         let sawAnyTransactions = false;
         while (windowEnd > earliestStartDate) {
             const windowStart = Math.max(earliestStartDate, windowEnd - windowSeconds);
+            const windowNum = completedWindows + 1;
+            const windowLabel = `window #${windowNum} (${formatUnixDate(windowStart)} to ${formatUnixDate(windowEnd)})`;
 
+            currentStep = `fetching SimpleFIN ${windowLabel}`;
             const response = await fetch(`https://${baseUrl}/accounts?pending=1&start-date=${windowStart}&end-date=${windowEnd}`, {
                 headers: { Authorization: `Basic ${authHeader}` },
             });
             if (!response.ok) {
-                let errorMessage = 'Failed to fetch data from SimpleFIN.';
-                try {
-                    const errorData = await response.json();
-                    if (errorData?.errors) errorMessage = errorData.errors.join(', ');
-                } catch { }
-                throw new Error(errorMessage);
+                throw await buildSimplefinHttpError(response, windowLabel);
             }
 
+            currentStep = `parsing SimpleFIN response for ${windowLabel}`;
             const data = await response.json();
+            if (Array.isArray(data?.errors)) {
+                for (const msg of data.errors) {
+                    if (typeof msg === 'string' && msg.trim()) {
+                        simplefinWarnings.add(`${msg.trim()} [${windowLabel}]`);
+                    }
+                }
+            }
             const accounts = (data.accounts as Array<any>) || [];
             const transactionsCountInWindow = accounts.reduce((sum: number, a: any) => {
                 const txs = Array.isArray(a.transactions) ? a.transactions : [];
                 return sum + txs.length;
             }, 0);
 
+            currentStep = `saving ${windowLabel} to database (${accounts.length} accounts, ${transactionsCountInWindow} transactions)`;
             db.transaction(() => {
                 for (const account of accounts) {
                     fetchedAccountIds.add(String(account.id));
-                        insertAccount.run(
-                            account.id,
-                            account.name,
-                            account.currency,
-                            account.balance,
-                            Math.floor(Number(account['balance-date']))
-                        );
+                    insertAccount.run(
+                        account.id,
+                        account.name,
+                        account.currency,
+                        account.balance,
+                        Math.floor(Number(account['balance-date']))
+                    );
 
-                        insertAccountHistory.run(
+                    insertAccountHistory.run(
+                        account.id,
+                        account.balance,
+                        Math.floor(Number(account['balance-date'])),
+                        fetchedAt
+                    );
+
+                    const transactions = Array.isArray(account.transactions) ? account.transactions : [];
+                    for (const transaction of transactions) {
+                        const exists = existsTransaction.get(transaction.id);
+                        insertTransaction.run(
+                            transaction.id,
                             account.id,
-                            account.balance,
-                            Math.floor(Number(account['balance-date'])),
+                            transaction.posted,
+                            transaction.amount,
+                            transaction.description,
+                            transaction.payee || null,
+                            transaction.transacted_at || null,
+                            transaction.pending ? 1 : 0,
+                            'Uncategorized',
                             fetchedAt
                         );
-
-                        const transactions = Array.isArray(account.transactions) ? account.transactions : [];
-                        for (const transaction of transactions) {
-                            const exists = existsTransaction.get(transaction.id);
-                            insertTransaction.run(
-                                transaction.id,
-                                account.id,
-                                transaction.posted,
-                                transaction.amount,
-                                transaction.description,
-                                transaction.payee || null,
-                                transaction.transacted_at || null,
-                                transaction.pending ? 1 : 0,
-                                'Uncategorized',
-                                fetchedAt
-                            );
                         if (!exists) newTransactionIds.add(String(transaction.id));
                     }
                 }
             })();
+
+            completedWindows += 1;
 
             if (transactionsCountInWindow === 0) {
                 consecutiveEmptyWindows += 1;
@@ -374,21 +530,23 @@ export async function refreshAll(): Promise<{ message: string; classifierOutput?
         }
 
         // Prune only missing accounts and their transactions
+        currentStep = `pruning missing accounts (${fetchedAccountIds.size} active accounts fetched across ${completedWindows} windows)`;
         db.transaction(() => {
-            db.prepare('CREATE TEMP TABLE IF NOT EXISTS temp_fetched_accounts (id TEXT PRIMARY KEY)').run();
-            db.prepare('DELETE FROM temp_fetched_accounts').run();
-            const insertTempAccount = db.prepare('INSERT OR IGNORE INTO temp_fetched_accounts (id) VALUES (?)');
+            db!.prepare('CREATE TEMP TABLE IF NOT EXISTS temp_fetched_accounts (id TEXT PRIMARY KEY)').run();
+            db!.prepare('DELETE FROM temp_fetched_accounts').run();
+            const insertTempAccount = db!.prepare('INSERT OR IGNORE INTO temp_fetched_accounts (id) VALUES (?)');
             for (const id of fetchedAccountIds) insertTempAccount.run(id);
 
-            db.prepare('DELETE FROM transactions WHERE account_id NOT IN (SELECT id FROM temp_fetched_accounts)').run();
-            db.prepare('DELETE FROM accounts WHERE id NOT IN (SELECT id FROM temp_fetched_accounts)').run();
+            db!.prepare('DELETE FROM transactions WHERE account_id NOT IN (SELECT id FROM temp_fetched_accounts)').run();
+            db!.prepare('DELETE FROM accounts WHERE id NOT IN (SELECT id FROM temp_fetched_accounts)').run();
 
-            db.prepare('DROP TABLE IF EXISTS temp_fetched_accounts').run();
+            db!.prepare('DROP TABLE IF EXISTS temp_fetched_accounts').run();
         })();
 
         // Mark internal transfers across entire dataset if enabled
         let updatedDuplicates: number | undefined;
         if (autoMarkDuplicates) {
+            currentStep = 'marking duplicate internal transfers across dataset';
             const threeDaysInSeconds = 3 * 24 * 60 * 60;
             const updateSql = `
       WITH pairs AS (
@@ -416,6 +574,7 @@ export async function refreshAll(): Promise<{ message: string; classifierOutput?
         let classifierOutput: string | undefined;
         let categorizedCount: number | undefined;
         if (autoCategorize) {
+            currentStep = 'running transaction classifier across dataset';
             const dataDir = getDataPath();
             const scriptPath = path.join(dataDir, 'classify_transaction.py');
             classifierOutput = await new Promise<string>((resolve) => {
@@ -440,12 +599,35 @@ export async function refreshAll(): Promise<{ message: string; classifierOutput?
             } catch { }
         }
 
-        return { message: 'Full refresh completed successfully', updatedDuplicates, newTransactions: newTransactionIds.size, classifierOutput, categorizedCount };
+        const warnings = Array.from(simplefinWarnings);
+        return {
+            ok: true,
+            message: 'Full refresh completed successfully',
+            warnings: warnings.length > 0 ? warnings : undefined,
+            updatedDuplicates,
+            newTransactions: newTransactionIds.size,
+            classifierOutput,
+            categorizedCount,
+        };
     } catch (error: any) {
-        console.error('Error in refreshAll action:', error);
-        throw error;
+        const warnings = Array.from(simplefinWarnings);
+        const progressContext = `${currentStep} (completed ${completedWindows} window${completedWindows === 1 ? '' : 's'}, ${newTransactionIds.size} new txns saved so far)`;
+        const formatted = formatActionError(error, progressContext, warnings);
+        console.error('Error in refreshAll action:', formatted.errorDetails);
+        return {
+            ok: false,
+            message: formatted.error,
+            error: formatted.error,
+            errorDetails: formatted.errorDetails,
+            warnings: warnings.length > 0 ? warnings : undefined,
+            newTransactions: newTransactionIds.size,
+        };
     } finally {
-        db.close();
+        try {
+            db?.close();
+        } catch {
+            // ignore close error
+        }
     }
 }
 

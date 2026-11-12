@@ -57,7 +57,10 @@ export default function OnboardingPage() {
 
             // Full refresh like settings-client
             const { refreshAll } = await import("@/app/settings/actions")
-            await refreshAll()
+            const refreshResult = await refreshAll()
+            if (!refreshResult.ok || refreshResult.error) {
+                throw new Error(refreshResult.error || 'Failed to fetch initial data from SimpleFIN')
+            }
             toast.success('Connected and data fetched')
             setStep(3)
         } catch (err: any) {

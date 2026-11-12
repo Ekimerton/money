@@ -22,8 +22,12 @@ export function startCronJobs() {
             try {
                 // We use dynamic import for a server action to avoid issues with direct `use server` imports in pure node scripts
                 const { refreshRecent } = await import('@/app/settings/actions');
-                await refreshRecent();
-                console.log('Daily auto-refresh complete.');
+                const res = await refreshRecent();
+                if (!res.ok || res.error) {
+                    console.error('Daily auto-refresh failed:', res.error, res.errorDetails);
+                } else {
+                    console.log('Daily auto-refresh complete.');
+                }
             } catch (err) {
                 console.error('Daily auto-refresh failed:', err);
             }
