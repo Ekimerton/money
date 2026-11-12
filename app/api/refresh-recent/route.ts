@@ -68,19 +68,6 @@ export async function POST(req: Request) {
         const data = await response.json();
         const accounts = data.accounts;
 
-        db.exec(`
-            CREATE TABLE IF NOT EXISTS account_history (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                account_id TEXT NOT NULL,
-                balance TEXT NOT NULL,
-                balance_date INTEGER NOT NULL,
-                fetched_at TEXT NOT NULL,
-                FOREIGN KEY (account_id) REFERENCES accounts(id)
-            );
-            CREATE INDEX IF NOT EXISTS idx_account_history_account_id ON account_history (account_id);
-            CREATE INDEX IF NOT EXISTS idx_account_history_fetched_at ON account_history (fetched_at);
-        `);
-
         const insertAccount = db.prepare(
             'INSERT INTO accounts (id, name, currency, balance, balance_date) VALUES (?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET currency=excluded.currency, balance=excluded.balance, balance_date=excluded.balance_date'
         );
@@ -89,16 +76,15 @@ export async function POST(req: Request) {
             'INSERT INTO account_history (account_id, balance, balance_date, fetched_at) VALUES (?, ?, ?, ?)'
         );
 
+        const insertTransaction = db.prepare(
+            'INSERT INTO transactions (id, account_id, posted, amount, description, payee, transacted_at, pending, category, fetched_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET account_id=excluded.account_id, posted=excluded.posted, amount=excluded.amount, description=excluded.description, payee=excluded.payee, transacted_at=excluded.transacted_at, pending=excluded.pending, hidden=excluded.hidden'
+        );
+
         const fetchedAt = new Date().toISOString();
-
-        // Ensure transactions table has fetch tracking column (safety for prod)
-        try { db.exec("ALTER TABLE transactions ADD COLUMN fetched_at TEXT;"); } catch (e) {}
-
 
         db.transaction(() => {
             for (const account of accounts) {
                 insertAccount.run(
-
                     account.id,
                     account.name,
                     account.currency,
@@ -113,9 +99,6 @@ export async function POST(req: Request) {
                     fetchedAt
                 );
 
-                const insertTransaction = db.prepare(
-                    'INSERT INTO transactions (id, account_id, posted, amount, description, payee, transacted_at, pending, category, fetched_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET account_id=excluded.account_id, posted=excluded.posted, amount=excluded.amount, description=excluded.description, payee=excluded.payee, transacted_at=excluded.transacted_at, pending=excluded.pending, hidden=excluded.hidden'
-                );
                 for (const transaction of account.transactions) {
                     insertTransaction.run(
                         transaction.id,

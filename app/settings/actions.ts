@@ -189,20 +189,6 @@ export async function refreshRecent(): Promise<RefreshResult> {
     const simplefinWarnings = new Set<string>();
     try {
         db = new Database(dbPath);
-        currentStep = 'initializing schema';
-        // TODO: [CLEANUP] Move this schema initialization to a dedicated migration script or a centralized DB init process.
-        db.exec(`
-          CREATE TABLE IF NOT EXISTS account_history (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            account_id TEXT NOT NULL,
-            balance TEXT NOT NULL,
-            balance_date INTEGER NOT NULL,
-            fetched_at INTEGER NOT NULL,
-            FOREIGN KEY (account_id) REFERENCES accounts(id)
-          );
-          CREATE INDEX IF NOT EXISTS idx_account_history_account_id ON account_history (account_id);
-          CREATE INDEX IF NOT EXISTS idx_account_history_fetched_at ON account_history (fetched_at);
-        `);
 
         currentStep = 'reading settings';
         const settings = await getSettings();
@@ -266,6 +252,9 @@ export async function refreshRecent(): Promise<RefreshResult> {
         const fetchedAt = new Date().toISOString();
 
         const existsTransaction = db.prepare('SELECT 1 FROM transactions WHERE id = ? LIMIT 1');
+        const insertTransaction = db.prepare(
+            'INSERT INTO transactions (id, account_id, posted, amount, description, payee, transacted_at, pending, category, fetched_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET account_id=excluded.account_id, posted=excluded.posted, amount=excluded.amount, description=excluded.description, payee=excluded.payee, transacted_at=excluded.transacted_at, pending=excluded.pending, hidden=excluded.hidden'
+        );
 
         db.transaction(() => {
             for (const account of accounts) {
@@ -284,9 +273,6 @@ export async function refreshRecent(): Promise<RefreshResult> {
                     fetchedAt
                 );
 
-                const insertTransaction = db!.prepare(
-                    'INSERT INTO transactions (id, account_id, posted, amount, description, payee, transacted_at, pending, category, fetched_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET account_id=excluded.account_id, posted=excluded.posted, amount=excluded.amount, description=excluded.description, payee=excluded.payee, transacted_at=excluded.transacted_at, pending=excluded.pending, hidden=excluded.hidden'
-                );
                 const transactions = Array.isArray(account.transactions) ? account.transactions : [];
                 for (const transaction of transactions) {
                     const exists = existsTransaction.get(transaction.id);
@@ -307,7 +293,6 @@ export async function refreshRecent(): Promise<RefreshResult> {
                     }
                 }
             }
-            // No pruning for recent refresh
         })();
 
         const newTransactions = newTransactionIds.length;
@@ -383,26 +368,12 @@ export async function refreshAll(): Promise<RefreshResult> {
     let db: Database.Database | null = null;
     let currentStep = 'opening database';
     const simplefinWarnings = new Set<string>();
-    const fetchedAccountIds = new Set<string>();
+    const recordedHistoryAccountIds = new Set<string>();
     const newTransactionIds = new Set<string>();
     let completedWindows = 0;
 
     try {
         db = new Database(dbPath);
-        currentStep = 'initializing schema';
-        // TODO: [CLEANUP] Move this schema initialization to a dedicated migration script or a centralized DB init process.
-        db.exec(`
-          CREATE TABLE IF NOT EXISTS account_history (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            account_id TEXT NOT NULL,
-            balance TEXT NOT NULL,
-            balance_date INTEGER NOT NULL,
-            fetched_at INTEGER NOT NULL,
-            FOREIGN KEY (account_id) REFERENCES accounts(id)
-          );
-          CREATE INDEX IF NOT EXISTS idx_account_history_account_id ON account_history (account_id);
-          CREATE INDEX IF NOT EXISTS idx_account_history_fetched_at ON account_history (fetched_at);
-        `);
 
         currentStep = 'reading settings';
         const settings = await getSettings();
@@ -427,7 +398,7 @@ export async function refreshAll(): Promise<RefreshResult> {
         const earliestStartDate = Math.floor(new Date('2000-01-01').getTime() / 1000);
         const now = Math.floor(Date.now() / 1000);
 
-        const windowDays = 60; // two months
+        const windowDays = 45; // SimpleFIN recommended max range
         const windowSeconds = windowDays * 24 * 60 * 60;
 
         currentStep = 'preparing database statements';
@@ -478,7 +449,7 @@ export async function refreshAll(): Promise<RefreshResult> {
             currentStep = `saving ${windowLabel} to database (${accounts.length} accounts, ${transactionsCountInWindow} transactions)`;
             db.transaction(() => {
                 for (const account of accounts) {
-                    fetchedAccountIds.add(String(account.id));
+                    const accountId = String(account.id);
                     insertAccount.run(
                         account.id,
                         account.name,
@@ -487,12 +458,15 @@ export async function refreshAll(): Promise<RefreshResult> {
                         Math.floor(Number(account['balance-date']))
                     );
 
-                    insertAccountHistory.run(
-                        account.id,
-                        account.balance,
-                        Math.floor(Number(account['balance-date'])),
-                        fetchedAt
-                    );
+                    if (!recordedHistoryAccountIds.has(accountId)) {
+                        insertAccountHistory.run(
+                            account.id,
+                            account.balance,
+                            Math.floor(Number(account['balance-date'])),
+                            fetchedAt
+                        );
+                        recordedHistoryAccountIds.add(accountId);
+                    }
 
                     const transactions = Array.isArray(account.transactions) ? account.transactions : [];
                     for (const transaction of transactions) {
@@ -528,20 +502,6 @@ export async function refreshAll(): Promise<RefreshResult> {
 
             windowEnd = windowStart - 1; // avoid overlap
         }
-
-        // Prune only missing accounts and their transactions
-        currentStep = `pruning missing accounts (${fetchedAccountIds.size} active accounts fetched across ${completedWindows} windows)`;
-        db.transaction(() => {
-            db!.prepare('CREATE TEMP TABLE IF NOT EXISTS temp_fetched_accounts (id TEXT PRIMARY KEY)').run();
-            db!.prepare('DELETE FROM temp_fetched_accounts').run();
-            const insertTempAccount = db!.prepare('INSERT OR IGNORE INTO temp_fetched_accounts (id) VALUES (?)');
-            for (const id of fetchedAccountIds) insertTempAccount.run(id);
-
-            db!.prepare('DELETE FROM transactions WHERE account_id NOT IN (SELECT id FROM temp_fetched_accounts)').run();
-            db!.prepare('DELETE FROM accounts WHERE id NOT IN (SELECT id FROM temp_fetched_accounts)').run();
-
-            db!.prepare('DROP TABLE IF EXISTS temp_fetched_accounts').run();
-        })();
 
         // Mark internal transfers across entire dataset if enabled
         let updatedDuplicates: number | undefined;

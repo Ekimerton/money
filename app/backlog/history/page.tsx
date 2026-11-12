@@ -8,10 +8,6 @@ async function getFetchHistory() {
     const dbPath = getDataPath('user_data.db');
     const db = new Database(dbPath);
     try {
-        // Ensure necessary columns exist for the query (safety during build/first-run)
-        try { db.exec("ALTER TABLE transactions ADD COLUMN fetched_at TEXT;"); } catch (e) { }
-        try { db.exec("ALTER TABLE account_history ADD COLUMN fetched_at TEXT;"); } catch (e) { }
-
         const accounts = db.prepare('SELECT * FROM accounts').all() as any[];
         const allHistoryRaw = db.prepare('SELECT account_id, balance, fetched_at FROM account_history').all() as any[];
         const allHistory = allHistoryRaw.map(h => ({

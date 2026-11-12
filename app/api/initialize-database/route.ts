@@ -49,9 +49,6 @@ export async function POST(req: NextRequest) {
       CREATE INDEX IF NOT EXISTS idx_transactions_account_id ON transactions (account_id);
       CREATE INDEX IF NOT EXISTS idx_transactions_transacted_at ON transactions (transacted_at);
       CREATE INDEX IF NOT EXISTS idx_transactions_category ON transactions (category);
-
-      /* Cleanup old user_config table now that settings are moved to JSON */
-      DROP TABLE IF EXISTS user_config;
     `);
 
     db.close();
